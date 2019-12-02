@@ -1,3 +1,25 @@
+// StreetViewService return service:
+// {
+//   "location": {
+//     "latLng": LatLng,
+//     "description": string,
+//     "pano": string
+//   },
+//   "copyright": string,
+//   "links": [{
+//       "heading": number,
+//       "description": string,
+//       "pano": string,
+//       "roadColor": string,
+//       "roadOpacity": number
+//     }],
+//   "tiles": {
+//     "worldSize": Size,
+//     "tileSize": Size,
+//     "centerHeading": number
+//   }
+// }
+
 let service = new google.maps.StreetViewService();
 
 let results = [];
@@ -11,6 +33,7 @@ function queryPosition() {
 		if (status == google.maps.StreetViewStatus.OK) {
 			let nearestLatLng = result.location.latLng;
 			console.log(nearestLatLng.toString());
+			console.log(result);
 			results.push(nearestLatLng);
 		} else {
 			console.log("Failed to get location.");
