@@ -2,14 +2,13 @@ package placefinder
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/golang/geo/s2"
-	"gitlab.com/glatteis/earthwalker/streetviewserver"
+	"gitlab.com/glatteis/earthwalker/challenge"
+	"log"
 	"net/http"
 )
 
 func RespondToPoints(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(r.Method)
 	type jsonPoint struct {
 		Lat float64 `json:"lat"`
 		Lng float64 `json:"lng"`
@@ -31,5 +30,13 @@ func RespondToPoints(w http.ResponseWriter, r *http.Request) {
 		locations[i] = s2.LatLngFromDegrees(content[i].Lat, content[i].Lng)
 	}
 
-	streetviewserver.ServeLocation(locations[0], w, r)
+	resultingChallenge, err := challenge.NewChallenge(locations)
+
+	if err != nil {
+		log.Println(err)
+		w.Write([]byte("Internal server error! Please contact an administrator or something"))
+		return
+	}
+
+	http.Redirect(w, r, "/game?c="+resultingChallenge.UniqueIdentifier, 302)
 }

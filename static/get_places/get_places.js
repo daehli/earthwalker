@@ -16,7 +16,7 @@ function queryPosition() {
 			console.log("Failed to get location.");
 			console.log(status.toString());
 		}
-		if (results.length < 1) {
+		if (results.length < 5) {
 			document.getElementById("counter").innerHTML = results.length;
 			queryPosition();
 		} else {

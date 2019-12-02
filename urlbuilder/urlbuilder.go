@@ -10,7 +10,7 @@ import (
 )
 
 func floatToString(number float64) string {
-	return strconv.FormatFloat(number, 'f', 6, 64)
+	return strconv.FormatFloat(number, 'f', 7, 64)
 }
 
 // BuildUrl builds google street view urls from coordinates
