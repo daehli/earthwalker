@@ -28,6 +28,13 @@ func randSeq(n int) string {
 	return string(b)
 }
 
+func NewSession() PlayerSession {
+	return PlayerSession{
+		UniqueIdentifier: randSeq(10),
+	}
+}
+
+// StorePlayerSession stores a player session in the database.
 func StorePlayerSession(session PlayerSession) error {
 	err := database.GetDB().Update(func(txn *badger.Txn) error {
 		var buffer bytes.Buffer
@@ -41,7 +48,9 @@ func StorePlayerSession(session PlayerSession) error {
 	return nil
 }
 
-func LoadPlayerSession(id string) (PlayerSession, error) {
+// loadPlayerSession loads a player session from the database.
+// Is private, because you should use GetSessionFromCookie in cookies.go.
+func loadPlayerSession(id string) (PlayerSession, error) {
 	var playerBytes []byte
 
 	err := database.GetDB().Update(func(txn *badger.Txn) error {

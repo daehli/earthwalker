@@ -24,7 +24,13 @@ func modifyMainPage(target string, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	bodyAsString := string(body)
-	replacedBody := strings.Replace(bodyAsString, "<head>", "<head> <script src=\"static/modify_frontend/modify.js\"/>", -1)
+
+	insertBody, err := ioutil.ReadFile("templates/to_insert.html")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	replacedBody := strings.Replace(bodyAsString, "<head>", "<head> "+string(insertBody), -1)
 	w.Write([]byte(replacedBody))
 }
 
@@ -49,7 +55,6 @@ func modifyInformation(target string, w http.ResponseWriter, r *http.Request) {
 // ServeLocation serves a specific location to the user.
 func ServeLocation(l s2.LatLng, w http.ResponseWriter, r *http.Request) {
 	mapsUrl := urlbuilder.BuildUrl(l)
-	log.Println(mapsUrl)
 	modifyMainPage(mapsUrl, w, r)
 }
 
@@ -60,6 +65,6 @@ func ServeMaps(w http.ResponseWriter, r *http.Request) {
 	if strings.Contains(fullURL.String(), "photometa") {
 		modifyInformation(fullURL.String(), w, r)
 	} else {
-		http.Redirect(w, r, fullURL.String(), 301)
+		http.Redirect(w, r, fullURL.String(), 302)
 	}
 }

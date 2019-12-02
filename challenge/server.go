@@ -5,6 +5,7 @@ import (
 	"encoding/gob"
 	"github.com/dgraph-io/badger"
 	"gitlab.com/glatteis/earthwalker/database"
+	"gitlab.com/glatteis/earthwalker/player"
 	"gitlab.com/glatteis/earthwalker/streetviewserver"
 	"log"
 	"net/http"
@@ -16,7 +17,7 @@ func ServeChallenge(w http.ResponseWriter, r *http.Request) {
 	challengeKey, ok := r.URL.Query()["c"]
 	// This is probably what they call "user error"
 	if !ok || len(challengeKey) == 0 {
-		http.Redirect(w, r, "/", 301)
+		http.Redirect(w, r, "/", 302)
 		return
 	}
 
@@ -72,6 +73,25 @@ func ServeChallenge(w http.ResponseWriter, r *http.Request) {
 	if roundAsInt < 1 || roundAsInt > foundChallenge.Settings.NumRounds {
 		w.Write([]byte("Round number not in range!"))
 		return
+	}
+
+	var cookieNotPresent bool
+	session, err := player.GetSessionFromCookie(r)
+	if err != nil {
+		session = player.NewSession()
+		cookieNotPresent = true
+	}
+	session.CurrentGameID = foundChallenge.UniqueIdentifier
+	session.CurrentRound = roundAsInt
+	err = player.StorePlayerSession(session)
+	if err != nil {
+		log.Println("Could not save a session: " + err.Error())
+		w.Write([]byte("Could not save your session: " + err.Error()))
+		return
+	}
+	if cookieNotPresent {
+		log.Println("Setting a new cookie for", session)
+		player.SetSessionCookie(session, w)
 	}
 
 	streetviewserver.ServeLocation(foundChallenge.Places[roundAsInt-1], w, r)

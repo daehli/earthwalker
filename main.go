@@ -5,6 +5,7 @@ import (
 	"gitlab.com/glatteis/earthwalker/challenge"
 	"gitlab.com/glatteis/earthwalker/database"
 	"gitlab.com/glatteis/earthwalker/placefinder"
+	"gitlab.com/glatteis/earthwalker/player"
 	"gitlab.com/glatteis/earthwalker/streetviewserver"
 	"log"
 	"math/rand"
@@ -21,7 +22,18 @@ func main() {
 	flag.Parse()
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, "/static/get_places/get_places.html", 301)
+		session, err := player.GetSessionFromCookie(r)
+		log.Println(session, err)
+		if err != nil || session.CurrentGameID == "" {
+			log.Println(err)
+			http.Redirect(w, r, "/static/get_places/get_places.html", 302)
+		} else {
+			redirectURL := "/game?c=" + session.CurrentGameID
+			if session.CurrentRound != 0 {
+				redirectURL += "&round=" + strconv.Itoa(session.CurrentRound)
+			}
+			http.Redirect(w, r, redirectURL, 302)
+		}
 	})
 	http.HandleFunc("/game", func(w http.ResponseWriter, r *http.Request) {
 		challenge.ServeChallenge(w, r)
