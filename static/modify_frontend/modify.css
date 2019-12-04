@@ -45,16 +45,19 @@
 	display: none;
 }
 
-#leaflet-map {
+#leaflet-container {
 	width: 300px;
 	height: 300px;
 	position: absolute;
 	right: 30px;
 	bottom: 30px;
-	/* margin-left: auto; */
-	/* margin-top: auto; */
-	/* margin-right: 100px; */
-	/* margin-bottom: 100px; */
-	/* max-height: none; */
-	/* max-width: none; */
+}
+
+#leaflet-map {
+	width: 100%;
+	height: calc(100% - 30px);
+}
+
+#navigation-bar {
+	height: 30px;
 }

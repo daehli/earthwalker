@@ -7,6 +7,8 @@ import (
 	"time"
 )
 
+var PlayerSessionNotFoundError = errors.New("no player session found")
+
 // SetSessionCookie sets the session cookie of a session into the browser.
 func SetSessionCookie(session PlayerSession, w http.ResponseWriter) {
 	c := http.Cookie{
@@ -28,7 +30,7 @@ func GetSessionFromCookie(r *http.Request) (PlayerSession, error) {
 		}
 	}
 	if cookie == nil {
-		return PlayerSession{}, errors.New("no player session found")
+		return PlayerSession{}, PlayerSessionNotFoundError
 	}
 
 	session, err := loadPlayerSession(cookie.Value)

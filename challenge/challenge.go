@@ -3,6 +3,7 @@ package challenge
 import (
 	"bytes"
 	"encoding/gob"
+	"errors"
 	"github.com/dgraph-io/badger"
 	"github.com/golang/geo/s2"
 	"gitlab.com/glatteis/earthwalker/database"
@@ -53,4 +54,44 @@ func NewChallenge(places []s2.LatLng) (Challenge, error) {
 		return Challenge{}, err
 	}
 	return challenge, nil
+}
+
+// The ChallengeNotFoundError is the error that is returned by GetChallenge when no challenge
+// of that id is present.
+var ChallengeNotFoundError = errors.New("challenge not found!")
+
+// GetChallenge loads a challenge from an id.
+func GetChallenge(id string) (Challenge, error) {
+	var challengeBytes []byte
+
+	err := database.GetDB().Update(func(txn *badger.Txn) error {
+		result, err := txn.Get([]byte("challenge-" + id))
+		if err != nil {
+			return err
+		}
+
+		var res []byte
+		err = result.Value(func(val []byte) error {
+			res = append([]byte{}, val...)
+			return nil
+		})
+
+		if err != nil {
+			return err
+		}
+
+		challengeBytes = res
+		return nil
+	})
+
+	if err == badger.ErrKeyNotFound {
+		return Challenge{}, ChallengeNotFoundError
+	} else if err != nil {
+		return Challenge{}, err
+	}
+
+	var foundChallenge Challenge
+	gob.NewDecoder(bytes.NewBuffer(challengeBytes)).Decode(&foundChallenge)
+
+	return foundChallenge, nil
 }

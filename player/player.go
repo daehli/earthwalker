@@ -7,15 +7,26 @@ import (
 	"github.com/dgraph-io/badger"
 	"gitlab.com/glatteis/earthwalker/database"
 	"math/rand"
+	"time"
 )
 
 type PlayerSession struct {
 	// UniqueIdentifier is the session identifier stored in the key.
 	UniqueIdentifier string
-	// CurrentGameID is game identifier the player might be currently in.
-	CurrentGameID string
-	// CurrentRound is the round the player is in.
-	CurrentRound int
+	// GameID is game identifier the player might be currently in.
+	GameID string
+	// Points is the number of points of rounds that the player has already completed.
+	Points []int
+	// Distances are the respective distances as floats.
+	Distances []float64
+	// GuessedPositions are the guessed positions as float64 tuples
+	GuessedPositions [][]float64
+	// TimeLeft is the time the player had left when earthwalker last checked.
+	TimeLeft time.Time
+}
+
+func (p PlayerSession) Round() int {
+	return 1 + len(p.Points)
 }
 
 var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
@@ -40,6 +51,20 @@ func StorePlayerSession(session PlayerSession) error {
 		var buffer bytes.Buffer
 		gob.NewEncoder(&buffer).Encode(session)
 		return txn.Set([]byte("session-"+session.UniqueIdentifier), buffer.Bytes())
+	})
+
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// RemovePlayerSession removes a player session in the database.
+func RemovePlayerSession(session PlayerSession) error {
+	err := database.GetDB().Update(func(txn *badger.Txn) error {
+		var buffer bytes.Buffer
+		gob.NewEncoder(&buffer).Encode(session)
+		return txn.Delete([]byte("session-" + session.UniqueIdentifier))
 	})
 
 	if err != nil {

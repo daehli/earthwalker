@@ -1,15 +1,10 @@
 package challenge
 
 import (
-	"bytes"
-	"encoding/gob"
-	"github.com/dgraph-io/badger"
-	"gitlab.com/glatteis/earthwalker/database"
 	"gitlab.com/glatteis/earthwalker/player"
 	"gitlab.com/glatteis/earthwalker/streetviewserver"
 	"log"
 	"net/http"
-	"strconv"
 )
 
 // ServeChallenge serves a challenge to the user (using the /game?c= url).
@@ -20,69 +15,33 @@ func ServeChallenge(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/", 302)
 		return
 	}
-
-	round, ok := r.URL.Query()["round"]
-	var roundAsString string
-	if !ok || len(round) == 0 {
-		roundAsString = "1"
-	} else {
-		roundAsString = round[0]
-	}
-
-	roundAsInt, err := strconv.Atoi(roundAsString)
-	if err != nil {
-		w.Write([]byte("Round must be an integer!"))
-		return
-	}
-
 	actualKey := challengeKey[0]
-	var challengeBytes []byte
-
-	err = database.GetDB().Update(func(txn *badger.Txn) error {
-		result, err := txn.Get([]byte("challenge-" + actualKey))
-		if err != nil {
-			return err
-		}
-
-		var res []byte
-		err = result.Value(func(val []byte) error {
-			res = append([]byte{}, val...)
-			return nil
-		})
-
-		if err != nil {
-			return err
-		}
-
-		challengeBytes = res
-		return nil
-	})
-
-	if err == badger.ErrKeyNotFound {
-		w.Write([]byte("Sorry, that challenge does not exist!"))
-		return
-	} else if err != nil {
-		log.Println(err)
-		w.Write([]byte("Internal error, sorry! Please contact an administrator or something."))
-		return
-	}
-
-	var foundChallenge Challenge
-	gob.NewDecoder(bytes.NewBuffer(challengeBytes)).Decode(&foundChallenge)
-
-	if roundAsInt < 1 || roundAsInt > foundChallenge.Settings.NumRounds {
-		w.Write([]byte("Round number not in range!"))
-		return
-	}
 
 	var cookieNotPresent bool
 	session, err := player.GetSessionFromCookie(r)
-	if err != nil {
+	if err != nil || session.GameID != actualKey {
+		if err != player.PlayerSessionNotFoundError {
+			log.Println(err)
+		}
 		session = player.NewSession()
 		cookieNotPresent = true
 	}
-	session.CurrentGameID = foundChallenge.UniqueIdentifier
-	session.CurrentRound = roundAsInt
+
+	foundChallenge, err := GetChallenge(actualKey)
+	if err == ChallengeNotFoundError {
+		w.Write([]byte("this challenge does not exist!"))
+		w.WriteHeader(404)
+		return
+	} else if err != nil {
+		log.Println(err)
+		w.Write([]byte("there was some kind of internal error, sorry!"))
+		w.WriteHeader(500)
+		return
+	}
+
+	session.GameID = foundChallenge.UniqueIdentifier
+	round := session.Round()
+
 	err = player.StorePlayerSession(session)
 	if err != nil {
 		log.Println("Could not save a session: " + err.Error())
@@ -94,5 +53,5 @@ func ServeChallenge(w http.ResponseWriter, r *http.Request) {
 		player.SetSessionCookie(session, w)
 	}
 
-	streetviewserver.ServeLocation(foundChallenge.Places[roundAsInt-1], w, r)
+	streetviewserver.ServeLocation(foundChallenge.Places[round-1], w, r)
 }

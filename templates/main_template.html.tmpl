@@ -1,9 +1,13 @@
+<!doctype html>
 <html>
 <head>
 	<title>earthwalker</title>
 	<link href="/static/bootstrap.min.css" rel="stylesheet"/>
 </head>
 <body>
-{{ .Content }}
+<nav class="navbar navbar-expand-sm navbar-light bg-light">
+	<span class="navbar-brand">Earthwalker</span>
+</nav>
+{{ template "content" . }}
 </body>
 </html>
