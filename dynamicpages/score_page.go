@@ -16,7 +16,7 @@ type guessedPositionsType struct {
 	Nickname        string
 }
 
-type serveStruct struct {
+type scoreServeStruct struct {
 	NumPoints        int
 	PointsPercent    int
 	DistanceKM       string
@@ -26,6 +26,7 @@ type serveStruct struct {
 	YourID           string
 }
 
+// ServeScores serves the scores page.
 func ServeScores(w http.ResponseWriter, r *http.Request) {
 	session, err := player.GetSessionFromCookie(r)
 	if err == player.PlayerSessionNotFoundError {
@@ -66,13 +67,13 @@ func ServeScores(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	toServe := serveStruct{
+	toServe := scoreServeStruct{
 		NumPoints:        session.Points[session.Round()-2],
 		PointsPercent:    session.Points[session.Round()-2] / (5000 / 100),
 		DistanceKM:       strconv.FormatFloat(session.Distances[session.Round()-2], 'f', 2, 64),
 		GuessedPositions: guessedPositions,
 		ActualPosition:   actualPositionAsFloats,
-		LastScorePage:    session.Round() == foundChallenge.Settings.NumRounds,
+		LastScorePage:    session.Round()-1 == foundChallenge.Settings.NumRounds,
 		YourID:           session.UniqueIdentifier,
 	}
 

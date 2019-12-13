@@ -49,6 +49,7 @@ func main() {
 
 	http.HandleFunc("/scores", dynamicpages.ServeScores)
 	http.HandleFunc("/set_nickname", dynamicpages.ServeSetNickname)
+	http.HandleFunc("/summary", dynamicpages.ServeSummary)
 
 	http.HandleFunc("/guess", challenge.Guess)
 

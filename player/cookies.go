@@ -30,7 +30,7 @@ func GetSessionFromCookie(r *http.Request) (PlayerSession, error) {
 		return PlayerSession{}, PlayerSessionNotFoundError
 	}
 
-	session, err := loadPlayerSession(cookie.Value)
+	session, err := LoadPlayerSession(cookie.Value)
 	if err != nil {
 		return PlayerSession{}, err
 	}

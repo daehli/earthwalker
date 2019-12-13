@@ -75,9 +75,9 @@ func RemovePlayerSession(session PlayerSession) error {
 	return nil
 }
 
-// loadPlayerSession loads a player session from the database.
-// Is private, because you should use GetSessionFromCookie in cookies.go.
-func loadPlayerSession(id string) (PlayerSession, error) {
+// LoadPlayerSession loads a player session from the database.
+// You should probably use GetSessionFromCookie in cookies.go.
+func LoadPlayerSession(id string) (PlayerSession, error) {
 	var playerBytes []byte
 
 	err := database.GetDB().Update(func(txn *badger.Txn) error {
