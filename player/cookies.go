@@ -2,7 +2,6 @@ package player
 
 import (
 	"errors"
-	"log"
 	"net/http"
 	"time"
 )
@@ -23,9 +22,7 @@ func SetSessionCookie(session PlayerSession, w http.ResponseWriter) {
 func GetSessionFromCookie(r *http.Request) (PlayerSession, error) {
 	var cookie *http.Cookie
 	for _, c := range r.Cookies() {
-		log.Println(*c)
 		if c.Name == "earthwalker-session" {
-			log.Println("Found cookie")
 			cookie = c
 		}
 	}

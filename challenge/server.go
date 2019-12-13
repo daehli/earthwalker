@@ -17,14 +17,15 @@ func ServeChallenge(w http.ResponseWriter, r *http.Request) {
 	}
 	actualKey := challengeKey[0]
 
-	var cookieNotPresent bool
 	session, err := player.GetSessionFromCookie(r)
-	if err != nil || session.GameID != actualKey {
-		if err != player.PlayerSessionNotFoundError {
-			log.Println(err)
-		}
-		session = player.NewSession()
-		cookieNotPresent = true
+	if err == player.PlayerSessionNotFoundError {
+		http.Redirect(w, r, "/set_nickname?c="+actualKey, 302)
+		return
+	} else if err != nil {
+		log.Println(err)
+		w.Write([]byte("Some internal error occured, sorry!"))
+		w.WriteHeader(500)
+		return
 	}
 
 	foundChallenge, err := GetChallenge(actualKey)
@@ -39,6 +40,20 @@ func ServeChallenge(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if session.GameID != actualKey {
+		newSession := player.NewSession()
+		newSession.Nickname = session.Nickname
+		session = newSession
+		err := player.StorePlayerSession(session)
+		if err != nil {
+			log.Println(err)
+			w.Write([]byte("there was some kind of internal error, sorry!"))
+			w.WriteHeader(500)
+			return
+		}
+		player.SetSessionCookie(session, w)
+	}
+
 	session.GameID = foundChallenge.UniqueIdentifier
 	round := session.Round()
 
@@ -48,10 +63,41 @@ func ServeChallenge(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Could not save your session: " + err.Error()))
 		return
 	}
-	if cookieNotPresent {
-		log.Println("Setting a new cookie for", session)
+
+	streetviewserver.ServeLocation(foundChallenge.Places[round-1], w, r)
+}
+
+// WriteNicknameAndSession writes a nickname and a session if the session
+// does not exist yet, otherwise writes the nickname to the session.
+// Only returns an error if it is exceptional.
+func WriteNicknameAndSession(w http.ResponseWriter, r *http.Request, nickname string) error {
+	session, err := player.GetSessionFromCookie(r)
+
+	var writeSession bool
+	if err != nil {
+		if err != player.PlayerSessionNotFoundError {
+			return err
+		}
+		session = player.NewSession()
+		writeSession = true
+	}
+
+	var writeSessionCookie bool
+	if session.Nickname != nickname {
+		session.Nickname = nickname
+		writeSessionCookie = true
+	}
+
+	if writeSession {
+		err := player.StorePlayerSession(session)
+		if err != nil {
+			return err
+		}
+	}
+
+	if writeSessionCookie {
 		player.SetSessionCookie(session, w)
 	}
 
-	streetviewserver.ServeLocation(foundChallenge.Places[round-1], w, r)
+	return nil
 }

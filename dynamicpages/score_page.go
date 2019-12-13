@@ -6,15 +6,24 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"strconv"
 )
 
 var scorePage = template.Must(template.ParseFiles("templates/main_template.html.tmpl", "templates/score/score.html.tmpl"))
 
-type serveStruct struct {
-	NumPoints       int
-	DistanceKM      float64
+type guessedPositionsType struct {
 	GuessedPosition []float64
-	ActualPosition  []float64
+	Nickname        string
+}
+
+type serveStruct struct {
+	NumPoints        int
+	PointsPercent    int
+	DistanceKM       string
+	GuessedPositions map[string]guessedPositionsType
+	ActualPosition   []float64
+	LastScorePage    bool
+	YourID           string
 }
 
 func ServeScores(w http.ResponseWriter, r *http.Request) {
@@ -41,17 +50,33 @@ func ServeScores(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Println(session.Round())
-
+	if session.Round() <= 1 {
+		w.Write([]byte("You have not completed a round yet, you cannot view scores."))
+		w.WriteHeader(500)
+		return
+	}
 	actualPosition := foundChallenge.Places[session.Round()-2]
 	actualPositionAsFloats := []float64{actualPosition.Lat.Degrees(), actualPosition.Lng.Degrees()}
 
-	toServe := serveStruct{
-		NumPoints:       session.Points[session.Round()-2],
-		DistanceKM:      session.Distances[session.Round()-2],
-		GuessedPosition: session.GuessedPositions[session.Round()-2],
-		ActualPosition:  actualPositionAsFloats,
+	guessedPositions := make(map[string]guessedPositionsType)
+	for _, guess := range foundChallenge.Guesses[session.Round()-2] {
+		guessedPositions[guess.PlayerID] = guessedPositionsType{
+			GuessedPosition: []float64{guess.GuessLocation.Lat.Degrees(), guess.GuessLocation.Lng.Degrees()},
+			Nickname:        guess.PlayerNickname,
+		}
 	}
+
+	toServe := serveStruct{
+		NumPoints:        session.Points[session.Round()-2],
+		PointsPercent:    session.Points[session.Round()-2] / (5000 / 100),
+		DistanceKM:       strconv.FormatFloat(session.Distances[session.Round()-2], 'f', 2, 64),
+		GuessedPositions: guessedPositions,
+		ActualPosition:   actualPositionAsFloats,
+		LastScorePage:    session.Round() == foundChallenge.Settings.NumRounds,
+		YourID:           session.UniqueIdentifier,
+	}
+
+	log.Println(foundChallenge.Guesses)
 
 	err = scorePage.Execute(w, toServe)
 	if err != nil {

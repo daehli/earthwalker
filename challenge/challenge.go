@@ -13,6 +13,7 @@ import (
 // A Challenge represents a number of places along with all kinds of associated data.
 type Challenge struct {
 	Places           []s2.LatLng
+	Guesses          [][]ChallengeGuess
 	UniqueIdentifier string
 	Settings         ChallengeSettings
 }
@@ -21,6 +22,15 @@ type Challenge struct {
 type ChallengeSettings struct {
 	NumRounds      int
 	LabeledMinimap bool
+}
+
+// A ChallengeGuess contains a guess on a round from someone.
+// This already contains the user's nickname so that the user
+// doesn't have to be looked up from the database every time.
+type ChallengeGuess struct {
+	GuessLocation  s2.LatLng
+	PlayerID       string
+	PlayerNickname string
 }
 
 var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
@@ -33,27 +43,30 @@ func randSeq(n int) string {
 	return string(b)
 }
 
-func NewChallenge(places []s2.LatLng) (Challenge, error) {
+// NewChallenge creates a new challenge with the parameters and stores it.
+func NewChallenge(places []s2.LatLng, settings ChallengeSettings) (Challenge, error) {
 	challenge := Challenge{
 		Places:           places,
 		UniqueIdentifier: randSeq(5),
-		// TODO make channel settings configurable
-		Settings: ChallengeSettings{
-			LabeledMinimap: true,
-			NumRounds:      5,
-		},
+		Guesses:          make([][]ChallengeGuess, len(places)),
+		Settings:         settings,
 	}
 
-	err := database.GetDB().Update(func(txn *badger.Txn) error {
-		var buffer bytes.Buffer
-		gob.NewEncoder(&buffer).Encode(challenge)
-		return txn.Set([]byte("challenge-"+challenge.UniqueIdentifier), buffer.Bytes())
-	})
+	err := StoreChallenge(challenge)
 
 	if err != nil {
 		return Challenge{}, err
 	}
 	return challenge, nil
+}
+
+// StoreChallenge stores changes to a challenge in the database.
+func StoreChallenge(challenge Challenge) error {
+	return database.GetDB().Update(func(txn *badger.Txn) error {
+		var buffer bytes.Buffer
+		gob.NewEncoder(&buffer).Encode(challenge)
+		return txn.Set([]byte("challenge-"+challenge.UniqueIdentifier), buffer.Bytes())
+	})
 }
 
 // The ChallengeNotFoundError is the error that is returned by GetChallenge when no challenge

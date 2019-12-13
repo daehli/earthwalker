@@ -22,9 +22,12 @@
 
 let service = new google.maps.StreetViewService();
 
+let searchingForResults = false;
 let results = [];
+let numDesiredResults = 5;
 
 function queryPosition() {
+	searchingForResults = true;
 	let randomLat = (Math.random() * 180.) - 90.;
 	let randomLon = (Math.random() * 360.) - 180.;
 	let point = new google.maps.LatLng(randomLat, randomLon);
@@ -32,27 +35,52 @@ function queryPosition() {
 	service.getPanoramaByLocation(point, radius, function(result, status) {
 		if (status == google.maps.StreetViewStatus.OK) {
 			let nearestLatLng = result.location.latLng;
-			console.log(nearestLatLng.toString());
-			console.log(result);
-			results.push(nearestLatLng);
+			// There seems to be a panorama graveyard at the top and bottom
+			// of the earth of incorrectly positioned paranoramas.
+			// Do not take these incorrect panorams into account.
+			// Of course, there is some sacrifice of actually interesting panoramas here.
+			console.log(nearestLatLng.lat());
+			if (nearestLatLng.lat() < 88 && nearestLatLng.lat() > -88 && 
+				result.copyright.includes("Google") // For now
+			) {
+				results.push(nearestLatLng);
+			}
 		} else {
 			console.log("Failed to get location.");
 			console.log(status.toString());
 		}
-		if (results.length < 5) {
-			document.getElementById("counter").innerHTML = results.length;
+		document.getElementById("loading-progress").setAttribute("style", "width: " + ((100 * results.length) / numDesiredResults) + "%;");
+		if (results.length < numDesiredResults) {
 			queryPosition();
 		} else {
 			// Yea, this is probably incorrect and hacky. But I'm writing JavaScript, so it's
 			// incorrect and hacky anyways.
 			let location = window.location.href;
 			let topLevel = location.substring(0, location.indexOf("/", 3));
-			// Insert a form containing results and send it off to the endpoint
-			document.body.innerHTML = "<form id='resultForm' action='" + topLevel + "/found_points' method='post'>" +
-				"<input type='hidden' name='result' value='" + JSON.stringify(results) + "'/></form>"
-			document.getElementById("resultForm").submit();
+			// Insert endpoint (hidden) into the form and add the submit button
+			let input = document.getElementById("hidden-input");
+			let button = document.getElementById("submit-button");
+
+			input.setAttribute("value", JSON.stringify(results));
+			button.removeAttribute("disabled");
+			searchingForResults = false;
 		}
 	});
+}
+
+function numberOfRoundsUpdated() {
+	let num = document.getElementById("rounds").value;
+	if (!num) {
+		return;
+	}
+	numDesiredResults = num;	
+	if (num > results.length) {
+		let button = document.getElementById("submit-button");
+		button.setAttribute("disabled", "disabled");
+		if (!searchingForResults) {
+			queryPosition();
+		}
+	} 
 }
 
 queryPosition();

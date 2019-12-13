@@ -13,6 +13,8 @@ import (
 type PlayerSession struct {
 	// UniqueIdentifier is the session identifier stored in the key.
 	UniqueIdentifier string
+	// The Nickname the player gives themselves.
+	Nickname string
 	// GameID is game identifier the player might be currently in.
 	GameID string
 	// Points is the number of points of rounds that the player has already completed.

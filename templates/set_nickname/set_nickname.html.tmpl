@@ -1,0 +1,19 @@
+{{ define "head_insert" }}
+{{ end }}
+
+{{ define "content" }}
+<div class="container">
+<br>
+<form action="/set_nickname" method="post">
+	<div class="form-group">
+		<label for="nickname">Your nickname:</label>
+		<input type="text" class="form-control" id="nickname" name="nickname" placeholder="Nickname" required pattern=".{1,}"/>
+	</div>
+
+	<input type="hidden" name="game_id" value="{{ .GameID }}"/>
+
+	<button id="submit-button" type="submit" class="btn btn-primary">Start game</button>
+</form>
+</div>
+
+{{ end }}

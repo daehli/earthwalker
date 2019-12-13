@@ -3,6 +3,7 @@ package challenge
 import (
 	"encoding/json"
 	"github.com/golang/geo/s2"
+	"github.com/pkg/errors"
 	"gitlab.com/glatteis/earthwalker/player"
 	"io/ioutil"
 	"log"
@@ -60,17 +61,28 @@ func Guess(w http.ResponseWriter, r *http.Request) {
 	maxDistance := earthRadius * math.Pi
 	points := int(5000 - ((float64(distance) / maxDistance) * 5000))
 
+	foundChallenge.Guesses[session.Round()-1] = append(foundChallenge.Guesses[session.Round()-1], ChallengeGuess{
+		GuessLocation:  guessLocation,
+		PlayerID:       session.UniqueIdentifier,
+		PlayerNickname: session.Nickname,
+	})
+
 	session.Points = append(session.Points, points)
 	session.GuessedPositions = append(session.GuessedPositions, []float64{guessLocation.Lat.Degrees(), guessLocation.Lng.Degrees()})
 	session.Distances = append(session.Distances, distance)
 
-	log.Println("Guessed!")
-	log.Println(session.Points)
-
 	err = player.StorePlayerSession(session)
 	if err != nil {
-		log.Println(err)
-		w.Write([]byte("there was some kind of internal error, sorry!"))
+		log.Println(errors.Wrap(err, "while storing the session"))
+		w.Write([]byte("There was an error while storing your session."))
+		w.WriteHeader(500)
+		return
+	}
+
+	err = StoreChallenge(foundChallenge)
+	if err != nil {
+		log.Println(errors.Wrap(err, "while storing the challenge"))
+		w.Write([]byte("There was an error while updating the challenge."))
 		w.WriteHeader(500)
 		return
 	}
