@@ -1,6 +1,7 @@
 package challenge
 
 import (
+	"github.com/pkg/errors"
 	"gitlab.com/glatteis/earthwalker/player"
 	"gitlab.com/glatteis/earthwalker/streetviewserver"
 	"log"
@@ -64,7 +65,7 @@ func ServeChallenge(w http.ResponseWriter, r *http.Request) {
 
 	err = player.StorePlayerSession(session)
 	if err != nil {
-		log.Println("Could not save a session: " + err.Error())
+		log.Println(errors.Wrap(err, "could not save a session"))
 		w.Write([]byte("Could not save your session: " + err.Error()))
 		return
 	}

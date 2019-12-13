@@ -54,7 +54,6 @@ func ServeSummary(w http.ResponseWriter, r *http.Request) {
 
 	ranking := make([]rankingType, 0)
 
-	log.Println(foundChallenge.Guesses)
 	for _, playerThatCompleted := range foundChallenge.Guesses[len(foundChallenge.Guesses)-1] {
 		completedSession, err := player.LoadPlayerSession(playerThatCompleted.PlayerID)
 		if err != nil {

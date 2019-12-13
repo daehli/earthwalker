@@ -7,7 +7,6 @@ import (
 	"github.com/dgraph-io/badger"
 	"github.com/golang/geo/s2"
 	"gitlab.com/glatteis/earthwalker/database"
-	"log"
 	"math/rand"
 )
 
@@ -46,7 +45,6 @@ func randSeq(n int) string {
 
 // NewChallenge creates a new challenge with the parameters and stores it.
 func NewChallenge(places []s2.LatLng, settings ChallengeSettings) (Challenge, error) {
-	log.Println(len(places))
 	challenge := Challenge{
 		Places:           places,
 		UniqueIdentifier: randSeq(5),

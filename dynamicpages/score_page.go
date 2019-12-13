@@ -77,8 +77,6 @@ func ServeScores(w http.ResponseWriter, r *http.Request) {
 		YourID:           session.UniqueIdentifier,
 	}
 
-	log.Println(foundChallenge.Guesses)
-
 	err = scorePage.Execute(w, toServe)
 	if err != nil {
 		log.Println(err)
