@@ -57,6 +57,11 @@ func ServeChallenge(w http.ResponseWriter, r *http.Request) {
 	session.GameID = foundChallenge.UniqueIdentifier
 	round := session.Round()
 
+	if round > len(foundChallenge.Places) {
+		http.Redirect(w, r, "/summary", 302)
+		return
+	}
+
 	err = player.StorePlayerSession(session)
 	if err != nil {
 		log.Println("Could not save a session: " + err.Error())
