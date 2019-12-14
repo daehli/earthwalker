@@ -120,6 +120,19 @@ function createMinimap() {
 	setTimeout(function() {
 		leafletMap.invalidateSize();
 	}, 100);
+
+	let copyrightNotice = document.createElement("span");
+	floatingContainer.setAttribute("style", "color: white; font-family: monospace;");
+	floatingContainer.append(copyrightNotice);
+	let interval = setInterval(function() {
+		if (document.getElementsByClassName("fineprint-copyrights")[2]) {
+			let notice = document.getElementsByClassName("fineprint-copyrights")[2].children[2].children[0].innerHTML;
+			if (notice != "") {
+				copyrightNotice.innerHTML = "Images " + notice;
+			}
+			clearInterval(interval);
+		}
+	}, 500);
 }
 
 let sizes = [
