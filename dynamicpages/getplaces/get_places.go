@@ -1,5 +1,5 @@
-// Package dynamicpages serves some dynamic pages.
-package dynamicpages
+// Package getplaces serves the get_places template.
+package getplaces
 
 import (
 	"html/template"

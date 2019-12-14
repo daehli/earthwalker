@@ -1,4 +1,5 @@
-package dynamicpages
+// Package setnickname serves the set_nickname template.
+package setnickname
 
 import (
 	"github.com/pkg/errors"

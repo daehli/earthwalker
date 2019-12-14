@@ -22,7 +22,10 @@ import (
 	"flag"
 	"gitlab.com/glatteis/earthwalker/challenge"
 	"gitlab.com/glatteis/earthwalker/database"
-	"gitlab.com/glatteis/earthwalker/dynamicpages"
+	"gitlab.com/glatteis/earthwalker/dynamicpages/getplaces"
+	"gitlab.com/glatteis/earthwalker/dynamicpages/scorepage"
+	"gitlab.com/glatteis/earthwalker/dynamicpages/setnickname"
+	"gitlab.com/glatteis/earthwalker/dynamicpages/summary"
 	"gitlab.com/glatteis/earthwalker/placefinder"
 	"gitlab.com/glatteis/earthwalker/player"
 	"gitlab.com/glatteis/earthwalker/streetviewserver"
@@ -43,7 +46,7 @@ func main() {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		session, err := player.GetSessionFromCookie(r)
 		if err != nil || session.GameID == "" {
-			dynamicpages.ServeGetPlaces(w, r)
+			getplaces.ServeGetPlaces(w, r)
 			return
 		}
 		w.Write([]byte("<a href='/continue'>Continue game</a> or <a href='/newgame'> start anew?</a>"))
@@ -51,13 +54,13 @@ func main() {
 	http.HandleFunc("/continue", func(w http.ResponseWriter, r *http.Request) {
 		session, err := player.GetSessionFromCookie(r)
 		if err != nil {
-			dynamicpages.ServeGetPlaces(w, r)
+			getplaces.ServeGetPlaces(w, r)
 			return
 		}
 		redirectURL := "/game?c=" + session.GameID
 		http.Redirect(w, r, redirectURL, http.StatusFound)
 	})
-	http.HandleFunc("/newgame", dynamicpages.ServeGetPlaces)
+	http.HandleFunc("/newgame", getplaces.ServeGetPlaces)
 	http.HandleFunc("/game", func(w http.ResponseWriter, r *http.Request) {
 		challenge.ServeChallenge(w, r)
 	})
@@ -65,9 +68,9 @@ func main() {
 
 	http.HandleFunc("/found_points", placefinder.RespondToPoints)
 
-	http.HandleFunc("/scores", dynamicpages.ServeScores)
-	http.HandleFunc("/set_nickname", dynamicpages.ServeSetNickname)
-	http.HandleFunc("/summary", dynamicpages.ServeSummary)
+	http.HandleFunc("/scores", scorepage.ServeScores)
+	http.HandleFunc("/set_nickname", setnickname.ServeSetNickname)
+	http.HandleFunc("/summary", summary.ServeSummary)
 
 	http.HandleFunc("/guess", challenge.Guess)
 

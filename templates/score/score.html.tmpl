@@ -31,7 +31,12 @@ let guessedPositions = [
 let actualPosition = [{{ index .ActualPosition 0 }}, {{ index .ActualPosition 1 }}];
 
 for (i in guessedPositions) {
-    let polyline = L.polyline([guessedPositions[i][1], actualPosition], {color: '#007bff'}).addTo(map);
+    let polyline;
+    if (i == {{ .You }}) {
+	polyline = L.polyline([guessedPositions[i][1], actualPosition], {color: '#ff007b'}).addTo(map);
+    } else {
+	polyline = L.polyline([guessedPositions[i][1], actualPosition], {color: '#007bff'}).addTo(map);
+    }
     map.fitBounds(polyline.getBounds());
 }
 

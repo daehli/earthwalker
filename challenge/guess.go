@@ -5,13 +5,12 @@ import (
 	"github.com/golang/geo/s2"
 	"github.com/pkg/errors"
 	"gitlab.com/glatteis/earthwalker/player"
+	"gitlab.com/glatteis/earthwalker/scores"
 	"io/ioutil"
 	"log"
-	"math"
+
 	"net/http"
 )
-
-const earthRadius = 6371
 
 // Guess serves the post request that is sent when one guesses.
 func Guess(w http.ResponseWriter, r *http.Request) {
@@ -51,9 +50,7 @@ func Guess(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	distance := actualLocation.Distance(guessLocation).Radians() * earthRadius
-	maxDistance := earthRadius * math.Pi
-	points := int(5000 - ((float64(distance) / maxDistance) * 5000))
+	points, distance := scores.CalculateScoreAndDistance(actualLocation, guessLocation)
 
 	foundChallenge.Guesses[session.Round()-1] = append(foundChallenge.Guesses[session.Round()-1], ChallengeGuess{
 		GuessLocation:  guessLocation,

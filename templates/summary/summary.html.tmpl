@@ -6,12 +6,75 @@
 
 <div class="container">
     <div style="margin-top: 10%; text-align: center;">
- 	{{ range .Rankings }}
-		<p>{{ .Nickname }}: {{ .NumPoints }} Points</p>
-	{{ end }}
+	<table class="table table-striped">
+	    <thead>
+		<th scope="col">Nickname</th>
+		<th scope="col">Number of Points</th>
+		<th scope="col">Total Distance Off</th>
+	    </thead>
+	    <tbody>
+	    {{ range .Rankings }}
+		<tr scope="row">
+		    <td>{{ .Nickname }}</td>
+		    <td>{{ .NumPoints }}</td>
+		    <td>{{ .AccumulatedDistance }}</td>
+		</tr>
+	    {{ end }}
+	    </tbody>
+	</table>
     </div>
 </div>
 
 <script src="static/leaflet/leaflet.js"></script>
 <link rel="stylesheet" href="static/leaflet/leaflet.css"/>
+<script>
+let map = L.map("score-map").setView([0.0, 0.0], 1);
+let makeIcon = function(name) {
+    return L.icon({
+	iconUrl: "static/icons/" + name,
+	iconSize: [50/2, 82/2],
+	iconAnchor: [25/2, 82/2],
+	shadowUrl: "static/leaflet/images/marker-shadow.png",
+	shadowSize: [41, 41],
+	shadowAnchor: [12, 41]
+    });
+};
+
+let guessedPositions = [
+{{ range $guessedPositions := .Guesses }} [
+    {{ range $x, $value := $guessedPositions }}
+	["{{ $value.Nickname }}", [{{ index $value.GuessedPosition 0}}, {{index $value.GuessedPosition 1}}]],
+    {{ end }} ],
+{{ end }} ];
+
+let actualPositions = [
+    {{ range $pos := .ActualPositions }}
+	[{{ index $pos 0 }}, {{ index $pos 1 }}],
+    {{ end }}
+]
+for (round in guessedPositions) {
+    for (i in guessedPositions[round]) {
+	let polyline = L.polyline([guessedPositions[round][i][1], actualPositions[round]], {color: '#007bff'}).addTo(map);
+	map.fitBounds(polyline.getBounds());
+    }
+}
+for (round in guessedPositions) {
+    for (i in guessedPositions[round]) {
+	L.marker(guessedPositions[round][i][1], {
+		title: guessedPositions[round][i][0],
+		icon: makeIcon("question.png"),
+	}).addTo(map).openPopup();
+    }
+}
+for (round in actualPositions) {
+    L.marker(actualPositions[round], {
+	    title: "Actual position",
+	    icon: makeIcon("answer.png"),
+    }).addTo(map).openPopup();
+}
+
+L.tileLayer("https://maps.wikimedia.org/osm-intl/{z}/{x}/{y}.png", {
+	attribution: "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OSM</a> contributors, <a href=\"https://foundation.wikimedia.org/wiki/Maps_Terms_of_Use\">Wikimedia Maps</a>"
+}).addTo(map);
+</script>
 {{ end }}

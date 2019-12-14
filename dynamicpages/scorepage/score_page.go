@@ -1,4 +1,5 @@
-package dynamicpages
+// Package scorepage serves the score_page template.
+package scorepage
 
 import (
 	"gitlab.com/glatteis/earthwalker/challenge"
@@ -23,7 +24,7 @@ type scoreServeStruct struct {
 	GuessedPositions map[string]guessedPositionsType
 	ActualPosition   []float64
 	LastScorePage    bool
-	YourID           string
+	You              int
 }
 
 // ServeScores serves the scores page.
@@ -55,8 +56,13 @@ func ServeScores(w http.ResponseWriter, r *http.Request) {
 	actualPosition := foundChallenge.Places[session.Round()-2]
 	actualPositionAsFloats := []float64{actualPosition.Lat.Degrees(), actualPosition.Lng.Degrees()}
 
+	var you int
+
 	guessedPositions := make(map[string]guessedPositionsType)
-	for _, guess := range foundChallenge.Guesses[session.Round()-2] {
+	for i, guess := range foundChallenge.Guesses[session.Round()-2] {
+		if guess.PlayerID == session.UniqueIdentifier {
+			you = i
+		}
 		guessedPositions[guess.PlayerID] = guessedPositionsType{
 			GuessedPosition: []float64{guess.GuessLocation.Lat.Degrees(), guess.GuessLocation.Lng.Degrees()},
 			Nickname:        guess.PlayerNickname,
@@ -70,7 +76,7 @@ func ServeScores(w http.ResponseWriter, r *http.Request) {
 		GuessedPositions: guessedPositions,
 		ActualPosition:   actualPositionAsFloats,
 		LastScorePage:    session.Round()-1 == foundChallenge.Settings.NumRounds,
-		YourID:           session.UniqueIdentifier,
+		You:              you,
 	}
 
 	err = scorePage.Execute(w, toServe)
