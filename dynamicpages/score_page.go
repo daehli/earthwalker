@@ -29,31 +29,27 @@ type scoreServeStruct struct {
 // ServeScores serves the scores page.
 func ServeScores(w http.ResponseWriter, r *http.Request) {
 	session, err := player.GetSessionFromCookie(r)
-	if err == player.PlayerSessionNotFoundError {
-		w.Write([]byte("you are not authenticated to guess!"))
-		w.WriteHeader(401)
+	if err == player.ErrPlayerSessionNotFound {
+		http.Error(w, "you are not authenticated to guess!", http.StatusUnauthorized)
 		return
 	} else if err != nil {
 		log.Println(err)
-		w.WriteHeader(500)
+		http.Error(w, "some error happened", http.StatusUnprocessableEntity)
 		return
 	}
 
 	foundChallenge, err := challenge.GetChallenge(session.GameID)
-	if err == challenge.ChallengeNotFoundError {
-		w.Write([]byte("this challenge does not exist!"))
-		w.WriteHeader(404)
+	if err == challenge.ErrChallengeNotFound {
+		http.Error(w, "this challenge does not exist!", http.StatusNotFound)
 		return
 	} else if err != nil {
 		log.Println(err)
-		w.Write([]byte("there was some kind of internal error, sorry!"))
-		w.WriteHeader(500)
+		http.Error(w, "there was some kind of internal error, sorry!", http.StatusUnprocessableEntity)
 		return
 	}
 
 	if session.Round() <= 1 {
-		w.Write([]byte("You have not completed a round yet, you cannot view scores."))
-		w.WriteHeader(500)
+		http.Error(w, "You have not completed a round yet, you cannot view scores.", http.StatusUnprocessableEntity)
 		return
 	}
 	actualPosition := foundChallenge.Places[session.Round()-2]
@@ -80,8 +76,7 @@ func ServeScores(w http.ResponseWriter, r *http.Request) {
 	err = scorePage.Execute(w, toServe)
 	if err != nil {
 		log.Println(err)
-		w.Write([]byte("there was some kind of internal error, sorry!"))
-		w.WriteHeader(500)
+		http.Error(w, "there was some kind of internal error, sorry!", http.StatusUnprocessableEntity)
 		return
 	}
 }

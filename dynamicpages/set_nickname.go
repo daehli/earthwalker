@@ -24,7 +24,7 @@ func ServeSetNickname(w http.ResponseWriter, r *http.Request) {
 	challengeKey, ok := r.URL.Query()["c"]
 	// This is probably what they call "user error"
 	if !ok || len(challengeKey) == 0 {
-		http.Redirect(w, r, "/", 302)
+		http.Redirect(w, r, "/", http.StatusFound)
 		return
 	}
 	actualKey := challengeKey[0]
@@ -33,8 +33,7 @@ func ServeSetNickname(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		log.Println(errors.Wrap(err, "while executing the set_nickname template"))
-		w.Write([]byte("Could not serve you a template for some reason, sorry!"))
-		w.WriteHeader(500)
+		http.Error(w, "Could not serve you a template for some reason, sorry!", http.StatusUnprocessableEntity)
 		return
 	}
 }
@@ -43,13 +42,12 @@ func setNicknamePost(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	nickname := r.FormValue("nickname")
 	if nickname == "" {
-		w.Write([]byte("Nickname cannot be empty!"))
-		w.WriteHeader(422)
+		http.Error(w, "Nickname cannot be empty!", http.StatusUnprocessableEntity)
 		return
 	}
 	gameID := r.FormValue("game_id")
 
 	challenge.WriteNicknameAndSession(w, r, nickname)
 
-	http.Redirect(w, r, "/game?c="+gameID, 302)
+	http.Redirect(w, r, "/game?c="+gameID, http.StatusFound)
 }

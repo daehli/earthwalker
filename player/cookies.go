@@ -6,7 +6,8 @@ import (
 	"time"
 )
 
-var PlayerSessionNotFoundError = errors.New("no player session found")
+// The PlayerSessionNotFoundError is the error that occurs when no player session is found.
+var ErrPlayerSessionNotFound = errors.New("no player session found")
 
 // SetSessionCookie sets the session cookie of a session into the browser.
 func SetSessionCookie(session PlayerSession, w http.ResponseWriter) {
@@ -27,7 +28,7 @@ func GetSessionFromCookie(r *http.Request) (PlayerSession, error) {
 		}
 	}
 	if cookie == nil {
-		return PlayerSession{}, PlayerSessionNotFoundError
+		return PlayerSession{}, ErrPlayerSessionNotFound
 	}
 
 	session, err := LoadPlayerSession(cookie.Value)

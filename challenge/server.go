@@ -13,31 +13,28 @@ func ServeChallenge(w http.ResponseWriter, r *http.Request) {
 	challengeKey, ok := r.URL.Query()["c"]
 	// This is probably what they call "user error"
 	if !ok || len(challengeKey) == 0 {
-		http.Redirect(w, r, "/", 302)
+		http.Redirect(w, r, "/", http.StatusFound)
 		return
 	}
 	actualKey := challengeKey[0]
 
 	session, err := player.GetSessionFromCookie(r)
-	if err == player.PlayerSessionNotFoundError {
-		http.Redirect(w, r, "/set_nickname?c="+actualKey, 302)
+	if err == player.ErrPlayerSessionNotFound {
+		http.Redirect(w, r, "/set_nickname?c="+actualKey, http.StatusFound)
 		return
 	} else if err != nil {
 		log.Println(err)
-		w.Write([]byte("Some internal error occured, sorry!"))
-		w.WriteHeader(500)
+		http.Error(w, "Some internal error occured, sorry!", http.StatusUnprocessableEntity)
 		return
 	}
 
 	foundChallenge, err := GetChallenge(actualKey)
-	if err == ChallengeNotFoundError {
-		w.Write([]byte("this challenge does not exist!"))
-		w.WriteHeader(404)
+	if err == ErrChallengeNotFound {
+		http.Error(w, "this challenge does not exist!", http.StatusNotFound)
 		return
 	} else if err != nil {
 		log.Println(err)
-		w.Write([]byte("there was some kind of internal error, sorry!"))
-		w.WriteHeader(500)
+		http.Error(w, "there was some kind of internal error, sorry!", http.StatusUnprocessableEntity)
 		return
 	}
 
@@ -48,8 +45,7 @@ func ServeChallenge(w http.ResponseWriter, r *http.Request) {
 		err := player.StorePlayerSession(session)
 		if err != nil {
 			log.Println(err)
-			w.Write([]byte("there was some kind of internal error, sorry!"))
-			w.WriteHeader(500)
+			http.Error(w, "there was some kind of internal error, sorry!", http.StatusUnprocessableEntity)
 			return
 		}
 		player.SetSessionCookie(session, w)
@@ -59,14 +55,14 @@ func ServeChallenge(w http.ResponseWriter, r *http.Request) {
 	round := session.Round()
 
 	if round > len(foundChallenge.Places) {
-		http.Redirect(w, r, "/summary", 302)
+		http.Redirect(w, r, "/summary", http.StatusFound)
 		return
 	}
 
 	err = player.StorePlayerSession(session)
 	if err != nil {
 		log.Println(errors.Wrap(err, "could not save a session"))
-		w.Write([]byte("Could not save your session: " + err.Error()))
+		http.Error(w, "could not save your session ", http.StatusInternalServerError)
 		return
 	}
 
@@ -81,7 +77,7 @@ func WriteNicknameAndSession(w http.ResponseWriter, r *http.Request, nickname st
 
 	var writeSession bool
 	if err != nil {
-		if err != player.PlayerSessionNotFoundError {
+		if err != player.ErrPlayerSessionNotFound {
 			return err
 		}
 		session = player.NewSession()

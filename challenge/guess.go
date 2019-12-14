@@ -16,25 +16,21 @@ const earthRadius = 6371
 // Guess serves the post request that is sent when one guesses.
 func Guess(w http.ResponseWriter, r *http.Request) {
 	session, err := player.GetSessionFromCookie(r)
-	if err == player.PlayerSessionNotFoundError {
-		w.Write([]byte("you are not authenticated to guess!"))
-		w.WriteHeader(401)
+	if err == player.ErrPlayerSessionNotFound {
+		http.Error(w, "you are not authenticated to guess!", http.StatusUnauthorized)
 		return
 	} else if err != nil {
-		log.Println(err)
-		w.WriteHeader(500)
+		http.Error(w, "there was some kind of internal error, sorry!", http.StatusInternalServerError)
 		return
 	}
 
 	foundChallenge, err := GetChallenge(session.GameID)
-	if err == ChallengeNotFoundError {
-		w.Write([]byte("this challenge does not exist!"))
-		w.WriteHeader(404)
+	if err == ErrChallengeNotFound {
+		http.Error(w, "this challenge does not exist!", http.StatusNotFound)
 		return
 	} else if err != nil {
 		log.Println(err)
-		w.Write([]byte("there was some kind of internal error, sorry!"))
-		w.WriteHeader(500)
+		http.Error(w, "there was some kind of internal error, sorry!", http.StatusUnprocessableEntity)
 		return
 	}
 
@@ -44,16 +40,14 @@ func Guess(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Println(err)
-		w.Write([]byte("there was some kind of internal error, sorry!"))
-		w.WriteHeader(500)
+		http.Error(w, "there was some kind of internal error, sorry!", http.StatusUnprocessableEntity)
 		return
 	}
 
 	guessLocation, err := parseGuessLocation(body)
 	if err != nil {
 		log.Println(err)
-		w.Write([]byte("there was some kind of error while parsing the input json."))
-		w.WriteHeader(500)
+		http.Error(w, "there was some kind of error while parsing the input json.", http.StatusUnprocessableEntity)
 		return
 	}
 
@@ -74,16 +68,14 @@ func Guess(w http.ResponseWriter, r *http.Request) {
 	err = player.StorePlayerSession(session)
 	if err != nil {
 		log.Println(errors.Wrap(err, "while storing the session"))
-		w.Write([]byte("There was an error while storing your session."))
-		w.WriteHeader(500)
+		http.Error(w, "There was an error while storing your session.", http.StatusUnprocessableEntity)
 		return
 	}
 
 	err = StoreChallenge(foundChallenge)
 	if err != nil {
 		log.Println(errors.Wrap(err, "while storing the challenge"))
-		w.Write([]byte("There was an error while updating the challenge."))
-		w.WriteHeader(500)
+		http.Error(w, "There was an error while updating the challenge.", http.StatusUnprocessableEntity)
 		return
 	}
 }

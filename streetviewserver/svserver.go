@@ -1,4 +1,4 @@
-// streetviewserver serves a streetview url that is injected with
+// Package streetviewserver serves a streetview url that is injected with
 // a script
 package streetviewserver
 
@@ -14,13 +14,13 @@ import (
 func modifyMainPage(target string, w http.ResponseWriter, r *http.Request) {
 	res, err := http.Get(target)
 	if err != nil {
-		http.Error(w, err.Error(), 403)
+		http.Error(w, err.Error(), http.StatusForbidden)
 		return
 	}
 	defer res.Body.Close()
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		http.Error(w, err.Error(), 403)
+		http.Error(w, err.Error(), http.StatusForbidden)
 		return
 	}
 	bodyAsString := string(body)
@@ -37,13 +37,13 @@ func modifyMainPage(target string, w http.ResponseWriter, r *http.Request) {
 func modifyInformation(target string, w http.ResponseWriter, r *http.Request) {
 	res, err := http.Get(target)
 	if err != nil {
-		http.Error(w, err.Error(), 403)
+		http.Error(w, err.Error(), http.StatusForbidden)
 		return
 	}
 	defer res.Body.Close()
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		http.Error(w, err.Error(), 403)
+		http.Error(w, err.Error(), http.StatusForbidden)
 		return
 	}
 
@@ -54,8 +54,8 @@ func modifyInformation(target string, w http.ResponseWriter, r *http.Request) {
 
 // ServeLocation serves a specific location to the user.
 func ServeLocation(l s2.LatLng, w http.ResponseWriter, r *http.Request) {
-	mapsUrl := urlbuilder.BuildUrl(l)
-	modifyMainPage(mapsUrl, w, r)
+	mapsURL := urlbuilder.BuildURL(l)
+	modifyMainPage(mapsURL, w, r)
 }
 
 func ServeMaps(w http.ResponseWriter, r *http.Request) {
@@ -65,6 +65,6 @@ func ServeMaps(w http.ResponseWriter, r *http.Request) {
 	if strings.Contains(fullURL.String(), "photometa") {
 		modifyInformation(fullURL.String(), w, r)
 	} else {
-		http.Redirect(w, r, fullURL.String(), 302)
+		http.Redirect(w, r, fullURL.String(), http.StatusFound)
 	}
 }

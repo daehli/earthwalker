@@ -1,3 +1,4 @@
+// Package player handles player objects and serves stuff based on that.
 package player
 
 import (

@@ -1,3 +1,4 @@
+// Package placefinder serves the page that responds to found places.
 package placefinder
 
 import (
@@ -10,6 +11,7 @@ import (
 	"strconv"
 )
 
+// RespondToPoints responds to found places.
 func RespondToPoints(w http.ResponseWriter, r *http.Request) {
 	type jsonPoint struct {
 		Lat float64 `json:"lat"`
@@ -22,7 +24,7 @@ func RespondToPoints(w http.ResponseWriter, r *http.Request) {
 	var content []jsonPoint
 
 	if err := json.Unmarshal([]byte(result), &content); err != nil {
-		http.Error(w, err.Error(), 403)
+		http.Error(w, err.Error(), http.StatusForbidden)
 		return
 	}
 
@@ -33,8 +35,7 @@ func RespondToPoints(w http.ResponseWriter, r *http.Request) {
 
 	nickname := r.FormValue("nickname")
 	if nickname == "" {
-		w.Write([]byte("Nickname cannot be empty!"))
-		w.WriteHeader(422)
+		http.Error(w, "Nickname cannot be empty!", http.StatusUnprocessableEntity)
 		return
 	}
 
@@ -43,7 +44,7 @@ func RespondToPoints(w http.ResponseWriter, r *http.Request) {
 	settings, err := createSettingsFromForm(r)
 
 	if err != nil {
-		w.Write([]byte("There was something wrong with your parameters: " + err.Error()))
+		http.Error(w, "There was something wrong with your parameters: ", http.StatusUnprocessableEntity)
 		return
 	}
 
@@ -51,11 +52,11 @@ func RespondToPoints(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Println(err)
-		w.Write([]byte("Internal server error! Please contact an administrator or something"))
+		http.Error(w, "Internal server error! Please contact an administrator or something", http.StatusInternalServerError)
 		return
 	}
 
-	http.Redirect(w, r, "/game?c="+resultingChallenge.UniqueIdentifier, 302)
+	http.Redirect(w, r, "/game?c="+resultingChallenge.UniqueIdentifier, http.StatusFound)
 }
 
 func createSettingsFromForm(r *http.Request) (challenge.ChallengeSettings, error) {
@@ -65,7 +66,7 @@ func createSettingsFromForm(r *http.Request) (challenge.ChallengeSettings, error
 	numRoundsStr := r.FormValue("rounds")
 	roundsAsInt, err := strconv.Atoi(numRoundsStr)
 	if err != nil {
-		return challenge.ChallengeSettings{}, errors.New("rounds is not an integer!")
+		return challenge.ChallengeSettings{}, errors.New("rounds is not an integer")
 	}
 	settings.NumRounds = roundsAsInt
 

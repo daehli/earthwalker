@@ -24,31 +24,27 @@ type summaryServeStruct struct {
 // ServeSummary serves the summary page.
 func ServeSummary(w http.ResponseWriter, r *http.Request) {
 	session, err := player.GetSessionFromCookie(r)
-	if err == player.PlayerSessionNotFoundError {
-		w.Write([]byte("you are not authenticated to guess!"))
-		w.WriteHeader(401)
+	if err == player.ErrPlayerSessionNotFound {
+		http.Error(w, "you are not authenticated to guess!", http.StatusUnauthorized)
 		return
 	} else if err != nil {
 		log.Println(err)
-		w.WriteHeader(500)
+		http.Error(w, "some error occured", http.StatusUnprocessableEntity)
 		return
 	}
 
 	foundChallenge, err := challenge.GetChallenge(session.GameID)
-	if err == challenge.ChallengeNotFoundError {
-		w.Write([]byte("this challenge does not exist!"))
-		w.WriteHeader(404)
+	if err == challenge.ErrChallengeNotFound {
+		http.Error(w, "this challenge does not exist!", http.StatusNotFound)
 		return
 	} else if err != nil {
 		log.Println(err)
-		w.Write([]byte("there was some kind of internal error, sorry!"))
-		w.WriteHeader(500)
+		http.Error(w, "there was some kind of internal error, sorry!", http.StatusUnprocessableEntity)
 		return
 	}
 
 	if session.Round() < foundChallenge.Settings.NumRounds {
-		w.Write([]byte("You have not completed every round yet, so you cannot view the summary."))
-		w.WriteHeader(500)
+		http.Error(w, "You have not completed every round yet, so you cannot view the summary.", http.StatusUnprocessableEntity)
 		return
 	}
 
@@ -78,8 +74,7 @@ func ServeSummary(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		log.Println(err)
-		w.Write([]byte("there was some kind of internal error, sorry!"))
-		w.WriteHeader(500)
+		http.Error(w, "there was some kind of internal error, sorry!", http.StatusUnprocessableEntity)
 		return
 	}
 }

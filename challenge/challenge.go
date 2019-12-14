@@ -1,3 +1,4 @@
+// Package challenge handles challenge datatypes, and some serving based on those.
 package challenge
 
 import (
@@ -69,9 +70,9 @@ func StoreChallenge(challenge Challenge) error {
 	})
 }
 
-// The ChallengeNotFoundError is the error that is returned by GetChallenge when no challenge
+// The ErrChallengeNotFound is the error that is returned by GetChallenge when no challenge
 // of that id is present.
-var ChallengeNotFoundError = errors.New("challenge not found!")
+var ErrChallengeNotFound = errors.New("challenge not found")
 
 // GetChallenge loads a challenge from an id.
 func GetChallenge(id string) (Challenge, error) {
@@ -98,7 +99,7 @@ func GetChallenge(id string) (Challenge, error) {
 	})
 
 	if err == badger.ErrKeyNotFound {
-		return Challenge{}, ChallengeNotFoundError
+		return Challenge{}, ErrChallengeNotFound
 	} else if err != nil {
 		return Challenge{}, err
 	}

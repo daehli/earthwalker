@@ -1,3 +1,4 @@
+// Package dynamicpages serves some dynamic pages.
 package dynamicpages
 
 import (
@@ -13,8 +14,7 @@ func ServeGetPlaces(w http.ResponseWriter, r *http.Request) {
 	err := getPlaces.Execute(w, struct{}{})
 	if err != nil {
 		log.Println(err)
-		w.Write([]byte("there was some kind of internal error, sorry!"))
-		w.WriteHeader(500)
+		http.Error(w, "there was some kind of internal error, sorry!", http.StatusUnprocessableEntity)
 		return
 	}
 }

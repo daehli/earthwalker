@@ -1,3 +1,4 @@
+// Package database opens and closes the database, and holds its object.
 package database
 
 import (
