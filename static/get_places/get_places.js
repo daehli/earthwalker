@@ -40,7 +40,7 @@ function queryPosition() {
 			// Do not take these incorrect panorams into account.
 			// Of course, there is some sacrifice of actually interesting panoramas here.
 			console.log(nearestLatLng.lat());
-			if (nearestLatLng.lat() < 88 && nearestLatLng.lat() > -88
+			if (nearestLatLng.lat() < 85 && nearestLatLng.lat() > -85
 				// && result.copyright.includes("Google") // For now
 			) {
 				results.push(nearestLatLng);
