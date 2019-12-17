@@ -80,7 +80,9 @@ function numberOfRoundsUpdated() {
 		if (!searchingForResults) {
 			queryPosition();
 		}
-	} 
+	}  else if (num < resuls.length) {
+		results = results.slice(num);
+	}
 }
 
 queryPosition();
