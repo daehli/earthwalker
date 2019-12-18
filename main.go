@@ -72,7 +72,7 @@ func main() {
 	http.HandleFunc("/set_nickname", setnickname.ServeSetNickname)
 	http.HandleFunc("/summary", summary.ServeSummary)
 
-	http.HandleFunc("/guess", challenge.Guess)
+	http.HandleFunc("/guess", challenge.HandleGuess)
 
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 

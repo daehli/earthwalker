@@ -14,21 +14,22 @@ import (
 // A Challenge represents a number of places along with all kinds of associated data.
 type Challenge struct {
 	Places           []s2.LatLng
-	Guesses          [][]ChallengeGuess
+	Guesses          [][]Guess
 	UniqueIdentifier string
-	Settings         ChallengeSettings
+	Settings         Settings
 }
 
-// The ChallengeSettings contain user-configurable options about the game.
-type ChallengeSettings struct {
+// The Settings contain user-configurable options about the game.
+type Settings struct {
 	NumRounds      int
 	LabeledMinimap bool
+	ConnectedOnly  bool // include only connected panoramas
 }
 
-// A ChallengeGuess contains a guess on a round from someone.
+// A Guess contains a guess on a round from someone.
 // This already contains the user's nickname so that the user
 // doesn't have to be looked up from the database every time.
-type ChallengeGuess struct {
+type Guess struct {
 	GuessLocation  s2.LatLng
 	PlayerID       string
 	PlayerNickname string
@@ -45,11 +46,11 @@ func randSeq(n int) string {
 }
 
 // NewChallenge creates a new challenge with the parameters and stores it.
-func NewChallenge(places []s2.LatLng, settings ChallengeSettings) (Challenge, error) {
+func NewChallenge(places []s2.LatLng, settings Settings) (Challenge, error) {
 	challenge := Challenge{
 		Places:           places,
 		UniqueIdentifier: randSeq(5),
-		Guesses:          make([][]ChallengeGuess, len(places)),
+		Guesses:          make([][]Guess, len(places)),
 		Settings:         settings,
 	}
 

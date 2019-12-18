@@ -4,11 +4,12 @@ package placefinder
 import (
 	"encoding/json"
 	"errors"
-	"github.com/golang/geo/s2"
-	"gitlab.com/glatteis/earthwalker/challenge"
 	"log"
 	"net/http"
 	"strconv"
+
+	"github.com/golang/geo/s2"
+	"gitlab.com/glatteis/earthwalker/challenge"
 )
 
 // RespondToPoints responds to found places.
@@ -59,14 +60,14 @@ func RespondToPoints(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/game?c="+resultingChallenge.UniqueIdentifier, http.StatusFound)
 }
 
-func createSettingsFromForm(r *http.Request) (challenge.ChallengeSettings, error) {
-	var settings challenge.ChallengeSettings
+func createSettingsFromForm(r *http.Request) (challenge.Settings, error) {
+	var settings challenge.Settings
 	r.ParseForm()
 
 	numRoundsStr := r.FormValue("rounds")
 	roundsAsInt, err := strconv.Atoi(numRoundsStr)
 	if err != nil {
-		return challenge.ChallengeSettings{}, errors.New("rounds is not an integer")
+		return challenge.Settings{}, errors.New("rounds is not an integer")
 	}
 	settings.NumRounds = roundsAsInt
 
