@@ -19,6 +19,14 @@
 		<label for="rounds">Number of rounds:</label>
 		<input type="number" class="form-control" id="rounds" name="rounds" value="5" onchange="numberOfRoundsUpdated()"/>
 	</div>
+
+	<div class="form-group">
+		<label for="connectedOnly">Panorama connectedness:</label>
+		<select class="form-control" id="connectedOnly" name="connectedOnly" onchange="connectedOnlyUpdated()">
+			<option>All Panoramas</option>
+			<option>Only Connected Panoramas</option>
+		</select>
+	</div>
 	
 	<div class="progress">
 		<div class="progress-bar" id="loading-progress" role="progressbar"></div>

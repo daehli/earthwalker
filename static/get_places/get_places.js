@@ -25,6 +25,7 @@ let service = new google.maps.StreetViewService();
 let searchingForResults = false;
 let results = [];
 let numDesiredResults = 5;
+let connectedOnly = false;
 
 function queryPosition() {
 	searchingForResults = true;
@@ -41,8 +42,10 @@ function queryPosition() {
 			// Of course, there is some sacrifice of actually interesting panoramas here.
 			console.log(nearestLatLng.lat());
 			if (nearestLatLng.lat() < 85 && nearestLatLng.lat() > -85
+				&& (!connectedOnly || result.links.length > 0) // exclude unconnected/orphan panos
 				// && result.copyright.includes("Google") // For now
 			) {
+				console.log("num links: " + result.links.length);
 				results.push(nearestLatLng);
 			}
 		} else {
@@ -80,8 +83,19 @@ function numberOfRoundsUpdated() {
 		if (!searchingForResults) {
 			queryPosition();
 		}
-	}  else if (num < resuls.length) {
+	}  else if (num < results.length) {
 		results = results.slice(num);
+	}
+}
+
+function connectedOnlyUpdated() {
+	let old = connectedOnly;
+	connectedOnly = document.getElementById("connectedOnly").value.toLowerCase().includes("only");
+	if (old !== connectedOnly) {
+		let button = document.getElementById("submit-button");
+		button.setAttribute("disabled", "disabled");
+		results = [];
+		queryPosition();
 	}
 }
 
