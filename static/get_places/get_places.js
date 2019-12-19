@@ -28,21 +28,31 @@ let numDesiredResults = 5;
 let connectedOnly = false;
 
 let map = null;
-let locString = "Powell Wyoming";
+let markerGroup = null; // DEBUGGING: map layer group for place markers
+let polygonGroup = null; // map layer group for polygon regions
+let locString = null;
 let placesPolygon = null;
 
 // given a turf.polygon or turf.multiPolygon,
 // display it on the map, and fit the map to its bounds
 function showPolygonOnMap(map, polygon) {
-	let map_poly = L.geoJSON(polygon).addTo(map);
+	let map_poly = L.geoJSON(polygon).addTo(polygonGroup);
 	map.fitBounds(map_poly.getBounds());
 }
 
 // given a location string, request a polygon from nominatim
 // then, update from the form inputs and start looking for places TODO: this isn't great
-function getPolygonFromLocString(loc) {
+function getPolygonFromLocString(locString) {
+	// don't update the polygon if locString is falsey/empty string
+	// that's handled in queryPosition()
+	if (locString === "" || !locString) {
+		numberOfRoundsUpdated();
+		connectedOnlyUpdated();
+		queryPosition();
+		return;
+	}
 	const Http = new XMLHttpRequest();
-	const url = "https://nominatim.openstreetmap.org/search?q=" + encodeURI(loc.replace(" ", "+")) + "&polygon_geojson=1&limit=1&format=json";
+	const url = "https://nominatim.openstreetmap.org/search?q=" + encodeURI(locString.replace(" ", "+")) + "&polygon_geojson=1&limit=1&format=json";
 	Http.open("GET", url);
 	Http.send();
 
@@ -52,7 +62,7 @@ function getPolygonFromLocString(loc) {
 			response = JSON.parse(Http.responseText)[0];
 			console.log("Response received, display name: " + response["display_name"]);
 			if (response["geojson"]["type"].toLowerCase() === "multipolygon") {
-				placesPolygon = turf.multiPolygon(response["geojson"]["coordinates"])
+				placesPolygon = turf.multiPolygon(response["geojson"]["coordinates"]);
 			} else {
 				placesPolygon = turf.polygon(response["geojson"]["coordinates"]);
 			}
@@ -64,8 +74,14 @@ function getPolygonFromLocString(loc) {
 	}
 }
 
+function getRandomLatLng() {
+	randomLng = (Math.random() * 360 - 180);
+	randomLat = (Math.random() * 180 - 90);
+	return new google.maps.LatLng(randomLat, randomLng);
+}
+
 // get a random google.maps.LatLng within the specified turf.polygon or turf.multiPolygon
-function getRandomLatLng(polygon) {
+function getRandomLatLngInPolygon(polygon) {
 	bounds = turf.bbox(polygon);
 	// TODO: not exactly the height of efficiency, but suffices for the small number of points needed
 	do { 
@@ -73,13 +89,18 @@ function getRandomLatLng(polygon) {
 		randomLat = (Math.random() * (bounds[3] - bounds[1]) + bounds[1]);
 		lnglat = turf.point([randomLng, randomLat]);
 	} while (!turf.booleanPointInPolygon(lnglat, polygon))
-	//L.marker([randomLat, randomLng]).addTo(map); // DEBUG: show random points on map
+	//L.marker([randomLat, randomLng]).addTo(markerGroup); // DEBUGGING: show random points on map
 	return new google.maps.LatLng(randomLat, randomLng);
 }
 
 function queryPosition() {
 	searchingForResults = true;
-	let point = getRandomLatLng(placesPolygon);
+	let point;
+	if (locString === "" || !locString) {
+		point = getRandomLatLng();
+	} else {
+		point = getRandomLatLngInPolygon(placesPolygon);
+	}
 	let radius = 10000;
 	service.getPanoramaByLocation(point, radius, function(result, status) {
 		if (status == google.maps.StreetViewStatus.OK) {
@@ -94,7 +115,7 @@ function queryPosition() {
 				// && result.copyright.includes("Google") // For now
 			) {
 				console.log("num links: " + result.links.length);
-				L.marker([nearestLatLng.lat(), nearestLatLng.lng()]).addTo(map); // DEBUG: show selected places on map
+				L.marker([nearestLatLng.lat(), nearestLatLng.lng()]).addTo(markerGroup); // DEBUGGING: show selected places on map
 				results.push(nearestLatLng);
 			}
 		} else {
@@ -143,6 +164,7 @@ function connectedOnlyUpdated() {
 		let button = document.getElementById("submit-button");
 		button.setAttribute("disabled", "disabled");
 		results = [];
+		markerGroup.clearLayers();
 		queryPosition();
 	}
 }
@@ -151,9 +173,12 @@ function locStringUpdated() {
 	let old = locString;
 	locString = document.getElementById("locString").value;
 	if (old !== locString) {
+		map.setView([0, 0], 1);
 		let button = document.getElementById("submit-button");
 		button.setAttribute("disabled", "disabled");
 		results = [];
+		polygonGroup.clearLayers();
+		markerGroup.clearLayers();
 		placesPolygon = getPolygonFromLocString(locString);
 	}
 }
@@ -162,9 +187,11 @@ function locStringUpdated() {
 // so check them once the DOM has loaded
 window.addEventListener("DOMContentLoaded", (event) => {
 	// TODO: stick map stuff in a function
-	map = L.map("bounds-map");
+	map = L.map("bounds-map", {center: [0, 0], zoom: 1});
 	L.tileLayer("https://maps.wikimedia.org/osm-intl/{z}/{x}/{y}.png", {
 		attribution: "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OSM</a> contributors, <a href=\"https://foundation.wikimedia.org/wiki/Maps_Terms_of_Use\">Wikimedia Maps</a>"
 	}).addTo(map);
+	markerGroup = L.layerGroup().addTo(map);
+	polygonGroup = L.layerGroup().addTo(map);
 	locStringUpdated();
 });
