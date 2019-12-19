@@ -27,6 +27,48 @@ let results = [];
 let numDesiredResults = 5;
 let connectedOnly = false;
 
+let map = null;
+
+function showPolygonOnMap(map, polygon) {
+	L.tileLayer("https://maps.wikimedia.org/osm-intl/{z}/{x}/{y}.png", {
+		attribution: "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OSM</a> contributors, <a href=\"https://foundation.wikimedia.org/wiki/Maps_Terms_of_Use\">Wikimedia Maps</a>"
+	}).addTo(map);
+	let map_poly = L.geoJSON(polygon).addTo(map);
+	map.fitBounds(map_poly.getBounds());
+}
+
+function getPolygonFromLocString(loc) {
+	const Http = new XMLHttpRequest();
+	const url = "https://nominatim.openstreetmap.org/search?q=" + encodeURI(loc.replace(" ", "+")) + "&polygon_geojson=1&limit=1&format=json";
+	Http.open("GET", url);
+	Http.send();
+
+	Http.onreadystatechange = (event) => {
+		if (Http.readyState == 4) {
+			response = JSON.parse(Http.responseText)[0];
+			console.log("Response received, display name: " + response["display_name"]);
+			if (response["geojson"]["type"].toLowerCase() === "multipolygon") {
+				polygon = turf.multiPolygon(response["geojson"]["coordinates"])
+			} else {
+				polygon = turf.polygon(response["geojson"]["coordinates"]);
+			}
+			showPolygonOnMap(map, polygon);
+			return polygon;
+		}
+	}
+}
+
+function getRandomLngLat(polygon) {
+	bounds = turf.bbox(polygon);
+	do {
+		randomLng = (Math.random() * (bounds[2] - bounds[0]) + bounds[0]);
+		randomLat = (Math.random() * (bounds[3] - bounds[1]) + bounds[1]);
+		lnglat = turf.point([randomLng, randomLat]);
+	} while (!turf.booleanPointInPolygon(lnglat, polygon))
+	L.marker([randomLat, randomLng]).addTo(map);
+	return lnglat;
+}
+
 function queryPosition() {
 	searchingForResults = true;
 	let randomLat = (Math.random() * 180.) - 90.;
@@ -49,8 +91,7 @@ function queryPosition() {
 				results.push(nearestLatLng);
 			}
 		} else {
-			console.log("Failed to get location.");
-			console.log(status.toString());
+			console.log("Failed to get location: " + status.toString());
 		}
 		document.getElementById("loading-progress").setAttribute("style", "width: " + ((100 * results.length) / numDesiredResults) + "%;");
 		if (results.length < numDesiredResults) {
@@ -99,4 +140,12 @@ function connectedOnlyUpdated() {
 	}
 }
 
-queryPosition();
+// settings may have been cached by the browser (wouldn't trigger the onchange),
+// so check them once the DOM has loaded
+window.addEventListener("DOMContentLoaded", (event) => {
+	map = L.map("bounds-map");
+	getPolygonFromLocString("powell wyoming");
+	numberOfRoundsUpdated();
+	connectedOnlyUpdated();
+	queryPosition();
+});

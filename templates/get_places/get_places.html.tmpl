@@ -1,6 +1,8 @@
 {{ define "head_insert" }}
-<script type="text/javascript" src="https://maps.google.com/maps/api/js"></script>
-<script type="text/javascript" src="/static/get_places/get_places.js"></script>
+<script src="https://maps.google.com/maps/api/js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@turf/turf@5/turf.min.js"></script>
+<script src="static/leaflet/leaflet.js"></script>
+<script src="/static/get_places/get_places.js"></script>
 {{ end }}
 
 {{ define "content" }}
@@ -40,6 +42,9 @@
 	<input id="hidden-input" type="hidden" name="result" value=""/>
 
 	<button id="submit-button" type="submit" class="btn btn-primary" disabled>Start game</button>
+
+	<div id="bounds-map" style="width: 80%; height: 50vh;"></div>
+	<link rel="stylesheet" href="static/leaflet/leaflet.css"/>
 </form>
 </div>
 
