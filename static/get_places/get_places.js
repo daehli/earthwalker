@@ -28,52 +28,58 @@ let numDesiredResults = 5;
 let connectedOnly = false;
 
 let map = null;
+let locString = "Powell Wyoming";
+let placesPolygon = null;
 
+// given a turf.polygon or turf.multiPolygon,
+// display it on the map, and fit the map to its bounds
 function showPolygonOnMap(map, polygon) {
-	L.tileLayer("https://maps.wikimedia.org/osm-intl/{z}/{x}/{y}.png", {
-		attribution: "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OSM</a> contributors, <a href=\"https://foundation.wikimedia.org/wiki/Maps_Terms_of_Use\">Wikimedia Maps</a>"
-	}).addTo(map);
 	let map_poly = L.geoJSON(polygon).addTo(map);
 	map.fitBounds(map_poly.getBounds());
 }
 
+// given a location string, request a polygon from nominatim
+// then, update from the form inputs and start looking for places TODO: this isn't great
 function getPolygonFromLocString(loc) {
 	const Http = new XMLHttpRequest();
 	const url = "https://nominatim.openstreetmap.org/search?q=" + encodeURI(loc.replace(" ", "+")) + "&polygon_geojson=1&limit=1&format=json";
 	Http.open("GET", url);
 	Http.send();
 
+	// TODO: this is insane, improve async flow
 	Http.onreadystatechange = (event) => {
 		if (Http.readyState == 4) {
 			response = JSON.parse(Http.responseText)[0];
 			console.log("Response received, display name: " + response["display_name"]);
 			if (response["geojson"]["type"].toLowerCase() === "multipolygon") {
-				polygon = turf.multiPolygon(response["geojson"]["coordinates"])
+				placesPolygon = turf.multiPolygon(response["geojson"]["coordinates"])
 			} else {
-				polygon = turf.polygon(response["geojson"]["coordinates"]);
+				placesPolygon = turf.polygon(response["geojson"]["coordinates"]);
 			}
-			showPolygonOnMap(map, polygon);
-			return polygon;
+			showPolygonOnMap(map, placesPolygon);
+			numberOfRoundsUpdated();
+			connectedOnlyUpdated();
+			queryPosition();
 		}
 	}
 }
 
-function getRandomLngLat(polygon) {
+// get a random google.maps.LatLng within the specified turf.polygon or turf.multiPolygon
+function getRandomLatLng(polygon) {
 	bounds = turf.bbox(polygon);
-	do {
+	// TODO: not exactly the height of efficiency, but suffices for the small number of points needed
+	do { 
 		randomLng = (Math.random() * (bounds[2] - bounds[0]) + bounds[0]);
 		randomLat = (Math.random() * (bounds[3] - bounds[1]) + bounds[1]);
 		lnglat = turf.point([randomLng, randomLat]);
 	} while (!turf.booleanPointInPolygon(lnglat, polygon))
-	L.marker([randomLat, randomLng]).addTo(map);
-	return lnglat;
+	//L.marker([randomLat, randomLng]).addTo(map); // DEBUG: show random points on map
+	return new google.maps.LatLng(randomLat, randomLng);
 }
 
 function queryPosition() {
 	searchingForResults = true;
-	let randomLat = (Math.random() * 180.) - 90.;
-	let randomLon = (Math.random() * 360.) - 180.;
-	let point = new google.maps.LatLng(randomLat, randomLon);
+	let point = getRandomLatLng(placesPolygon);
 	let radius = 10000;
 	service.getPanoramaByLocation(point, radius, function(result, status) {
 		if (status == google.maps.StreetViewStatus.OK) {
@@ -88,6 +94,7 @@ function queryPosition() {
 				// && result.copyright.includes("Google") // For now
 			) {
 				console.log("num links: " + result.links.length);
+				L.marker([nearestLatLng.lat(), nearestLatLng.lng()]).addTo(map); // DEBUG: show selected places on map
 				results.push(nearestLatLng);
 			}
 		} else {
@@ -140,12 +147,24 @@ function connectedOnlyUpdated() {
 	}
 }
 
+function locStringUpdated() {
+	let old = locString;
+	locString = document.getElementById("locString").value;
+	if (old !== locString) {
+		let button = document.getElementById("submit-button");
+		button.setAttribute("disabled", "disabled");
+		results = [];
+		placesPolygon = getPolygonFromLocString(locString);
+	}
+}
+
 // settings may have been cached by the browser (wouldn't trigger the onchange),
 // so check them once the DOM has loaded
 window.addEventListener("DOMContentLoaded", (event) => {
+	// TODO: stick map stuff in a function
 	map = L.map("bounds-map");
-	getPolygonFromLocString("powell wyoming");
-	numberOfRoundsUpdated();
-	connectedOnlyUpdated();
-	queryPosition();
+	L.tileLayer("https://maps.wikimedia.org/osm-intl/{z}/{x}/{y}.png", {
+		attribution: "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OSM</a> contributors, <a href=\"https://foundation.wikimedia.org/wiki/Maps_Terms_of_Use\">Wikimedia Maps</a>"
+	}).addTo(map);
+	locStringUpdated();
 });
