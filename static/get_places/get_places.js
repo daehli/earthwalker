@@ -20,18 +20,26 @@
 //   }
 // }
 
-let service = new google.maps.StreetViewService();
+const PANO_SEARCH_RADIUS = 10000;
+const LAT_LIMIT = 85; // polar panos are discarded, they're usually garbage
 
-let searchingForResults = false;
-let results = [];
-let numDesiredResults = 5;
-let connectedOnly = false;
+let streetViewService = new google.maps.StreetViewService();
 
-let map = null;
+let pageMapInfo = {
+	"numRounds": 5,
+	"locStrings": [],
+	"locPolygon": null,
+	"panoReqs": {
+		"panoConnectedness": "any"
+	},
+	"panoCoords": []
+}
+
+let numPanoFetchesInProgress = 0;
+
+let previewMap = null;
 let markerGroup = null; // DEBUGGING: map layer group for place markers
 let polygonGroup = null; // map layer group for polygon regions
-let locString = null;
-let placesPolygon = null;
 
 // given a turf.polygon or turf.multiPolygon,
 // display it on the map, and fit the map to its bounds
@@ -66,11 +74,108 @@ function getPolygonFromLocString(locString) {
 			} else {
 				placesPolygon = turf.polygon(response["geojson"]["coordinates"]);
 			}
-			showPolygonOnMap(map, placesPolygon);
+			showPolygonOnMap(previewMap, placesPolygon);
 			numberOfRoundsUpdated();
 			connectedOnlyUpdated();
 			queryPosition();
 		}
+	}
+}
+
+// ===== API/Panorama Fetching =====
+
+// mapInfo object format (type and default in parens):
+/*
+{
+	"numRounds": (int > 0, default to 5)
+	"locStrings": (array of strings, default to [])
+	"locPolygon": (turf.multiPolygon, default to null TODO: convert polygon to multiPolygon)
+	"panoReqs": {
+		"panoConnectedness": (string, one of ["always", "never", "any"], default to "any")
+	}
+	// TODO: consider storing addition pano information, such as connectedness
+	"panoCoords": (array of google.maps.LatLng, default to [])
+}
+*/
+function fetchPanos(mapInfo) {
+	disableSubmitButton();
+	// if no locPolygon, fall back to entire world
+	if (mapInfo["locPolygon"] == null) {
+		if (mapInfo["locStrings"] != null && mapInfo["locStrings"].length > 0) {
+			console.warn("Null polygon, but there are loc strings.  Possibly due to lack of nominatim results.");
+		}
+	}
+
+	if (mapInfo["panoCoords"] == null) {
+		mapInfo["panoCoords"] = [];
+	}
+
+	for (let i = mapInfo["panoCoords"].length + numPanoFetchesInProgress; i < mapInfo["numRounds"]; i++) {
+		numPanoFetchesInProgress += 1; // TODO: still a race condition here
+		fetchPano(mapInfo);
+	}
+}
+
+// fetch a pano and add it to mapInfo["panoCoords"]
+// api query is repeated until a good pano is found
+function fetchPano(mapInfo) {
+	randomLatLng = getRandomLatLngInPolygon(mapInfo["locPolygon"]);
+
+	function handlePanoResponse(result, status) {
+		if (status == google.maps.StreetViewStatus.OK && resultPanoIsGood(result, mapInfo["panoReqs"])) {
+			L.marker([result.location.latLng.lat(), result.location.latLng.lng()]).addTo(markerGroup); // DEBUGGING: show selected places on map
+
+			// in case the user has decreased numRounds while the request was running, don't add the pano
+			if (mapInfo["panoCoords"].length < mapInfo["numRounds"]) {
+				mapInfo["panoCoords"].push(result.location.latLng);
+			}
+			numPanoFetchesInProgress -= 1; // TODO: still a race condition here
+			updateFetchingBar(mapInfo["panoCoords"], mapInfo["numRounds"]);
+			updateSecretForm(mapInfo["panoCoords"], mapInfo["numRounds"]);
+		} else {
+			console.log("Failed to get location: " + status.toString());
+			// user may have decreased numRounds, if so don't make another request
+			if (mapInfo["panoCoords"].length < mapInfo["numRounds"]) {
+				fetchPano(mapInfo);
+			}
+		}
+	}
+
+	streetViewService.getPanoramaByLocation(randomLatLng, PANO_SEARCH_RADIUS, handlePanoResponse);
+}
+
+// returns whether result (pano) meets the requirements of mapInfo
+function resultPanoIsGood(result, panoReqs) {
+	if (result.location.latLng.lat() > LAT_LIMIT || result.location.latLng.lat() < -1 * LAT_LIMIT) {return false;}
+
+	if (panoReqs["panoConnectedness"] === "always" && result.links.length == 0) {return false;}
+	if (panoReqs["panoConnectedness"] === "never" && result.links.length > 0) {return false;}
+
+	return true;
+}
+
+// ===== Helpers ======
+
+function disableSubmitButton() {
+	let button = document.getElementById("submit-button");
+	button.setAttribute("disabled", "disabled");
+}
+
+// update loading/fetching progress bar with number of panoCoords found
+function updateFetchingBar(panoCoords, numRounds) {
+	document.getElementById("loading-progress").setAttribute("style", "width: " + ((100 * panoCoords.length) / numRounds) + "%;");
+}
+
+function updateSecretForm(panoCoords, numRounds) {
+	if (panoCoords.length >= numRounds) {
+		if (panoCoords.length > numRounds) {
+			console.warn("Too many panoCoords?! mapInfo:");
+			console.log(mapInfo);
+		}
+		let input = document.getElementById("hidden-input");
+		let button = document.getElementById("submit-button");
+		input.setAttribute("value", JSON.stringify(panoCoords));
+		button.removeAttribute("disabled");
 	}
 }
 
@@ -82,6 +187,10 @@ function getRandomLatLng() {
 
 // get a random google.maps.LatLng within the specified turf.polygon or turf.multiPolygon
 function getRandomLatLngInPolygon(polygon) {
+	if (polygon == null) {
+		// fall back to global
+		return getRandomLatLng();
+	}
 	bounds = turf.bbox(polygon);
 	// TODO: not exactly the height of efficiency, but suffices for the small number of points needed
 	do { 
@@ -93,87 +202,38 @@ function getRandomLatLngInPolygon(polygon) {
 	return new google.maps.LatLng(randomLat, randomLng);
 }
 
-function queryPosition() {
-	searchingForResults = true;
-	let point;
-	if (locString === "" || !locString) {
-		point = getRandomLatLng();
-	} else {
-		point = getRandomLatLngInPolygon(placesPolygon);
-	}
-	let radius = 10000;
-	service.getPanoramaByLocation(point, radius, function(result, status) {
-		if (status == google.maps.StreetViewStatus.OK) {
-			let nearestLatLng = result.location.latLng;
-			// There seems to be a panorama graveyard at the top and bottom
-			// of the earth of incorrectly positioned paranoramas.
-			// Do not take these incorrect panorams into account.
-			// Of course, there is some sacrifice of actually interesting panoramas here.
-			console.log(nearestLatLng.lat());
-			if (nearestLatLng.lat() < 85 && nearestLatLng.lat() > -85
-				&& (!connectedOnly || result.links.length > 0) // exclude unconnected/orphan panos
-				// && result.copyright.includes("Google") // For now
-			) {
-				console.log("num links: " + result.links.length);
-				L.marker([nearestLatLng.lat(), nearestLatLng.lng()]).addTo(markerGroup); // DEBUGGING: show selected places on map
-				results.push(nearestLatLng);
-			}
-		} else {
-			console.log("Failed to get location: " + status.toString());
-		}
-		document.getElementById("loading-progress").setAttribute("style", "width: " + ((100 * results.length) / numDesiredResults) + "%;");
-		if (results.length < numDesiredResults) {
-			queryPosition();
-		} else {
-			// Yea, this is probably incorrect and hacky. But I'm writing JavaScript, so it's
-			// incorrect and hacky anyways.
-			let location = window.location.href;
-			let topLevel = location.substring(0, location.indexOf("/", 3));
-			// Insert endpoint (hidden) into the form and add the submit button
-			let input = document.getElementById("hidden-input");
-			let button = document.getElementById("submit-button");
-
-			input.setAttribute("value", JSON.stringify(results));
-			button.removeAttribute("disabled");
-			searchingForResults = false;
-		}
-	});
-}
+// ===== Form Change Handlers =====
 
 function numberOfRoundsUpdated() {
-	let num = document.getElementById("rounds").value;
-	if (!num) {
+	let newNumRounds = document.getElementById("rounds").value;
+	if (!newNumRounds) {
 		return;
 	}
-	numDesiredResults = num;	
-	if (num > results.length) {
-		let button = document.getElementById("submit-button");
-		button.setAttribute("disabled", "disabled");
-		if (!searchingForResults) {
-			queryPosition();
-		}
-	}  else if (num < results.length) {
-		results = results.slice(num);
+	pageMapInfo["numRounds"] = newNumRounds;	
+	if (newNumRounds < pageMapInfo["numRounds"]) {
+		// note: can't decrease length of panoCoords beyond 0, so any excess requests are handled in fetchPano()
+		pageMapInfo["panoCoords"] = pageMapInfo["panoCoords"].slice(newNumRounds);
 	}
+	fetchPanos(pageMapInfo);
 }
 
 function connectedOnlyUpdated() {
-	let old = connectedOnly;
-	connectedOnly = document.getElementById("connectedOnly").value.toLowerCase().includes("only");
-	if (old !== connectedOnly) {
-		let button = document.getElementById("submit-button");
-		button.setAttribute("disabled", "disabled");
-		results = [];
-		markerGroup.clearLayers();
-		queryPosition();
+	// TODO: improve user-friendliness of these values
+	newConnectedOnly = document.getElementById("connectedOnly").value;
+	if (pageMapInfo["panoReqs"]["panoConnectedness"] !== newConnectedOnly) {
+		disableSubmitButton();
+		pageMapInfo["panoReqs"]["panoConnectedness"] = newConnectedOnly;
+		pageMapInfo["panoCoords"] = [];
+		markerGroup.clearLayers(); // DEBUGGING: clear markers
+		fetchPanos(pageMapInfo);
 	}
 }
 
 function locStringUpdated() {
 	let old = locString;
-	locString = document.getElementById("locString").value;
+	newLocString = document.getElementById("locString").value;
 	if (old !== locString) {
-		map.setView([0, 0], 1);
+		previewMap.setView([0, 0], 1);
 		let button = document.getElementById("submit-button");
 		button.setAttribute("disabled", "disabled");
 		results = [];
@@ -187,11 +247,11 @@ function locStringUpdated() {
 // so check them once the DOM has loaded
 window.addEventListener("DOMContentLoaded", (event) => {
 	// TODO: stick map stuff in a function
-	map = L.map("bounds-map", {center: [0, 0], zoom: 1});
+	previewMap = L.map("bounds-map", {center: [0, 0], zoom: 1});
 	L.tileLayer("https://maps.wikimedia.org/osm-intl/{z}/{x}/{y}.png", {
 		attribution: "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OSM</a> contributors, <a href=\"https://foundation.wikimedia.org/wiki/Maps_Terms_of_Use\">Wikimedia Maps</a>"
-	}).addTo(map);
-	markerGroup = L.layerGroup().addTo(map);
-	polygonGroup = L.layerGroup().addTo(map);
+	}).addTo(previewMap);
+	markerGroup = L.layerGroup().addTo(previewMap);
+	polygonGroup = L.layerGroup().addTo(previewMap);
 	locStringUpdated();
 });
