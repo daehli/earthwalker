@@ -20,6 +20,8 @@
 //   }
 // }
 
+let debug = false;
+
 const PANO_SEARCH_RADIUS = 10000;
 const LAT_LIMIT = 85; // polar panos are discarded, they're usually garbage
 
@@ -72,7 +74,8 @@ function fetchPolygonFromLocString(mapInfo) {
 	// TODO: this is insane, improve async flow
 	Http.onreadystatechange = (event) => {
 		if (Http.readyState == 4) {
-			response = JSON.parse(Http.responseText)[0];
+			let placesPolygon;
+			let response = JSON.parse(Http.responseText)[0];
 			console.log("Response received, display name: " + response["display_name"]);
 			if (response["geojson"]["type"].toLowerCase() === "multipolygon") {
 				placesPolygon = turf.multiPolygon(response["geojson"]["coordinates"]);
@@ -131,11 +134,13 @@ function fetchPanos(mapInfo) {
 // api query is repeated until a good pano is found
 // TODO: I think we've ended up with excessive numRounds checks here, try to clean it up
 function fetchPano(mapInfo) {
-	randomLatLng = getRandomLatLngInPolygon(mapInfo["locPolygon"]);
+	let randomLatLng = getRandomLatLngInPolygon(mapInfo["locPolygon"]);
 
 	function handlePanoResponse(result, status) {
 		if (status == google.maps.StreetViewStatus.OK && resultPanoIsGood(result, mapInfo["panoReqs"])) {
-			L.marker([result.location.latLng.lat(), result.location.latLng.lng()]).addTo(markerGroup); // DEBUGGING: show selected places on map
+			if (debug) {
+				L.marker([result.location.latLng.lat(), result.location.latLng.lng()]).addTo(markerGroup); // DEBUGGING: show selected places on map
+			}
 
 			// in case the user has decreased numRounds while the request was running, don't add the pano
 			if (mapInfo["panoCoords"].length < mapInfo["numRounds"]) {
@@ -168,7 +173,7 @@ function resultPanoIsGood(result, panoReqs) {
 	return true;
 }
 
-// ===== Helpers ======
+// =====
 
 function disableSubmitButton() {
 	let button = document.getElementById("submit-button");
@@ -180,11 +185,14 @@ function updateFetchingBar(panoCoords, numRounds) {
 	document.getElementById("loading-progress").setAttribute("style", "width: " + ((100 * panoCoords.length) / numRounds) + "%;");
 }
 
+// put panoCoords into the hidden form input
+// TODO: this is a hack
+// re-enables the submit button
 function updateSecretForm(panoCoords, numRounds) {
 	if (panoCoords.length >= numRounds) {
 		if (panoCoords.length > numRounds) {
 			console.warn("Too many panoCoords?! mapInfo:");
-			console.log(pageMapInfo); // DEBUGGING: remove global access
+			console.log(pageMapInfo); // DEBUGGING: should probably remove use of this global
 		}
 		let input = document.getElementById("hidden-input");
 		let button = document.getElementById("submit-button");
@@ -193,9 +201,10 @@ function updateSecretForm(panoCoords, numRounds) {
 	}
 }
 
+// get a random google.maps.LatLng, anywhere
 function getRandomLatLng() {
-	randomLng = (Math.random() * 360 - 180);
-	randomLat = (Math.random() * 180 - 90);
+	let randomLng = (Math.random() * 360 - 180);
+	let randomLat = (Math.random() * 180 - 90);
 	return new google.maps.LatLng(randomLat, randomLng);
 }
 
@@ -206,13 +215,16 @@ function getRandomLatLngInPolygon(polygon) {
 		return getRandomLatLng();
 	}
 	bounds = turf.bbox(polygon);
-	// TODO: not exactly the height of efficiency, but suffices for the small number of points needed
+	let randomLng;
+	let randomLat;
+	let lnglat;
+	// TODO: more efficient algorithm? - suffices for the small number of points needed
 	do { 
 		randomLng = (Math.random() * (bounds[2] - bounds[0]) + bounds[0]);
 		randomLat = (Math.random() * (bounds[3] - bounds[1]) + bounds[1]);
 		lnglat = turf.point([randomLng, randomLat]);
 	} while (!turf.booleanPointInPolygon(lnglat, polygon))
-	//L.marker([randomLat, randomLng]).addTo(markerGroup); // DEBUGGING: show random points on map
+	//L.marker([randomLat, randomLng]).addTo(markerGroup); // DEBUGGING: show _all_ random points on map
 	return new google.maps.LatLng(randomLat, randomLng);
 }
 
@@ -233,7 +245,7 @@ function numberOfRoundsUpdated() {
 
 function connectedOnlyUpdated() {
 	// TODO: improve user-friendliness of these values
-	newConnectedOnly = document.getElementById("connectedOnly").value;
+	let newConnectedOnly = document.getElementById("connectedOnly").value;
 	if (pageMapInfo["panoReqs"]["panoConnectedness"] !== newConnectedOnly) {
 		disableSubmitButton();
 		pageMapInfo["panoReqs"]["panoConnectedness"] = newConnectedOnly;
@@ -246,7 +258,7 @@ function connectedOnlyUpdated() {
 // TODO: support multiple loc strings
 function locStringUpdated() {
 	let old = pageMapInfo["locStrings"][0];
-	newLocString = document.getElementById("locString").value;
+	let newLocString = document.getElementById("locString").value;
 	if (old !== newLocString) {
 		pageMapInfo["locStrings"][0] = newLocString;
 		disableSubmitButton();
@@ -268,5 +280,7 @@ window.addEventListener("DOMContentLoaded", (event) => {
 	}).addTo(previewMap);
 	markerGroup = L.layerGroup().addTo(previewMap);
 	polygonGroup = L.layerGroup().addTo(previewMap);
+	numberOfRoundsUpdated();
+	connectedOnlyUpdated();
 	locStringUpdated();
 });
