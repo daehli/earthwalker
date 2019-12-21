@@ -18,8 +18,8 @@
 	</div>
 
 	<div class="form-group">
-		<label for="locString">Location string:</label>
-		<input type="text" class="form-control" id="locString" name="nickname" onchange="locStringUpdated()"/>
+		<label for="locString">Location string (country, state, city, neighborhood, lake, or any other bounded area):</label>
+		<input type="text" class="form-control" id="locString" name="locString" placeholder="Location" onchange="locStringUpdated()"/>
 	</div>
 
 	<div class="form-group">
@@ -30,9 +30,9 @@
 	<div class="form-group">
 		<label for="connectedOnly">Panorama connectedness:</label>
 		<select class="form-control" id="connectedOnly" name="connectedOnly" onchange="connectedOnlyUpdated()">
+			<option>any</option>
 			<option>always</option>
 			<option>never</option>
-			<option>any</option>
 		</select>
 	</div>
 	
