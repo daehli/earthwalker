@@ -58,6 +58,14 @@
 	height: calc(100% - 30px);
 }
 
+#timer-container {
+	width: 200px;
+	height: 100px;
+	position: absolute;
+	right: 30px;
+	top: 30px;
+}
+
 #navigation-bar {
 	height: 30px;
 }

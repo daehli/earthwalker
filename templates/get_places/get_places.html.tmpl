@@ -9,15 +9,41 @@
 
 <br>
 
+<h2>Create a new game</h2>
+
+<br>
+
 <form action="/found_points" method="post">
 	<div class="form-group">
-		<label for="nickname">Your nickname:</label>
-		<input type="text" class="form-control" id="nickname" name="nickname" placeholder="Nickname" required pattern=".{1,}"/>
+		<div class="input-group">
+			<div class="input-group-prepend">
+			      <div class="input-group-text">Nickname</div>
+			</div>
+			<input type="text" class="form-control" id="nickname" name="nickname" placeholder="Nickname" required pattern=".{1,}"/>
+		</div>
 	</div>
 
 	<div class="form-group">
-		<label for="rounds">Number of rounds:</label>
-		<input type="number" class="form-control" id="rounds" name="rounds" value="5" onchange="numberOfRoundsUpdated()"/>
+		<div class="input-group">
+			<div class="input-group-prepend">
+			      <div class="input-group-text">Number of rounds</div>
+			</div>
+			<input type="number" class="form-control" id="rounds" name="rounds" value="5" onchange="numberOfRoundsUpdated()"/>
+		</div>
+	</div>
+
+
+	<div class="form-group">
+		<div class="form-check form-check-inline">
+			<input class="form-check-input" type="checkbox" id="use-timer" value="use-timer">
+			<label class="form-check-label" for="timer">Use timer</label>
+		</div>
+		<div class="input-group">
+			<div class="input-group-prepend">
+			      <div class="input-group-text">Time (minutes:seconds)</div>
+			</div>
+			<input type="text" pattern="[0-9]+:[0-5][0-9]" class="form-control" id="time" name="time" placeholder="05:00"/>
+		</div>
 	</div>
 	
 	<div class="progress">

@@ -121,6 +121,7 @@ function createMinimap() {
 		leafletMap.invalidateSize();
 	}, 100);
 
+	// If a copyright notice exists (and it gets found by this heuristic), show it
 	let copyrightNotice = document.createElement("span");
 	floatingContainer.setAttribute("style", "color: white; font-family: monospace;");
 	floatingContainer.append(copyrightNotice);
@@ -133,6 +134,14 @@ function createMinimap() {
 			clearInterval(interval);
 		}
 	}, 500);
+
+	// The timer & stuff!
+	let floatingContainer = document.createElement("div");
+	floatingContainer.id = "timer-container";
+	document.body.appendChild(floatingContainer);
+
+
+	
 }
 
 let sizes = [

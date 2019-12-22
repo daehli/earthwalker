@@ -9,6 +9,7 @@ import (
 	"github.com/golang/geo/s2"
 	"gitlab.com/glatteis/earthwalker/database"
 	"math/rand"
+	"time"
 )
 
 // A Challenge represents a number of places along with all kinds of associated data.
@@ -21,8 +22,12 @@ type Challenge struct {
 
 // The ChallengeSettings contain user-configurable options about the game.
 type ChallengeSettings struct {
-	NumRounds      int
-	LabeledMinimap bool
+	NumRounds int
+	// TimerDuration is the timer duration per round. Nil if there is no timer set.
+	TimerDuration *time.Duration
+	// TODO
+	LabeledMinimap        bool
+	OnlyUsingGoogleImages bool
 }
 
 // A ChallengeGuess contains a guess on a round from someone.
@@ -34,18 +39,17 @@ type ChallengeGuess struct {
 	PlayerNickname string
 }
 
-var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
-
-func randSeq(n int) string {
-	b := make([]rune, n)
-	for i := range b {
-		b[i] = letters[rand.Intn(len(letters))]
-	}
-	return string(b)
-}
-
 // NewChallenge creates a new challenge with the parameters and stores it.
 func NewChallenge(places []s2.LatLng, settings ChallengeSettings) (Challenge, error) {
+	randSeq := func(n int) string {
+		var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+		b := make([]rune, n)
+		for i := range b {
+			b[i] = letters[rand.Intn(len(letters))]
+		}
+		return string(b)
+	}
+
 	challenge := Challenge{
 		Places:           places,
 		UniqueIdentifier: randSeq(5),

@@ -8,6 +8,7 @@ import (
 
 const earthRadius = 6371
 
+// CalculateScoreAndDistance calculates the score and distance for a guessed location (and its actual location).
 func CalculateScoreAndDistance(actualLocation s2.LatLng, guessLocation s2.LatLng) (int, float64) {
 	distance := actualLocation.Distance(guessLocation).Radians() * earthRadius
 	maxDistance := earthRadius * math.Pi

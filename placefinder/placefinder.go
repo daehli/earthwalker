@@ -9,6 +9,8 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
+	"time"
 )
 
 // RespondToPoints responds to found places.
@@ -44,7 +46,7 @@ func RespondToPoints(w http.ResponseWriter, r *http.Request) {
 	settings, err := createSettingsFromForm(r)
 
 	if err != nil {
-		http.Error(w, "There was something wrong with your parameters: ", http.StatusUnprocessableEntity)
+		http.Error(w, "There was something wrong with your parameters: "+err.Error(), http.StatusUnprocessableEntity)
 		return
 	}
 
@@ -68,7 +70,37 @@ func createSettingsFromForm(r *http.Request) (challenge.ChallengeSettings, error
 	if err != nil {
 		return challenge.ChallengeSettings{}, errors.New("rounds is not an integer")
 	}
+	if roundsAsInt == 0 {
+		return challenge.ChallengeSettings{}, errors.New("rounds must not be zero")
+	}
 	settings.NumRounds = roundsAsInt
+
+	useTimerStr := r.FormValue("use-timer")
+	var incorrectFormat bool
+	if useTimerStr != "" {
+		roundDurationStr := r.FormValue("time")
+		twoNumbers := strings.Split(roundDurationStr, ":")
+		if len(twoNumbers) != 2 {
+			incorrectFormat = true
+			goto done
+		}
+		minutes, err := strconv.Atoi(twoNumbers[0])
+		if err != nil {
+			incorrectFormat = true
+			goto done
+		}
+		seconds, err := strconv.Atoi(twoNumbers[1])
+		if err != nil {
+			incorrectFormat = true
+			goto done
+		}
+		duration := time.Duration(minutes)*time.Minute + time.Duration(seconds)*time.Second
+		settings.TimerDuration = &duration
+	}
+done:
+	if incorrectFormat {
+		return challenge.ChallengeSettings{}, errors.New("time is in an incorrect format")
+	}
 
 	return settings, nil
 }
