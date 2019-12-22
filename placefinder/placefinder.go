@@ -95,6 +95,10 @@ func createSettingsFromForm(r *http.Request) (challenge.ChallengeSettings, error
 			goto done
 		}
 		duration := time.Duration(minutes)*time.Minute + time.Duration(seconds)*time.Second
+		if duration <= 0 {
+			incorrectFormat = true
+			goto done
+		}
 		settings.TimerDuration = &duration
 	}
 done:

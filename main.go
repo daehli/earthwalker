@@ -21,6 +21,7 @@ import (
 	"gitlab.com/glatteis/earthwalker/challenge"
 	"gitlab.com/glatteis/earthwalker/database"
 	"gitlab.com/glatteis/earthwalker/dynamicpages/getplaces"
+	"gitlab.com/glatteis/earthwalker/dynamicpages/modifyfrontend"
 	"gitlab.com/glatteis/earthwalker/dynamicpages/scorepage"
 	"gitlab.com/glatteis/earthwalker/dynamicpages/setnickname"
 	"gitlab.com/glatteis/earthwalker/dynamicpages/summary"
@@ -69,6 +70,7 @@ func main() {
 	http.HandleFunc("/scores", scorepage.ServeScores)
 	http.HandleFunc("/set_nickname", setnickname.ServeSetNickname)
 	http.HandleFunc("/summary", summary.ServeSummary)
+	http.HandleFunc("/modify_frontend.js", modifyfrontend.ServeModifyFrontend)
 
 	http.HandleFunc("/guess", challenge.Guess)
 

@@ -64,8 +64,15 @@
 	position: absolute;
 	right: 30px;
 	top: 30px;
+	text-align: right;
 }
 
 #navigation-bar {
 	height: 30px;
+}
+
+.timer-span {
+	color: white;
+	font-size: 30px;
+	text-shadow: 2px 2px black;
 }
