@@ -20,7 +20,7 @@
 //   }
 // }
 
-let debug = true;
+let debug = false;
 
 const PANO_SEARCH_RADIUS = 10000;
 const LAT_LIMIT = 85; // polar panos are discarded, they're usually garbage
