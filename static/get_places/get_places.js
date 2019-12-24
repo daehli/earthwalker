@@ -20,7 +20,7 @@
 //   }
 // }
 
-let debug = false;
+let debug = true;
 
 const PANO_SEARCH_RADIUS = 10000;
 const LAT_LIMIT = 85; // polar panos are discarded, they're usually garbage
@@ -137,7 +137,7 @@ function fetchPano(mapInfo) {
 	let randomLatLng = getRandomLatLngInPolygon(mapInfo["locPolygon"]);
 
 	function handlePanoResponse(result, status) {
-		if (status == google.maps.StreetViewStatus.OK && resultPanoIsGood(result, mapInfo["panoReqs"])) {
+		if (status == google.maps.StreetViewStatus.OK && resultPanoIsGood(result, mapInfo["panoReqs"], mapInfo["locPolygon"])) {
 			if (debug) {
 				L.marker([result.location.latLng.lat(), result.location.latLng.lng()]).addTo(markerGroup); // DEBUGGING: show selected places on map
 			}
@@ -164,11 +164,20 @@ function fetchPano(mapInfo) {
 }
 
 // returns whether result (pano) meets the requirements of mapInfo
-function resultPanoIsGood(result, panoReqs) {
+function resultPanoIsGood(result, panoReqs, polygon) {
 	if (result.location.latLng.lat() > LAT_LIMIT || result.location.latLng.lat() < -1 * LAT_LIMIT) {return false;}
 
-	if (panoReqs["panoConnectedness"] === "always" && result.links.length == 0) {return false;}
-	if (panoReqs["panoConnectedness"] === "never" && result.links.length > 0) {return false;}
+	if (panoReqs["panoConnectedness"] === "always" && result.links.length == 0) {
+		return false;
+	}
+	if (panoReqs["panoConnectedness"] === "never" && result.links.length > 0) {
+		return false;
+	}
+
+	let locationTurfPoint = turf.point([result.location.latLng.lng(), result.location.latLng.lat()]);
+	if (polygon != null && !turf.booleanPointInPolygon(locationTurfPoint, polygon)) {
+		return false;
+	}
 
 	return true;
 }
