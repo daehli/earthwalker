@@ -4,13 +4,14 @@ package placefinder
 import (
 	"encoding/json"
 	"errors"
-	"github.com/golang/geo/s2"
-	"gitlab.com/glatteis/earthwalker/challenge"
 	"log"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/golang/geo/s2"
+	"gitlab.com/glatteis/earthwalker/challenge"
 )
 
 // RespondToPoints responds to found places.

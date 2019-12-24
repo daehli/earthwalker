@@ -72,7 +72,7 @@ func main() {
 	http.HandleFunc("/summary", summary.ServeSummary)
 	http.HandleFunc("/modify_frontend.js", modifyfrontend.ServeModifyFrontend)
 
-	http.HandleFunc("/guess", challenge.Guess)
+	http.HandleFunc("/guess", challenge.HandleGuess)
 
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 

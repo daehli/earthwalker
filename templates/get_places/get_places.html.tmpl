@@ -1,6 +1,8 @@
 {{ define "head_insert" }}
-<script type="text/javascript" src="https://maps.google.com/maps/api/js"></script>
-<script type="text/javascript" src="/static/get_places/get_places.js"></script>
+<script src="https://maps.google.com/maps/api/js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@turf/turf@5/turf.min.js"></script>
+<script src="static/leaflet/leaflet.js"></script>
+<script src="/static/get_places/get_places.js"></script>
 {{ end }}
 
 {{ define "content" }}
@@ -44,6 +46,22 @@
 			</div>
 			<input type="text" pattern="[0-9]+:[0-5][0-9]" class="form-control" id="time" name="time" placeholder="05:00"/>
 		</div>
+		<label for="locString">Location string (country, state, city, neighborhood, lake, or any other bounded area):</label>
+		<input type="text" class="form-control" id="locString" name="locString" placeholder="Location" onchange="locStringUpdated()"/>
+	</div>
+
+	<div class="form-group">
+		<label for="rounds">Number of rounds:</label>
+		<input type="number" class="form-control" id="rounds" name="rounds" value="5" onchange="numberOfRoundsUpdated()"/>
+	</div>
+
+	<div class="form-group">
+		<label for="connectedOnly">Panorama connectedness:</label>
+		<select class="form-control" id="connectedOnly" name="connectedOnly" onchange="connectedOnlyUpdated()">
+			<option>any</option>
+			<option>always</option>
+			<option>never</option>
+		</select>
 	</div>
 	
 	<div class="progress">
@@ -58,7 +76,11 @@
 	<input id="hidden-input" type="hidden" name="result" value=""/>
 
 	<button id="submit-button" type="submit" class="btn btn-primary" disabled>Start game</button>
+
 </form>
+<br/>
+<div id="bounds-map" style="width: 80%; height: 50vh; margin-left: 10%; margin-right: 10%;"></div>
+<link rel="stylesheet" href="static/leaflet/leaflet.css"/>
 </div>
 
 {{ end }}

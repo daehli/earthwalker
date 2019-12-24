@@ -12,8 +12,8 @@ import (
 	"net/http"
 )
 
-// Guess serves the post request that is sent when one guesses.
-func Guess(w http.ResponseWriter, r *http.Request) {
+// HandleGuess serves the post request that is sent when one guesses.
+func HandleGuess(w http.ResponseWriter, r *http.Request) {
 	session, err := player.GetSessionFromCookie(r)
 	if err == player.ErrPlayerSessionNotFound {
 		http.Error(w, "you are not authenticated to guess!", http.StatusUnauthorized)
@@ -52,7 +52,7 @@ func Guess(w http.ResponseWriter, r *http.Request) {
 
 	points, distance := scores.CalculateScoreAndDistance(actualLocation, guessLocation)
 
-	foundChallenge.Guesses[session.Round()-1] = append(foundChallenge.Guesses[session.Round()-1], ChallengeGuess{
+	foundChallenge.Guesses[session.Round()-1] = append(foundChallenge.Guesses[session.Round()-1], Guess{
 		GuessLocation:  guessLocation,
 		PlayerID:       session.UniqueIdentifier,
 		PlayerNickname: session.Nickname,
