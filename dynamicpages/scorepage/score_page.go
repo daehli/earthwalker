@@ -56,6 +56,7 @@ func ServeScores(w http.ResponseWriter, r *http.Request) {
 	actualPosition := foundChallenge.Places[session.Round()-2]
 	actualPositionAsFloats := []float64{actualPosition.Lat.Degrees(), actualPosition.Lng.Degrees()}
 
+	// The index in guessedPositions that your guess is at
 	var you int
 
 	guessedPositions := make(map[string]guessedPositionsType)
@@ -79,6 +80,7 @@ func ServeScores(w http.ResponseWriter, r *http.Request) {
 		You:              you,
 	}
 
+	w.Header().Set("Cache-Control", "no-cache")
 	err = scorePage.Execute(w, toServe)
 	if err != nil {
 		log.Println(err)
