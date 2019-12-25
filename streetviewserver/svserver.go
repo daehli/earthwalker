@@ -30,7 +30,7 @@ func modifyMainPage(target string, w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err)
 	}
 
-	replacedBody := strings.Replace(bodyAsString, "<head>", "<head> "+string(insertBody), -1)
+	replacedBody := strings.Replace(bodyAsString, "<head>", "<head> "+string(insertBody), 1)
 	w.Write([]byte(replacedBody))
 }
 
