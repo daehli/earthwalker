@@ -20,6 +20,7 @@ import (
 	"flag"
 	"gitlab.com/glatteis/earthwalker/challenge"
 	"gitlab.com/glatteis/earthwalker/database"
+	"gitlab.com/glatteis/earthwalker/dynamicpages/continuegame"
 	"gitlab.com/glatteis/earthwalker/dynamicpages/getplaces"
 	"gitlab.com/glatteis/earthwalker/dynamicpages/modifyfrontend"
 	"gitlab.com/glatteis/earthwalker/dynamicpages/scorepage"
@@ -48,7 +49,7 @@ func main() {
 			getplaces.ServeGetPlaces(w, r)
 			return
 		}
-		w.Write([]byte("<a href='/continue'>Continue game</a> or <a href='/newgame'> start anew?</a>"))
+		continuegame.ServeContinueGame(w, r)
 	})
 	http.HandleFunc("/continue", func(w http.ResponseWriter, r *http.Request) {
 		session, err := player.GetSessionFromCookie(r)
