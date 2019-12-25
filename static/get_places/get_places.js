@@ -20,7 +20,7 @@
 //   }
 // }
 
-let debug = false;
+let debug = true;
 
 const PANO_SEARCH_RADIUS = 10000;
 const LAT_LIMIT = 85; // polar panos are discarded, they're usually garbage
@@ -47,6 +47,9 @@ let polygonGroup = null; // map layer group for polygon regions
 // display it on the map, and fit the map to its bounds
 function showPolygonOnMap(map, polygon) {
 	let map_poly = L.geoJSON(polygon).addTo(polygonGroup);
+	if (debug) {
+		console.log(map_poly.getBounds());
+	}
 	map.fitBounds(map_poly.getBounds());
 }
 
@@ -76,11 +79,31 @@ function fetchPolygonFromLocString(mapInfo) {
 		if (Http.readyState == 4) {
 			let placesPolygon;
 			let response = JSON.parse(Http.responseText)[0];
+
+			let errorDialog = document.getElementById("error-dialog");
+
+			// Happens when you enter ajdsfdsajkf, for instance
+			if (!response) {
+				console.log("No response recieved");
+				errorDialog.removeAttribute("hidden");
+				return;
+			}
+
 			console.log("Response received, display name: " + response["display_name"]);
+			if (debug) {
+				console.log(response);
+			}
 			if (response["geojson"]["type"].toLowerCase() === "multipolygon") {
+				errorDialog.setAttribute("hidden", "hidden");
 				placesPolygon = turf.multiPolygon(response["geojson"]["coordinates"]);
-			} else {
+			} else if (response["geojson"]["type"].toLowerCase() === "polygon") {
+				errorDialog.setAttribute("hidden", "hidden");
 				placesPolygon = turf.multiPolygon([response["geojson"]["coordinates"]]);
+			} else {
+				// Happens when there is only one point. In the old version, 
+				// this would just crash at a later point.
+				errorDialog.removeAttribute("hidden");
+				return;
 			}
 			showPolygonOnMap(previewMap, placesPolygon);
 			mapInfo["locPolygon"] = placesPolygon;

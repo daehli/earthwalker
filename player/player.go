@@ -8,7 +8,6 @@ import (
 	"github.com/dgraph-io/badger"
 	"gitlab.com/glatteis/earthwalker/database"
 	"math/rand"
-	"time"
 )
 
 type PlayerSession struct {
@@ -22,10 +21,8 @@ type PlayerSession struct {
 	Points []int
 	// Distances are the respective distances as floats.
 	Distances []float64
-	// GuessedPositions are the guessed positions as float64 tuples
+	// GuessedPositions are the guessed positions as float64 tuples ([lat, lng])
 	GuessedPositions [][]float64
-	// TimeLeft is the time the player had left when earthwalker last checked.
-	TimeLeft time.Time
 }
 
 func (p PlayerSession) Round() int {

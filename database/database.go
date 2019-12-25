@@ -21,6 +21,7 @@ func CloseDB() {
 	database.Close()
 }
 
+// GetDB gets the database.
 func GetDB() *badger.DB {
 	return database
 }
