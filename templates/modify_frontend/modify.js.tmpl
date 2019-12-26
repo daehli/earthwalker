@@ -109,9 +109,14 @@ function createMinimap() {
 
 	leafletMap = L.map("leaflet-map").setView([0.0, 0.0], 1);
 
-	L.tileLayer("https://maps.wikimedia.org/osm-intl/{z}/{x}/{y}.png", {
-		attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> contributors, <a href="https://foundation.wikimedia.org/wiki/Maps_Terms_of_Use">Wikimedia Maps</a>'
-	}).addTo(leafletMap);
+	// only show labels on minimap if the user wishes so
+	// TODO: fix this
+	let labelsEnabled = {{ .LabeledMinimap }};
+	if(labelsEnabled) {
+		L.tileLayer("https://maps.wikimedia.org/osm-intl/{z}/{x}/{y}.png", {
+			attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> contributors, <a href="https://foundation.wikimedia.org/wiki/Maps_Terms_of_Use">Wikimedia Maps</a>'
+		}).addTo(leafletMap);
+	}
 
 	function onMapClick(event) {
 		if (marker != null) {

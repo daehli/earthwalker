@@ -66,6 +66,13 @@ func createSettingsFromForm(r *http.Request) (challenge.ChallengeSettings, error
 	var settings challenge.ChallengeSettings
 	r.ParseForm()
 
+	showLabelsStr := r.FormValue("show-labels")
+	if showLabelsStr != "" {
+		settings.LabeledMinimap = true
+	} else {
+		settings.LabeledMinimap = false
+	}
+
 	numRoundsStr := r.FormValue("rounds")
 	roundsAsInt, err := strconv.Atoi(numRoundsStr)
 	if err != nil {

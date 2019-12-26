@@ -26,7 +26,6 @@ type ChallengeSettings struct {
 	// TimerDuration is the timer duration per round. Nil if there is no timer set.
 	TimerDuration *time.Duration
 	ConnectedOnly bool // include only connected panoramas
-	// TODO
 	LabeledMinimap bool
 }
 
