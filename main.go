@@ -49,7 +49,7 @@ func main() {
 			getplaces.ServeGetPlaces(w, r)
 			return
 		}
-		continuegame.ServeContinueGame(w, r, session)
+		continuegame.ServeContinueGame(w, r, session.Nickname)
 	})
 	http.HandleFunc("/continue", func(w http.ResponseWriter, r *http.Request) {
 		session, err := player.GetSessionFromCookie(r)
