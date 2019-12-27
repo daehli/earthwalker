@@ -12,6 +12,6 @@ const earthRadius = 6371
 func CalculateScoreAndDistance(actualLocation s2.LatLng, guessLocation s2.LatLng) (int, float64) {
 	distance := actualLocation.Distance(guessLocation).Radians() * earthRadius
 	factor := math.Pow(2, -float64(distance)/1070)
-	points := int(factor * 5000)
+	points := int(factor * 5001)
 	return points, distance
 }

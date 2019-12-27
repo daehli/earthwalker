@@ -13,6 +13,7 @@ import (
 type modifyServeStruct struct {
 	TimerEnabled  bool
 	TimerDuration int
+	LabeledMinimap bool
 }
 
 var modifyScript = template.Must(template.ParseFiles("templates/modify_frontend/modify.js.tmpl"))
@@ -35,6 +36,8 @@ func ServeModifyFrontend(w http.ResponseWriter, r *http.Request) {
 		toServe.TimerEnabled = true
 		toServe.TimerDuration = int(*game.Settings.TimerDuration / time.Second)
 	}
+
+	toServe.LabeledMinimap = game.Settings.LabeledMinimap
 
 	err = modifyScript.Execute(w, toServe)
 	if err != nil {
