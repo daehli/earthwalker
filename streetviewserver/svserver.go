@@ -35,7 +35,17 @@ func modifyMainPage(target string, w http.ResponseWriter, r *http.Request) {
 }
 
 func modifyInformation(target string, w http.ResponseWriter, r *http.Request) {
-	res, err := http.Get(target)
+	req, err := http.NewRequest("GET", target, nil)
+	req.Header.Add("User-Agent", r.Header.Get("User-Agent"))
+	req.Header.Add("Accept", r.Header.Get("Accept"))
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusForbidden)
+		return
+	}
+
+	res, err := http.DefaultClient.Do(req)
+	// res, err := http.Get(target)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusForbidden)
 		return
@@ -62,6 +72,7 @@ func ServeMaps(w http.ResponseWriter, r *http.Request) {
 	fullURL := r.URL
 	fullURL.Host = "www.google.com"
 	fullURL.Scheme = "https"
+
 	if strings.Contains(fullURL.String(), "photometa") {
 		modifyInformation(fullURL.String(), w, r)
 	} else {
