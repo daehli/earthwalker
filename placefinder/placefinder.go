@@ -12,6 +12,7 @@ import (
 
 	"github.com/golang/geo/s2"
 	"gitlab.com/glatteis/earthwalker/challenge"
+	"gitlab.com/glatteis/earthwalker/player"
 )
 
 // RespondToPoints responds to found places.
@@ -42,7 +43,7 @@ func RespondToPoints(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	challenge.WriteNicknameAndSession(w, r, nickname)
+	player.WriteNicknameAndSession(w, r, nickname)
 
 	settings, err := createSettingsFromForm(r)
 

@@ -3,7 +3,7 @@ package setnickname
 
 import (
 	"github.com/pkg/errors"
-	"gitlab.com/glatteis/earthwalker/challenge"
+	"gitlab.com/glatteis/earthwalker/player"
 	"html/template"
 	"log"
 	"net/http"
@@ -48,7 +48,7 @@ func setNicknamePost(w http.ResponseWriter, r *http.Request) {
 	}
 	gameID := r.FormValue("game_id")
 
-	challenge.WriteNicknameAndSession(w, r, nickname)
+	player.WriteNicknameAndSession(w, r, nickname)
 
 	http.Redirect(w, r, "/game?c="+gameID, http.StatusFound)
 }

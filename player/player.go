@@ -8,6 +8,7 @@ import (
 	"github.com/dgraph-io/badger"
 	"gitlab.com/glatteis/earthwalker/database"
 	"math/rand"
+	"net/http"
 	"time"
 )
 
@@ -114,4 +115,35 @@ func LoadPlayerSession(id string) (PlayerSession, error) {
 	gob.NewDecoder(bytes.NewBuffer(playerBytes)).Decode(&foundSession)
 
 	return foundSession, nil
+}
+
+// WriteNicknameAndSession writes a nickname and a session if the session
+// does not exist yet, otherwise writes the nickname to the session.
+// Only returns an error if it is exceptional.
+func WriteNicknameAndSession(w http.ResponseWriter, r *http.Request, nickname string) error {
+	session, err := GetSessionFromCookie(r)
+
+	var writeSession bool
+	if err != nil {
+		if err != ErrPlayerSessionNotFound && err != ErrPlayerSessionDoesNotExist {
+			return err
+		}
+		session = NewSession()
+		writeSession = true
+	}
+
+	if session.Nickname != nickname {
+		session.Nickname = nickname
+	}
+
+	if writeSession {
+		err := StorePlayerSession(session)
+		if err != nil {
+			return err
+		}
+	}
+
+	SetSessionCookie(session, w)
+
+	return nil
 }

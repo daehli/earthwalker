@@ -74,34 +74,3 @@ func ServeChallenge(w http.ResponseWriter, r *http.Request) {
 
 	streetviewserver.ServeLocation(foundChallenge.Places[round-1], w, r)
 }
-
-// WriteNicknameAndSession writes a nickname and a session if the session
-// does not exist yet, otherwise writes the nickname to the session.
-// Only returns an error if it is exceptional.
-func WriteNicknameAndSession(w http.ResponseWriter, r *http.Request, nickname string) error {
-	session, err := player.GetSessionFromCookie(r)
-
-	var writeSession bool
-	if err != nil {
-		if err != player.ErrPlayerSessionNotFound && err != player.ErrPlayerSessionDoesNotExist {
-			return err
-		}
-		session = player.NewSession()
-		writeSession = true
-	}
-
-	if session.Nickname != nickname {
-		session.Nickname = nickname
-	}
-
-	if writeSession {
-		err := player.StorePlayerSession(session)
-		if err != nil {
-			return err
-		}
-	}
-
-	player.SetSessionCookie(session, w)
-
-	return nil
-}
