@@ -90,10 +90,8 @@ func WriteNicknameAndSession(w http.ResponseWriter, r *http.Request, nickname st
 		writeSession = true
 	}
 
-	var writeSessionCookie bool
 	if session.Nickname != nickname {
 		session.Nickname = nickname
-		writeSessionCookie = true
 	}
 
 	if writeSession {
@@ -103,9 +101,7 @@ func WriteNicknameAndSession(w http.ResponseWriter, r *http.Request, nickname st
 		}
 	}
 
-	if writeSessionCookie {
-		player.SetSessionCookie(session, w)
-	}
+	player.SetSessionCookie(session, w)
 
 	return nil
 }
