@@ -267,11 +267,11 @@ function numberOfRoundsUpdated() {
 	if (!newNumRounds) {
 		return;
 	}
-	pageMapInfo["numRounds"] = newNumRounds;	
 	if (newNumRounds < pageMapInfo["numRounds"]) {
 		// note: can't decrease length of panoCoords beyond 0, so any excess requests are handled in fetchPano()
 		pageMapInfo["panoCoords"] = pageMapInfo["panoCoords"].slice(newNumRounds);
 	}
+	pageMapInfo["numRounds"] = newNumRounds;
 	fetchPanos(pageMapInfo);
 }
 
