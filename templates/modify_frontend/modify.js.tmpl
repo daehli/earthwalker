@@ -165,7 +165,7 @@ function createMinimap() {
 
 	if (timerEnabled) {
 		let timerSpan = document.createElement("span");
-		timerSpan.className = "timer-span";
+		timerSpan.className = "timer-span align-middle";
 		timerContainer.appendChild(timerSpan);
 
 		let remainingTime = timerDurationSeconds;
@@ -188,6 +188,17 @@ function createMinimap() {
 			setTimer();
 		}, 1000);
 	}
+
+	// The "Back home" button
+	let backHomeButton = document.createElement("button");
+	backHomeButton.className = "btn btn-light mx-sm-2 align-middle";
+	backHomeButton.innerHTML = "⚑";
+	timerContainer.appendChild(backHomeButton);
+	backHomeButton.addEventListener("click", function() {
+		// https://www.phpied.com/files/location-location/location-location.html
+		location = location;
+	});
+
 }
 
 let sizes = [
