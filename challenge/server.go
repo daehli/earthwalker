@@ -20,7 +20,7 @@ func ServeChallenge(w http.ResponseWriter, r *http.Request) {
 	actualKey := challengeKey[0]
 
 	session, err := player.GetSessionFromCookie(r)
-	if err == player.ErrPlayerSessionNotFound {
+	if err == player.ErrPlayerSessionNotFound || err == player.ErrPlayerSessionDoesNotExist {
 		http.Redirect(w, r, "/set_nickname?c="+actualKey, http.StatusFound)
 		return
 	} else if err != nil {

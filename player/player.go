@@ -77,6 +77,8 @@ func RemovePlayerSession(session PlayerSession) error {
 	return nil
 }
 
+var ErrPlayerSessionDoesNotExist = errors.New("this player does not exist")
+
 // LoadPlayerSession loads a player session from the database.
 // You should probably use GetSessionFromCookie in cookies.go.
 func LoadPlayerSession(id string) (PlayerSession, error) {
@@ -103,7 +105,7 @@ func LoadPlayerSession(id string) (PlayerSession, error) {
 	})
 
 	if err == badger.ErrKeyNotFound {
-		return PlayerSession{}, errors.New("this player does not exist")
+		return PlayerSession{}, ErrPlayerSessionDoesNotExist
 	} else if err != nil {
 		return PlayerSession{}, err
 	}
