@@ -8,6 +8,7 @@ import (
 	"github.com/dgraph-io/badger"
 	"gitlab.com/glatteis/earthwalker/database"
 	"math/rand"
+	"time"
 )
 
 type PlayerSession struct {
@@ -23,6 +24,9 @@ type PlayerSession struct {
 	Distances []float64
 	// GuessedPositions are the guessed positions as float64 tuples ([lat, lng])
 	GuessedPositions [][]float64
+	// TimeStarted is the time that a player started a specific round from the challenge.
+	// If the player hasn't started the round yet, this will be nil.
+	TimeStarted *time.Time
 }
 
 func (p PlayerSession) Round() int {

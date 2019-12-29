@@ -6,6 +6,7 @@ import (
 	"gitlab.com/glatteis/earthwalker/streetviewserver"
 	"log"
 	"net/http"
+	"time"
 )
 
 // ServeChallenge serves a challenge to the user (using the /game?c= url).
@@ -57,6 +58,11 @@ func ServeChallenge(w http.ResponseWriter, r *http.Request) {
 	if round > len(foundChallenge.Places) {
 		http.Redirect(w, r, "/summary", http.StatusFound)
 		return
+	}
+
+	if session.TimeStarted == nil {
+		now := time.Now()
+		session.TimeStarted = &now
 	}
 
 	err = player.StorePlayerSession(session)

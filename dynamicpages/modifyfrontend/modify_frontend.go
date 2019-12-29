@@ -11,8 +11,8 @@ import (
 )
 
 type modifyServeStruct struct {
-	TimerEnabled  bool
-	TimerDuration int
+	TimerEnabled   bool
+	TimerDuration  int
 	LabeledMinimap bool
 }
 
@@ -27,14 +27,21 @@ func ServeModifyFrontend(w http.ResponseWriter, r *http.Request) {
 
 	game, err := challenge.GetChallenge(session.GameID)
 	if err != nil {
-		http.Error(w, "the game does not exist", http.StatusInternalServerError)
+		http.Error(w, "the game does not exist", http.StatusNotFound)
 	}
 
 	var toServe modifyServeStruct
 
 	if game.Settings.TimerDuration != nil {
 		toServe.TimerEnabled = true
-		toServe.TimerDuration = int(*game.Settings.TimerDuration / time.Second)
+		duration := *game.Settings.TimerDuration
+		timeStarted := session.TimeStarted
+		if timeStarted == nil {
+			log.Println("Error: game has timer, but player has not stared game!")
+			http.Error(w, "internal server error!", http.StatusInternalServerError)
+		}
+		alreadyPassed := time.Since(*timeStarted)
+		toServe.TimerDuration = int((duration - alreadyPassed) / time.Second)
 	}
 
 	toServe.LabeledMinimap = game.Settings.LabeledMinimap
