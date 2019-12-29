@@ -58,6 +58,7 @@ func HandleGuess(w http.ResponseWriter, r *http.Request) {
 		PlayerNickname: session.Nickname,
 	})
 
+	session.TimeStarted = nil
 	session.Points = append(session.Points, points)
 	session.GuessedPositions = append(session.GuessedPositions, []float64{guessLocation.Lat.Degrees(), guessLocation.Lng.Degrees()})
 	session.Distances = append(session.Distances, distance)

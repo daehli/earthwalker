@@ -81,10 +81,9 @@ func createSettingsFromForm(r *http.Request) (challenge.ChallengeSettings, error
 	}
 	settings.NumRounds = roundsAsInt
 
-	useTimerStr := r.FormValue("use-timer")
 	var incorrectFormat bool
-	if useTimerStr != "" {
-		roundDurationStr := r.FormValue("time")
+	roundDurationStr := r.FormValue("time")
+	if roundDurationStr != "" {
 		twoNumbers := strings.Split(roundDurationStr, ":")
 		if len(twoNumbers) != 2 {
 			incorrectFormat = true

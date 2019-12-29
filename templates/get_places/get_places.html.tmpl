@@ -35,15 +35,14 @@
 	</div>
 
 	<div class="form-group">
-		<div class="form-check form-check-inline">
-			<input class="form-check-input" type="checkbox" id="use-timer" name="use-timer">
-			<label class="form-check-label" for="timer">Use timer</label>
-		</div>
 		<div class="input-group">
 			<div class="input-group-prepend">
 			      <div class="input-group-text">Time (minutes:seconds)</div>
 			</div>
-			<input type="text" pattern="[0-9]+:[0-5][0-9]" class="form-control" id="time" name="time" placeholder="05:00"/>
+			<input type="text" pattern="[0-9]+:[0-5][0-9]" class="form-control mr-sm-3" id="time" name="time" placeholder="05:00"/>
+			<small class="form-text text-muted">
+				Leave empty for no timer
+			</small>
 		</div>
 	</div>
 
@@ -90,7 +89,7 @@
 					<div class="input-group-prepend">
 					      <div class="input-group-text">Location string </div>
 					</div>
-					<input type="text" class="form-control mx-sm-3" id="locString" name="locString" placeholder="Location" onchange="locStringUpdated()"/>
+					<input type="text" class="form-control mr-sm-3" id="locString" name="locString" placeholder="Location" onchange="locStringUpdated()"/>
 					<small class="form-text text-muted">
 						Country, state, city, neighborhood, lake, or any other bounded area
 					</small>

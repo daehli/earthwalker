@@ -42,6 +42,9 @@ func ServeModifyFrontend(w http.ResponseWriter, r *http.Request) {
 		}
 		alreadyPassed := time.Since(*timeStarted)
 		toServe.TimerDuration = int((duration - alreadyPassed) / time.Second)
+		if toServe.TimerDuration < 1 {
+			toServe.TimerDuration = 1
+		}
 	}
 
 	toServe.LabeledMinimap = game.Settings.LabeledMinimap
