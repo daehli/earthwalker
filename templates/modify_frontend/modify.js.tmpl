@@ -92,7 +92,15 @@ function createMinimap() {
 		xhr.open("POST", topLevel + "/guess", true);
 		xhr.setRequestHeader('Content-Type', 'application/json');
 		xhr.send(JSON.stringify(latlng));
-		window.location.replace(topLevel + "/scores");
+		xhr.onreadystatechange = function() {
+			if(xhr.readyState === XMLHttpRequest.DONE) {
+				if (xhr.status === 200) {
+					window.location.replace(topLevel + "/scores");
+				} else {
+					alert("Something went wrong when guessing: Status " + xhr.status);
+				}
+			}
+		};
 	}
 	guessButton.addEventListener("click", function() {
 		if (marker == null) {
