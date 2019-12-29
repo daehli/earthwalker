@@ -83,7 +83,7 @@ func WriteNicknameAndSession(w http.ResponseWriter, r *http.Request, nickname st
 
 	var writeSession bool
 	if err != nil {
-		if err != player.ErrPlayerSessionNotFound {
+		if err != player.ErrPlayerSessionNotFound && err != player.ErrPlayerSessionDoesNotExist {
 			return err
 		}
 		session = player.NewSession()
