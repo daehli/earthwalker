@@ -1,6 +1,6 @@
 # Earthwalker
 
-Earthwalker is a game of a similar concept to [GeoGuessr](geoguessr.com).
+Earthwalker is a game of a similar concept to [GeoGuessr](https://geoguessr.com).
 You get dropped somewhere in the world in Google Street View, and the goal is that you find out where you are,
 and guess better than all of your friends. You can play against time, restrict the game to an area, and more.
 
