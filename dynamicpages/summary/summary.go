@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"sort"
+	"strconv"
 )
 
 var summaryPage = template.Must(template.ParseFiles("templates/main_template.html.tmpl", "templates/summary/summary.html.tmpl"))
@@ -21,20 +22,20 @@ type guessedPositionsType struct {
 type rankingType struct {
 	Nickname            string
 	NumPoints           int
-	AccumulatedDistance float64
+	AccumulatedDistance string
 }
 
 type distanceType struct {
-	Round int
-	Points int
-	Distance float64
+	Round    int
+	Points   int
+	Distance string
 }
 
 type summaryServeStruct struct {
 	Rankings        []rankingType
 	Guesses         []map[string]guessedPositionsType
 	ActualPositions [][]float64
-	DistanceInfo 	[]distanceType
+	DistanceInfo    []distanceType
 }
 
 // ServeSummary serves the summary page.
@@ -70,7 +71,7 @@ func ServeSummary(w http.ResponseWriter, r *http.Request) {
 		Rankings:        ranking,
 		Guesses:         allGuessedPositions,
 		ActualPositions: actualPositionsAsFloats,
-		DistanceInfo: 	 distanceInfo,
+		DistanceInfo:    distanceInfo,
 	})
 	if err != nil {
 		log.Println(err)
@@ -98,7 +99,7 @@ func makeRanking(foundChallenge challenge.Challenge) []rankingType {
 		ranking = append(ranking, rankingType{
 			Nickname:            completedSession.Nickname,
 			NumPoints:           sumPoints,
-			AccumulatedDistance: sumDistance,
+			AccumulatedDistance: strconv.FormatFloat(sumDistance, 'f', 2, 64),
 		})
 	}
 
@@ -137,7 +138,7 @@ func makeDistanceInfo(session player.PlayerSession) []distanceType {
 		distances = append(distances, distanceType{
 			Round:    i + 1,
 			Points:   session.Points[i],
-			Distance: distance,
+			Distance: strconv.FormatFloat(distance, 'f', 2, 64),
 		})
 	}
 	return distances
