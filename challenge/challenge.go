@@ -22,10 +22,9 @@ type Challenge struct {
 
 // The ChallengeSettings contain user-configurable options about the game.
 type ChallengeSettings struct {
-	NumRounds int
-	// TimerDuration is the timer duration per round. Nil if there is no timer set.
-	TimerDuration *time.Duration
-	ConnectedOnly bool // include only connected panoramas
+	NumRounds      int
+	TimerDuration  *time.Duration // the timer duration per round. Nil if there is no timer set.
+	ConnectedOnly  bool           // include only connected panoramas
 	LabeledMinimap bool
 }
 

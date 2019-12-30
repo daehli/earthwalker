@@ -32,12 +32,40 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"os"
+	"os/signal"
 	"strconv"
+	"syscall"
 	"time"
 )
 
+var placesAndFunctions = map[string]func(w http.ResponseWriter, r *http.Request){
+	"/newgame":            getplaces.ServeGetPlaces,
+	"/game":               challenge.ServeChallenge,
+	"/maps/":              streetviewserver.ServeMaps,
+	"/found_points":       placefinder.RespondToPoints,
+	"/scores":             scorepage.ServeScores,
+	"/set_nickname":       setnickname.ServeSetNickname,
+	"/summary":            summary.ServeSummary,
+	"/modify_frontend.js": modifyfrontend.ServeModifyFrontend,
+	"/guess":              challenge.HandleGuess,
+}
+
+func cleanup() {
+	database.CloseDB()
+}
+
 func main() {
-	defer database.CloseDB()
+	// Either defer cleanup for when the program exits...
+	defer cleanup()
+	// Or listen for SIGTERM and also clean up.
+	c := make(chan os.Signal)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-c
+		cleanup()
+		os.Exit(0)
+	}()
 
 	rand.Seed(time.Now().UnixNano())
 	port := flag.Int("port", 8080, "the port the server is running on")
@@ -60,22 +88,10 @@ func main() {
 		redirectURL := "/game?c=" + session.GameID
 		http.Redirect(w, r, redirectURL, http.StatusFound)
 	})
-	http.HandleFunc("/newgame", getplaces.ServeGetPlaces)
-	http.HandleFunc("/game", func(w http.ResponseWriter, r *http.Request) {
-		challenge.ServeChallenge(w, r)
-	})
-	http.HandleFunc("/maps/", streetviewserver.ServeMaps)
-
-	http.HandleFunc("/found_points", placefinder.RespondToPoints)
-
-	http.HandleFunc("/scores", scorepage.ServeScores)
-	http.HandleFunc("/set_nickname", setnickname.ServeSetNickname)
-	http.HandleFunc("/summary", summary.ServeSummary)
-	http.HandleFunc("/modify_frontend.js", modifyfrontend.ServeModifyFrontend)
-
-	http.HandleFunc("/guess", challenge.HandleGuess)
-
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
+	for path, function := range placesAndFunctions {
+		http.HandleFunc(path, function)
+	}
 
 	log.Println("earthwalker is running on ", *port)
 	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(*port), nil))

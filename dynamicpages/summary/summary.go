@@ -81,7 +81,7 @@ func ServeSummary(w http.ResponseWriter, r *http.Request) {
 }
 
 func makeRanking(foundChallenge challenge.Challenge) []rankingType {
-	ranking := make([]rankingType, 0)
+	var ranking []rankingType
 
 	for _, playerThatCompleted := range foundChallenge.Guesses[len(foundChallenge.Guesses)-1] {
 		completedSession, err := player.LoadPlayerSession(playerThatCompleted.PlayerID)
@@ -133,7 +133,7 @@ func makeMap(foundChallenge challenge.Challenge) ([][]float64, []map[string]gues
 }
 
 func makeDistanceInfo(session player.PlayerSession) []distanceType {
-	distances := make([]distanceType, 0)
+	var distances []distanceType
 	for i, distance := range session.Distances {
 		distances = append(distances, distanceType{
 			Round:    i + 1,
