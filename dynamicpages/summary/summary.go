@@ -24,10 +24,17 @@ type rankingType struct {
 	AccumulatedDistance float64
 }
 
+type distanceType struct {
+	Round int
+	Points int
+	Distance float64
+}
+
 type summaryServeStruct struct {
 	Rankings        []rankingType
 	Guesses         []map[string]guessedPositionsType
 	ActualPositions [][]float64
+	DistanceInfo 	[]distanceType
 }
 
 // ServeSummary serves the summary page.
@@ -56,14 +63,14 @@ func ServeSummary(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "You have not completed every round yet, so you cannot view the summary.", http.StatusUnprocessableEntity)
 		return
 	}
-
 	ranking := makeRanking(foundChallenge)
 	actualPositionsAsFloats, allGuessedPositions := makeMap(foundChallenge)
-
+	distanceInfo := makeDistanceInfo(session)
 	err = summaryPage.Execute(w, summaryServeStruct{
 		Rankings:        ranking,
 		Guesses:         allGuessedPositions,
 		ActualPositions: actualPositionsAsFloats,
+		DistanceInfo: 	 distanceInfo,
 	})
 	if err != nil {
 		log.Println(err)
@@ -122,4 +129,16 @@ func makeMap(foundChallenge challenge.Challenge) ([][]float64, []map[string]gues
 	}
 
 	return actualPositionsAsFloats, allGuessedPositions
+}
+
+func makeDistanceInfo(session player.PlayerSession) []distanceType {
+	distances := make([]distanceType, 0)
+	for i, distance := range session.Distances {
+		distances = append(distances, distanceType{
+			Round:    i + 1,
+			Points:   session.Points[i],
+			Distance: distance,
+		})
+	}
+	return distances
 }
