@@ -134,6 +134,7 @@ func WriteNicknameAndSession(w http.ResponseWriter, r *http.Request, nickname st
 
 	if session.Nickname != nickname {
 		session.Nickname = nickname
+		writeSession = true
 	}
 
 	if writeSession {
