@@ -86,6 +86,7 @@ function createMinimap() {
 	guessButton.innerHTML = "Guess!";
 	floatingContainer.appendChild(guessButton);
 	function makeGuess(latlng) {
+		latlng = latlng.wrap();
 		let location = window.location.href;
 		let topLevel = location.substring(0, location.indexOf("/", 3));
 		let xhr = new XMLHttpRequest();

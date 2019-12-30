@@ -52,6 +52,13 @@ func HandleGuess(w http.ResponseWriter, r *http.Request) {
 
 	points, distance := scores.CalculateScoreAndDistance(actualLocation, guessLocation)
 
+	// map guess longitudes so that the distance appearing on the map seems shortest
+	if guessLocation.Lng.Degrees() - 180 > actualLocation.Lng.Degrees() {
+		guessLocation = s2.LatLngFromDegrees(guessLocation.Lat.Degrees(), guessLocation.Lng.Degrees() - 360)
+	} else if guessLocation.Lng.Degrees() + 180 < actualLocation.Lng.Degrees() {
+		guessLocation = s2.LatLngFromDegrees(guessLocation.Lat.Degrees(), guessLocation.Lng.Degrees() + 360)
+	}
+
 	foundChallenge.Guesses[session.Round()-1] = append(foundChallenge.Guesses[session.Round()-1], Guess{
 		GuessLocation:  guessLocation,
 		PlayerID:       session.UniqueIdentifier,

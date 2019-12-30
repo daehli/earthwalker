@@ -5,7 +5,30 @@
 <div id="score-map" style="width: 100%; height: 50vh;"></div>
 
 <div class="container">
+	<div style="margin-top: 10%; text-align: center;">
+		<h3>Your scores:</h3>
+		<table class="table table-striped">
+			<thead>
+			<th scope="col">Round</th>
+			<th scope="col">Points</th>
+			<th scope="col">Distance Off</th>
+			</thead>
+			<tbody>
+			{{ range .DistanceInfo }}
+				<tr scope="row">
+					<td>{{ .Round }}</td>
+					<td>{{ .Points }}</td>
+					<td>{{ .Distance }} km</td>
+				</tr>
+			{{ end }}
+			</tbody>
+		</table>
+	</div>
+</div>
+
+<div class="container">
     <div style="margin-top: 10%; text-align: center;">
+		<h3>Leaderboard</h3>
 	<table class="table table-striped">
 	    <thead>
 		<th scope="col">Nickname</th>
@@ -17,7 +40,7 @@
 		<tr scope="row">
 		    <td>{{ .Nickname }}</td>
 		    <td>{{ .NumPoints }}</td>
-		    <td>{{ .AccumulatedDistance }}</td>
+		    <td>{{ .AccumulatedDistance }} km</td>
 		</tr>
 	    {{ end }}
 	    </tbody>
@@ -51,26 +74,33 @@ let actualPositions = [
     {{ range $pos := .ActualPositions }}
 	[{{ index $pos 0 }}, {{ index $pos 1 }}],
     {{ end }}
-]
+];
+let polyLines = L.featureGroup();
+
 for (round in guessedPositions) {
     for (i in guessedPositions[round]) {
-	let polyline = L.polyline([guessedPositions[round][i][1], actualPositions[round]], {color: '#007bff'}).addTo(map);
-	map.fitBounds(polyline.getBounds());
+		L.polyline([guessedPositions[round][i][1], actualPositions[round]], {color: '#007bff'}).addTo(polyLines);
     }
 }
+polyLines.addTo(map);
+map.fitBounds(polyLines.getBounds());
 for (round in guessedPositions) {
     for (i in guessedPositions[round]) {
 	L.marker(guessedPositions[round][i][1], {
 		title: guessedPositions[round][i][0],
 		icon: makeIcon("question.png"),
-	}).addTo(map).openPopup();
+	}).addTo(map).bindTooltip(String(Number(round) + 1), {
+		permanent: true
+	}).openPopup();
     }
 }
 for (round in actualPositions) {
     L.marker(actualPositions[round], {
 	    title: "Actual position",
 	    icon: makeIcon("answer.png"),
-    }).addTo(map).openPopup();
+    }).addTo(map).bindTooltip(String(Number(round) + 1), {
+		permanent: true
+	}).openPopup();
 }
 
 L.tileLayer("https://maps.wikimedia.org/osm-intl/{z}/{x}/{y}.png", {

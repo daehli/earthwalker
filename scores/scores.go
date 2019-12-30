@@ -13,5 +13,8 @@ func CalculateScoreAndDistance(actualLocation s2.LatLng, guessLocation s2.LatLng
 	distance := actualLocation.Distance(guessLocation).Radians() * earthRadius
 	factor := math.Pow(2, -float64(distance)/1070)
 	points := int(factor * 5001)
+	if points > 5000 { // sanity check if somebody really had the exact right position
+		points = 5000
+	}
 	return points, distance
 }
