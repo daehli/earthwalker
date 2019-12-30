@@ -1,9 +1,5 @@
 # Earthwalker
 
-![Create new game dialog](readme/image_create_new_game.png)
-![Ingame](readme/image_ingame.png)
-![Summary](readme/image_summary.png)
-
 Earthwalker is a game of a similar concept to [GeoGuessr](geoguessr.com).
 You get dropped somewhere in the world in Google Street View, and the goal is that you find out where you are,
 and guess better than all of your friends. You can play against time, restrict the game to an area, and more.
@@ -34,3 +30,9 @@ Clone this repo and build the program:
     go build
 
 The executable should be called `earthwalker` or `earthwalker.exe`. Run `./earthwalker(.exe) -h` to see how to use it.
+
+## Images
+
+![Create new game dialog](readme/image_create_new.png)
+![Ingame](readme/image_ingame.png)
+![Summary](readme/image_summary.png)
