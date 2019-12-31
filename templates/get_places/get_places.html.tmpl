@@ -1,4 +1,5 @@
 {{ define "head_insert" }}
+<meta name="referrer" content="no-referrer"/>
 <script src="https://maps.google.com/maps/api/js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@turf/turf@5/turf.min.js"></script>
 <script src="/static/leaflet/leaflet.js"></script>
@@ -75,7 +76,7 @@
 			<div class="form-group">
 				<div class="input-group">
 					<div class="input-group-prepend">
-					      <div class="input-group-text">Panorama conntectedness</div>
+					      <div class="input-group-text">Panorama connectedness</div>
 					</div>
 					<select class="form-control" id="connectedOnly" name="connectedOnly" onchange="connectedOnlyUpdated()">
 						<option>any</option>

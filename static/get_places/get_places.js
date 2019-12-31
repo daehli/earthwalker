@@ -24,6 +24,8 @@ let debug = false;
 
 const PANO_SEARCH_RADIUS = 10000;
 const LAT_LIMIT = 85; // polar panos are discarded, they're usually garbage
+// string formatting in javascript...
+const NOMINATIM_URL = (locStringEncoded) => `https://nominatim.openstreetmap.org/search?q=${locStringEncoded}&polygon_geojson=1&limit=5&format=json`;
 
 let streetViewService = new google.maps.StreetViewService();
 
@@ -70,7 +72,7 @@ function fetchPolygonFromLocString(mapInfo) {
 	}
 
 	const Http = new XMLHttpRequest();
-	const url = "https://nominatim.openstreetmap.org/search?q=" + encodeURI(locString.replace(" ", "+")) + "&polygon_geojson=1&limit=1&format=json";
+	const url = NOMINATIM_URL(encodeURI(locString.replace(" ", "+")));
 	Http.open("GET", url);
 	Http.send();
 
@@ -78,33 +80,34 @@ function fetchPolygonFromLocString(mapInfo) {
 	Http.onreadystatechange = (event) => {
 		if (Http.readyState == 4) {
 			let placesPolygon;
-			let response = JSON.parse(Http.responseText)[0];
-
+			let response = JSON.parse(Http.responseText);
 			let errorDialog = document.getElementById("error-dialog");
 
-			// Happens when you enter ajdsfdsajkf, for instance
-			if (!response) {
-				console.log("No response recieved");
+			for (let i = 0; i < response.length; i++) {
+				let type = response[i]["geojson"]["type"].toLowerCase();
+				if (type === "multipolygon") {
+					if (debug) {
+						console.log(response[i]);
+					}
+					errorDialog.setAttribute("hidden", "hidden");
+					placesPolygon = turf.multiPolygon(response[i]["geojson"]["coordinates"]);
+					break;
+				} else if (type === "polygon") {
+					if (debug) {
+						console.log(response[i]);
+					}
+					errorDialog.setAttribute("hidden", "hidden");
+					placesPolygon = turf.multiPolygon([response[i]["geojson"]["coordinates"]]);
+					break;
+				}
+			}
+
+			if (!placesPolygon) {
+				console.log("No polygon response recieved");
 				errorDialog.removeAttribute("hidden");
 				return;
 			}
 
-			console.log("Response received, display name: " + response["display_name"]);
-			if (debug) {
-				console.log(response);
-			}
-			if (response["geojson"]["type"].toLowerCase() === "multipolygon") {
-				errorDialog.setAttribute("hidden", "hidden");
-				placesPolygon = turf.multiPolygon(response["geojson"]["coordinates"]);
-			} else if (response["geojson"]["type"].toLowerCase() === "polygon") {
-				errorDialog.setAttribute("hidden", "hidden");
-				placesPolygon = turf.multiPolygon([response["geojson"]["coordinates"]]);
-			} else {
-				// Happens when there is only one point. In the old version, 
-				// this would just crash at a later point.
-				errorDialog.removeAttribute("hidden");
-				return;
-			}
 			showPolygonOnMap(previewMap, placesPolygon);
 			mapInfo["locPolygon"] = placesPolygon;
 			numberOfRoundsUpdated();
