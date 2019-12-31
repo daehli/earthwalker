@@ -131,12 +131,6 @@ function fetchPolygonFromLocString(mapInfo) {
 */
 function fetchPanos(mapInfo) {
 	disableSubmitButton();
-	// if no locPolygon, fall back to entire world
-	if (mapInfo["locPolygon"] == null) {
-		if (mapInfo["locStrings"] != null && mapInfo["locStrings"].length > 0) {
-			console.warn("Null polygon, but there are loc strings.  Possibly due to lack of nominatim results.");
-		}
-	}
 
 	if (mapInfo["panoCoords"] == null) {
 		mapInfo["panoCoords"] = [];
@@ -269,7 +263,7 @@ function numberOfRoundsUpdated() {
 	}
 	if (newNumRounds < pageMapInfo["numRounds"]) {
 		// note: can't decrease length of panoCoords beyond 0, so any excess requests are handled in fetchPano()
-		pageMapInfo["panoCoords"] = pageMapInfo["panoCoords"].slice(newNumRounds);
+		pageMapInfo["panoCoords"] = pageMapInfo["panoCoords"].slice(0, newNumRounds);
 	}
 	pageMapInfo["numRounds"] = newNumRounds;
 	fetchPanos(pageMapInfo);
