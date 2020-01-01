@@ -17,6 +17,7 @@ type Challenge struct {
 	Places           []s2.LatLng
 	Guesses          [][]Guess
 	UniqueIdentifier string
+	SummaryPassword  string // The "password" behind the link for the summary.
 	Settings         ChallengeSettings
 }
 
@@ -52,6 +53,7 @@ func NewChallenge(places []s2.LatLng, settings ChallengeSettings) (Challenge, er
 		Places:           places,
 		UniqueIdentifier: randSeq(5),
 		Guesses:          make([][]Guess, len(places)),
+		SummaryPassword:  randSeq(3),
 		Settings:         settings,
 	}
 

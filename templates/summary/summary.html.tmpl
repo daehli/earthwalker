@@ -5,28 +5,38 @@
 <div id="score-map" style="width: 100%; height: 50vh;"></div>
 
 <div class="container">
-	<div style="margin-top: 10%; text-align: center;">
-		<h3>Your scores:</h3>
-		<table class="table table-striped">
-			<thead>
-			<th scope="col">Round</th>
-			<th scope="col">Points</th>
-			<th scope="col">Distance Off</th>
-			</thead>
-			<tbody>
-			{{ range .DistanceInfo }}
-				<tr scope="row">
-					<td>{{ .Round }}</td>
-					<td>{{ .Points }}</td>
-					<td>{{ .Distance }} km</td>
-				</tr>
-			{{ end }}
-			</tbody>
-		</table>
-	</div>
-</div>
+    <br>
+    <div class="text-center">
+	<button id="copy-link" class="btn btn-primary">Copy link to this summary</button>
+    </div>
+    <script>
+	document.getElementById("copy-link").onclick = function() {
+	    window.prompt("Copy to clipboard: Ctrl+C, Enter", window.location);
+	};
+    </script>
 
-<div class="container">
+    {{ if .HasDistanceInfo }}
+    <div style="margin-top: 10%; text-align: center;">
+	<h3>Your scores:</h3>
+	<table class="table table-striped">
+		<thead>
+		<th scope="col">Round</th>
+		<th scope="col">Points</th>
+		<th scope="col">Distance Off</th>
+		</thead>
+		<tbody>
+		{{ range .DistanceInfo }}
+			<tr scope="row">
+				<td>{{ .Round }}</td>
+				<td>{{ .Points }}</td>
+				<td>{{ .Distance }} km</td>
+			</tr>
+		{{ end }}
+		</tbody>
+	</table>
+    </div>
+    {{ end }}
+
     <div style="margin-top: 10%; text-align: center;">
 		<h3>Leaderboard</h3>
 	<table class="table table-striped">
