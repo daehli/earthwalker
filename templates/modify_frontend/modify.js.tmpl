@@ -4,6 +4,9 @@
 // Templated variables
 let timerEnabled = {{ .TimerEnabled }};
 let timerDurationSeconds = {{ .TimerDuration }};
+let roundNumber = {{ .RoundNumber }};
+
+alert(roundNumber);
 
 function injectStylesheet() {
 	var node = document.createElement("link");
@@ -49,6 +52,7 @@ history.pushState = function() {
 }
 
 let leafletMap = null;
+let hasGuessed = false;
 
 // The leaflet minimap!
 function createMinimap() {
@@ -86,11 +90,15 @@ function createMinimap() {
 	guessButton.innerHTML = "Guess!";
 	floatingContainer.appendChild(guessButton);
 	function makeGuess(latlng) {
+		if (hasGuessed) {
+			return;
+		}
+		hasGuessed = true;
 		latlng = latlng.wrap();
 		let location = window.location.href;
 		let topLevel = location.substring(0, location.indexOf("/", 3));
 		let xhr = new XMLHttpRequest();
-		xhr.open("POST", topLevel + "/guess", true);
+		xhr.open("POST", topLevel + "/guess?round=" + roundNumber, true);
 		xhr.setRequestHeader('Content-Type', 'application/json');
 		xhr.send(JSON.stringify(latlng));
 		xhr.onreadystatechange = function() {
@@ -99,6 +107,7 @@ function createMinimap() {
 					window.location.replace(topLevel + "/scores");
 				} else {
 					alert("Something went wrong when guessing: Status " + xhr.status);
+					hasGuessed = false;
 				}
 			}
 		};

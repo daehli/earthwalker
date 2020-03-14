@@ -8,6 +8,7 @@ import (
 	"gitlab.com/glatteis/earthwalker/scores"
 	"io/ioutil"
 	"log"
+	"strconv"
 
 	"net/http"
 )
@@ -33,6 +34,16 @@ func HandleGuess(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	roundNumber, err := strconv.Atoi(r.URL.Query().Get("round"))
+	if err != nil {
+		http.Error(w, "please give a round number", http.StatusNotAcceptable)
+		return
+	}
+	if session.Round() != roundNumber {
+		http.Error(w, "invalid round number", http.StatusNotAcceptable)
+		return
+	}
+
 	actualLocation := foundChallenge.Places[session.Round()-1]
 
 	defer r.Body.Close()
@@ -53,10 +64,10 @@ func HandleGuess(w http.ResponseWriter, r *http.Request) {
 	points, distance := scores.CalculateScoreAndDistance(actualLocation, guessLocation)
 
 	// map guess longitudes so that the distance appearing on the map seems shortest
-	if guessLocation.Lng.Degrees() - 180 > actualLocation.Lng.Degrees() {
-		guessLocation = s2.LatLngFromDegrees(guessLocation.Lat.Degrees(), guessLocation.Lng.Degrees() - 360)
-	} else if guessLocation.Lng.Degrees() + 180 < actualLocation.Lng.Degrees() {
-		guessLocation = s2.LatLngFromDegrees(guessLocation.Lat.Degrees(), guessLocation.Lng.Degrees() + 360)
+	if guessLocation.Lng.Degrees()-180 > actualLocation.Lng.Degrees() {
+		guessLocation = s2.LatLngFromDegrees(guessLocation.Lat.Degrees(), guessLocation.Lng.Degrees()-360)
+	} else if guessLocation.Lng.Degrees()+180 < actualLocation.Lng.Degrees() {
+		guessLocation = s2.LatLngFromDegrees(guessLocation.Lat.Degrees(), guessLocation.Lng.Degrees()+360)
 	}
 
 	foundChallenge.Guesses[session.Round()-1] = append(foundChallenge.Guesses[session.Round()-1], Guess{

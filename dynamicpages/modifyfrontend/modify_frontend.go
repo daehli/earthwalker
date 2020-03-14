@@ -14,6 +14,7 @@ type modifyServeStruct struct {
 	TimerEnabled   bool
 	TimerDuration  int
 	LabeledMinimap bool
+	RoundNumber    int
 }
 
 var modifyScript = template.Must(template.ParseFiles("templates/modify_frontend/modify.js.tmpl"))
@@ -48,6 +49,7 @@ func ServeModifyFrontend(w http.ResponseWriter, r *http.Request) {
 	}
 
 	toServe.LabeledMinimap = game.Settings.LabeledMinimap
+	toServe.RoundNumber = session.Round()
 
 	err = modifyScript.Execute(w, toServe)
 	if err != nil {
