@@ -6,8 +6,6 @@ let timerEnabled = {{ .TimerEnabled }};
 let timerDurationSeconds = {{ .TimerDuration }};
 let roundNumber = {{ .RoundNumber }};
 
-alert(roundNumber);
-
 function injectStylesheet() {
 	var node = document.createElement("link");
 	node.href = "/static/modify_frontend/modify.css";
