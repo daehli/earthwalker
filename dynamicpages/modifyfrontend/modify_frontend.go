@@ -2,12 +2,14 @@
 package modifyfrontend
 
 import (
-	"gitlab.com/glatteis/earthwalker/challenge"
-	"gitlab.com/glatteis/earthwalker/player"
 	"log"
 	"net/http"
 	"text/template"
 	"time"
+
+	"gitlab.com/glatteis/earthwalker/challenge"
+	"gitlab.com/glatteis/earthwalker/player"
+	"gitlab.com/glatteis/earthwalker/util"
 )
 
 type modifyServeStruct struct {
@@ -17,7 +19,7 @@ type modifyServeStruct struct {
 	RoundNumber    int
 }
 
-var modifyScript = template.Must(template.ParseFiles("templates/modify_frontend/modify.js.tmpl"))
+var modifyScript = template.Must(template.ParseFiles(util.AppPath() + "/templates/modify_frontend/modify.js.tmpl"))
 
 // ServeModifyFrontend serves the modify_frontend.js template.
 func ServeModifyFrontend(w http.ResponseWriter, r *http.Request) {

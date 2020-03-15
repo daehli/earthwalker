@@ -2,15 +2,17 @@
 package scorepage
 
 import (
-	"gitlab.com/glatteis/earthwalker/challenge"
-	"gitlab.com/glatteis/earthwalker/player"
 	"html/template"
 	"log"
 	"net/http"
 	"strconv"
+
+	"gitlab.com/glatteis/earthwalker/challenge"
+	"gitlab.com/glatteis/earthwalker/player"
+	"gitlab.com/glatteis/earthwalker/util"
 )
 
-var scorePage = template.Must(template.ParseFiles("templates/main_template.html.tmpl", "templates/score/score.html.tmpl"))
+var scorePage = template.Must(template.ParseFiles(util.AppPath()+"/templates/main_template.html.tmpl", util.AppPath()+"/templates/score/score.html.tmpl"))
 
 type guessedPositionsType struct {
 	GuessedPosition []float64

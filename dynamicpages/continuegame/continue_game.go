@@ -5,13 +5,15 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+
+	"gitlab.com/glatteis/earthwalker/util"
 )
 
 type modifyContinueGameStruct struct {
 	Nickname string
 }
 
-var continueGame = template.Must(template.ParseFiles("templates/main_template.html.tmpl", "templates/continue_game/continue_game.html.tmpl"))
+var continueGame = template.Must(template.ParseFiles(util.AppPath()+"/templates/main_template.html.tmpl", util.AppPath()+"/templates/continue_game/continue_game.html.tmpl"))
 
 // ServeContinueGame serves the continue_game template. It takes the nickname of the current player.
 func ServeContinueGame(w http.ResponseWriter, r *http.Request, nickname string) {

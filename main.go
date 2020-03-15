@@ -18,6 +18,15 @@ package main
 
 import (
 	"flag"
+	"log"
+	"math/rand"
+	"net/http"
+	"os"
+	"os/signal"
+	"strconv"
+	"syscall"
+	"time"
+
 	"gitlab.com/glatteis/earthwalker/challenge"
 	"gitlab.com/glatteis/earthwalker/database"
 	"gitlab.com/glatteis/earthwalker/dynamicpages/continuegame"
@@ -29,14 +38,7 @@ import (
 	"gitlab.com/glatteis/earthwalker/placefinder"
 	"gitlab.com/glatteis/earthwalker/player"
 	"gitlab.com/glatteis/earthwalker/streetviewserver"
-	"log"
-	"math/rand"
-	"net/http"
-	"os"
-	"os/signal"
-	"strconv"
-	"syscall"
-	"time"
+	"gitlab.com/glatteis/earthwalker/util"
 )
 
 var placesAndFunctions = map[string]func(w http.ResponseWriter, r *http.Request){
@@ -88,7 +90,7 @@ func main() {
 		redirectURL := "/game?c=" + session.GameID
 		http.Redirect(w, r, redirectURL, http.StatusFound)
 	})
-	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
+	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir(util.AppPath()+"/static"))))
 	for path, function := range placesAndFunctions {
 		http.HandleFunc(path, function)
 	}
