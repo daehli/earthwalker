@@ -304,8 +304,8 @@ function locStringUpdated() {
 window.addEventListener("DOMContentLoaded", (event) => {
 	// TODO: stick map stuff in a function
 	previewMap = L.map("bounds-map", {center: [0, 0], zoom: 1});
-	L.tileLayer("https://maps.wikimedia.org/osm-intl/{z}/{x}/{y}.png", {
-		attribution: "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OSM</a> contributors, <a href=\"https://foundation.wikimedia.org/wiki/Maps_Terms_of_Use\">Wikimedia Maps</a>"
+	L.tileLayer("https://tiles.wmflabs.org/osm/{z}/{x}/{y}.png", {
+		attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> contributors, <a href="https://wikitech.wikimedia.org/wiki/Wikitech:Cloud_Services_Terms_of_use">Wikimedia Cloud Servides</a>'
 	}).addTo(previewMap);
 	markerGroup = L.layerGroup().addTo(previewMap);
 	polygonGroup = L.layerGroup().addTo(previewMap);
