@@ -37,10 +37,6 @@
 	display: none;
 }
 
-.app-viewcard-strip {
-	display: none;
-}
-
 #titlecard {
 	display: none;
 }
@@ -65,6 +61,15 @@
 	right: 30px;
 	top: 30px;
 	text-align: right;
+}
+
+#compass-container {
+	width: 200px;
+	height: 100px;
+	position: absolute;
+	left: 30px;
+	top: 30px;
+	text-align: left;
 }
 
 #navigation-bar {

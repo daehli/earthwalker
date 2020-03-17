@@ -166,6 +166,15 @@ function createMinimap() {
 		}
 	}, 500);
 
+	let compassContianer = document.createElement("div");
+	compassContianer.id = "compass-container";
+	document.body.appendChild(compassContianer);
+
+	// Move the compass from inside the google code to the compass container.
+	let compass = document.getElementById("compass");
+	compass.parentNode.removeChild(compass);
+	compassContianer.appendChild(compass);
+
 	// The timer & stuff!
 	let timerContainer = document.createElement("div");
 	timerContainer.id = "timer-container";
