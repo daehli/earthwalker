@@ -3,6 +3,7 @@ package database
 
 import (
 	"github.com/dgraph-io/badger"
+	"gitlab.com/glatteis/earthwalker/util"
 	"log"
 )
 
@@ -10,7 +11,7 @@ var database *badger.DB
 
 func init() {
 	var err error
-	database, err = badger.Open(badger.DefaultOptions("badger/"))
+	database, err = badger.Open(badger.DefaultOptions(util.AppPath() + "badger/"))
 	if err != nil {
 		log.Fatal(err)
 	}
