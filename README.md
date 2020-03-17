@@ -29,7 +29,10 @@ Clone this repo and build the program:
     cd earthwalker
     go build
 
-The executable should be called `earthwalker` or `earthwalker.exe`. Run `./earthwalker(.exe) -h` to see how to use it.
+The executable should be called `earthwalker` or `earthwalker.exe`.
+Just running it and going to `localhost:8080` in your browser should work for you.
+If you are running a server, you probably configure a custom port to work with your nginx or apache config.
+How to do this is described in the help: `./earthwalker(.exe) -h`.
 
 ## Images
 
