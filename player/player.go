@@ -28,6 +28,8 @@ type PlayerSession struct {
 	// TimeStarted is the time that a player started a specific round from the challenge.
 	// If the player hasn't started the round yet, this will be nil.
 	TimeStarted *time.Time
+	// CurrentGuess is the player's current guess as a float64 tuple ([lat, lng]).
+	CurrentGuess []float64
 }
 
 func (p PlayerSession) Round() int {
