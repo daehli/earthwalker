@@ -6,10 +6,10 @@
 
 <div class="container">
     <div style="margin-top: 10%; text-align: center;">
+	<p class="text-center">You were {{ .DistanceKM }}km from the correct position. Your marker is <img style="height: 40px;" src="/static/icons/question{{ .YourColor }}.png"/></p>
 	<div class="progress" style="height: 40px;">
 	      <div class="progress-bar" role="progressbar" style="width: {{ .PointsPercent }}%;" aria-valuenow="{{ .NumPoints }}" aria-valuemin="0" aria-valuemax="5000">{{ .NumPoints }}/5000 points</div>
 	</div>
-	<p class="text-center">You were {{ .DistanceKM }}km from the correct position.</p>
 	<p class="text-muted">Reload the page to see other player's scores once they finish this round.</p>
 	{{ if .LastScorePage }}
 	<button type="button" class="btn btn-primary" onclick="window.location.href = '/summary'">Go to summary</button>
@@ -25,18 +25,14 @@ let map = L.map("score-map").setView([0.0, 0.0], 1);
 
 let guessedPositions = [
 {{ range $x, $value := .GuessedPositions }}
-    ["{{ $value.Nickname }}", [{{ index $value.GuessedPosition 0}}, {{index $value.GuessedPosition 1}}]],
+    ["{{ $value.Nickname }}", [{{ index $value.GuessedPosition 0}}, {{index $value.GuessedPosition 1}}], {{ $value.Color }}],
 {{ end }}
 ]
 let actualPosition = [{{ index .ActualPosition 0 }}, {{ index .ActualPosition 1 }}];
 
 for (i in guessedPositions) {
     let polyline;
-    if (i == {{ .You }}) {
-	polyline = L.polyline([guessedPositions[i][1], actualPosition], {color: '#ff007b'}).addTo(map);
-    } else {
-	polyline = L.polyline([guessedPositions[i][1], actualPosition], {color: '#007bff'}).addTo(map);
-    }
+    polyline = L.polyline([guessedPositions[i][1], actualPosition], {color: '#007bff'}).addTo(map);
     map.fitBounds(polyline.getBounds());
 }
 
@@ -54,7 +50,7 @@ let makeIcon = function(name) {
 for (i in guessedPositions) {
     L.marker(guessedPositions[i][1], {
 	    title: guessedPositions[i][0],
-	    icon: makeIcon("question.png"),
+	    icon: makeIcon("question" + guessedPositions[i][2] + ".png"),
     }).addTo(map).openPopup();
 }
 L.marker(actualPosition, {
