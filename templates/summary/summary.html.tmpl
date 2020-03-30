@@ -6,14 +6,24 @@
 
 <div class="container">
     <br>
-    <div class="text-center">
-	<button id="copy-link" class="btn btn-primary">Copy link to this summary</button>
+    <div class="row">
+    <div class="col text-center">
+	<button id="copy-game-link" class="btn btn-primary">Copy link to this game</button>
     </div>
     <script>
-	document.getElementById("copy-link").onclick = function() {
+	document.getElementById("copy-game-link").onclick = function() {
+	    window.prompt("Copy to clipboard: Ctrl+C, Enter", window.location.toString().replace("summary", "game"));
+	};
+    </script>
+    <div class="col text-center">
+	<button id="copy-summary-link" class="btn btn-primary">Copy link to this summary</button>
+    </div>
+    <script>
+	document.getElementById("copy-summary-link").onclick = function() {
 	    window.prompt("Copy to clipboard: Ctrl+C, Enter", window.location);
 	};
     </script>
+    </div>
 
     {{ if .HasDistanceInfo }}
     <div style="margin-top: 10%; text-align: center;">
@@ -41,6 +51,7 @@
 		<h3>Leaderboard</h3>
 	<table class="table table-striped">
 	    <thead>
+		<th scope="col">Icon</th>
 		<th scope="col">Nickname</th>
 		<th scope="col">Number of Points</th>
 		<th scope="col">Total Distance Off</th>
@@ -48,6 +59,7 @@
 	    <tbody>
 	    {{ range .Rankings }}
 		<tr scope="row">
+		    <td><img style="height: 20px;" src="/static/icons/question{{ .Color }}.png"/></td>
 		    <td>{{ .Nickname }}</td>
 		    <td>{{ .NumPoints }}</td>
 		    <td>{{ .AccumulatedDistance }} km</td>
@@ -76,7 +88,7 @@ let makeIcon = function(name) {
 let guessedPositions = [
 {{ range $guessedPositions := .Guesses }} [
     {{ range $x, $value := $guessedPositions }}
-	["{{ $value.Nickname }}", [{{ index $value.GuessedPosition 0}}, {{index $value.GuessedPosition 1}}]],
+	["{{ $value.Nickname }}", [{{ index $value.GuessedPosition 0}}, {{index $value.GuessedPosition 1}}], {{ $value.Color }}],
     {{ end }} ],
 {{ end }} ];
 
@@ -98,7 +110,7 @@ for (round in guessedPositions) {
     for (i in guessedPositions[round]) {
 	L.marker(guessedPositions[round][i][1], {
 		title: guessedPositions[round][i][0],
-		icon: makeIcon("question.png"),
+		icon: makeIcon("question" + guessedPositions[round][i][2] + ".png"),
 	}).addTo(map).bindTooltip(String(Number(round) + 1), {
 		permanent: true
 	}).openPopup();

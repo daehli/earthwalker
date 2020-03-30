@@ -36,6 +36,7 @@ type Guess struct {
 	GuessLocation  s2.LatLng
 	PlayerID       string
 	PlayerNickname string
+	PlayerColor    int
 }
 
 // NewChallenge creates a new challenge with the parameters and stores it.

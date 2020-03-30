@@ -19,12 +19,14 @@ var summaryPage = template.Must(template.ParseFiles(util.AppPath()+"/templates/m
 type guessedPositionsType struct {
 	GuessedPosition []float64
 	Nickname        string
+	Color           int
 }
 
 type rankingType struct {
 	Nickname            string
 	NumPoints           int
 	AccumulatedDistance string
+	Color               int
 }
 
 type distanceType struct {
@@ -151,6 +153,7 @@ func makeRanking(foundChallenge challenge.Challenge) []rankingType {
 			Nickname:            completedSession.Nickname,
 			NumPoints:           sumPoints,
 			AccumulatedDistance: strconv.FormatFloat(sumDistance, 'f', 2, 64),
+			Color:               completedSession.IconColor,
 		})
 	}
 
@@ -175,6 +178,7 @@ func makeMap(foundChallenge challenge.Challenge) ([][]float64, []map[string]gues
 			guessedPositions[guess.PlayerID] = guessedPositionsType{
 				GuessedPosition: []float64{guess.GuessLocation.Lat.Degrees(), guess.GuessLocation.Lng.Degrees()},
 				Nickname:        guess.PlayerNickname,
+				Color:           guess.PlayerColor,
 			}
 		}
 		allGuessedPositions = append(allGuessedPositions, guessedPositions)

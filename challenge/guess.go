@@ -74,6 +74,7 @@ func HandleGuess(w http.ResponseWriter, r *http.Request) {
 		GuessLocation:  guessLocation,
 		PlayerID:       session.UniqueIdentifier,
 		PlayerNickname: session.Nickname,
+		PlayerColor:    session.IconColor,
 	})
 
 	session.TimeStarted = nil

@@ -17,6 +17,7 @@ var scorePage = template.Must(template.ParseFiles(util.AppPath()+"/templates/mai
 type guessedPositionsType struct {
 	GuessedPosition []float64
 	Nickname        string
+	Color           int
 }
 
 type scoreServeStruct struct {
@@ -26,7 +27,7 @@ type scoreServeStruct struct {
 	GuessedPositions map[string]guessedPositionsType
 	ActualPosition   []float64
 	LastScorePage    bool
-	You              int
+	YourColor        int
 }
 
 // ServeScores serves the scores page.
@@ -58,17 +59,12 @@ func ServeScores(w http.ResponseWriter, r *http.Request) {
 	actualPosition := foundChallenge.Places[session.Round()-2]
 	actualPositionAsFloats := []float64{actualPosition.Lat.Degrees(), actualPosition.Lng.Degrees()}
 
-	// The index in guessedPositions that your guess is at
-	var you int
-
 	guessedPositions := make(map[string]guessedPositionsType)
-	for i, guess := range foundChallenge.Guesses[session.Round()-2] {
-		if guess.PlayerID == session.UniqueIdentifier {
-			you = i
-		}
+	for _, guess := range foundChallenge.Guesses[session.Round()-2] {
 		guessedPositions[guess.PlayerID] = guessedPositionsType{
 			GuessedPosition: []float64{guess.GuessLocation.Lat.Degrees(), guess.GuessLocation.Lng.Degrees()},
 			Nickname:        guess.PlayerNickname,
+			Color:           guess.PlayerColor,
 		}
 	}
 
@@ -79,7 +75,7 @@ func ServeScores(w http.ResponseWriter, r *http.Request) {
 		GuessedPositions: guessedPositions,
 		ActualPosition:   actualPositionAsFloats,
 		LastScorePage:    session.Round()-1 == foundChallenge.Settings.NumRounds,
-		You:              you,
+		YourColor:        session.IconColor,
 	}
 
 	w.Header().Set("Cache-Control", "no-cache")

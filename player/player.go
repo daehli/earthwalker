@@ -28,8 +28,10 @@ type PlayerSession struct {
 	// TimeStarted is the time that a player started a specific round from the challenge.
 	// If the player hasn't started the round yet, this will be nil.
 	TimeStarted *time.Time
-	// CurrentGuess is the player's current guess as a float64 tuple ([lat, lng]).
+	// TODO CurrentGuess is the player's current guess as a float64 tuple ([lat, lng]).
 	CurrentGuess []float64
+	// IconColor is the player's icon color (see static/icons).
+	IconColor int
 }
 
 func (p PlayerSession) Round() int {
@@ -49,6 +51,7 @@ func randSeq(n int) string {
 func NewSession() PlayerSession {
 	return PlayerSession{
 		UniqueIdentifier: randSeq(10),
+		IconColor:        (rand.Int() % 200) + 1,
 	}
 }
 
