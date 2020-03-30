@@ -40,6 +40,7 @@ type summaryServeStruct struct {
 	Guesses         []map[string]guessedPositionsType
 	ActualPositions [][]float64
 	HasDistanceInfo bool
+	GameID          string
 	DistanceInfo    []distanceType
 }
 

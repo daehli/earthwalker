@@ -60,7 +60,7 @@ func RespondToPoints(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(w, r, "/game?c="+resultingChallenge.UniqueIdentifier, http.StatusFound)
+	http.Redirect(w, r, "/beforestart?c="+resultingChallenge.UniqueIdentifier, http.StatusFound)
 }
 
 func createSettingsFromForm(r *http.Request) (challenge.ChallengeSettings, error) {

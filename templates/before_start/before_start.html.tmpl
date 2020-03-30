@@ -1,0 +1,26 @@
+{{ define "head_insert" }}
+{{ end }}
+
+{{ define "content" }}
+<div class="container">
+<br>
+<div class="row">
+<div class="col text-center">
+Share this game with your friends:
+<button id="copy-game-link" class="btn btn-outline-primary">Copy link to this game</button>
+</div>
+</div>
+<script>
+document.getElementById("copy-game-link").onclick = function() {
+    window.prompt("Copy to clipboard: Ctrl+C, Enter", window.location.toString().replace("beforestart", "game"));
+};
+</script>
+<br>
+
+<div class="text-center">
+<a href="/game?c={{ .GameID }}" class="btn btn-primary">Start game</a>
+</div>
+
+</div>
+
+{{ end }}

@@ -29,6 +29,7 @@ import (
 
 	"gitlab.com/glatteis/earthwalker/challenge"
 	"gitlab.com/glatteis/earthwalker/database"
+	"gitlab.com/glatteis/earthwalker/dynamicpages/beforestart"
 	"gitlab.com/glatteis/earthwalker/dynamicpages/continuegame"
 	"gitlab.com/glatteis/earthwalker/dynamicpages/getplaces"
 	"gitlab.com/glatteis/earthwalker/dynamicpages/modifyfrontend"
@@ -43,6 +44,7 @@ import (
 
 var placesAndFunctions = map[string]func(w http.ResponseWriter, r *http.Request){
 	"/newgame":            getplaces.ServeGetPlaces,
+	"/beforestart":        beforestart.ServeBeforeStart,
 	"/game":               challenge.ServeChallenge,
 	"/maps/":              streetviewserver.ServeMaps,
 	"/found_points":       placefinder.RespondToPoints,
