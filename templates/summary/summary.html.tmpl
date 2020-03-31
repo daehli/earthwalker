@@ -12,7 +12,9 @@
     </div>
     <script>
 	document.getElementById("copy-game-link").onclick = function() {
-	    window.prompt("Copy to clipboard: Ctrl+C, Enter", window.location.toString().replace("summary", "game"));
+	    let link = window.location.toString().replace("summary", "game");
+	    link = link.substring(0, link.lastIndexOf("&"));
+	    window.prompt("Copy to clipboard: Ctrl+C, Enter", link);
 	};
     </script>
     <div class="col text-center">
