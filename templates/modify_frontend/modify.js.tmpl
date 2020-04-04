@@ -196,7 +196,7 @@ function createMinimap() {
 			remainingTime -= 1;
 			if (remainingTime <= 0) {
 				if (marker == null) {
-					makeGuess({"lat": 0, "lng": 0});
+					makeGuess(L.latLng(0, 0));
 				} else {
 					makeGuess(marker.getLatLng());
 				}
