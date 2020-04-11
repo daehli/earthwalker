@@ -3,6 +3,8 @@
 <script src="https://maps.google.com/maps/api/js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@turf/turf@5/turf.min.js"></script>
 <script src="/static/leaflet/leaflet.js"></script>
+<script src="/static/geotiff.bundle.min.js"></script>
+<script src="/static/bootstrap_slider.js"></script>
 <script src="/static/get_places/get_places.js"></script>
 {{ end }}
 
@@ -68,11 +70,25 @@
 
 		<div class="card-body" id="advanced-settings" hidden="true">
 			<div class="form-group">
-				<div class="form-check form-check-inline">
-					<input class="form-check-input" type="checkbox" id="show-labels" name="show-labels" checked>
-					<label class="form-check-label" for="label">Show labels on map</label>
+				<div class="input-group">
+					<div class="input-group-prepend">
+					      <div class="input-group-text">Minimum population density %</div>
+					</div>
+					<input type="number" class="form-control mr-sm-3" id="minDensity" value="0" min="0" max="100" onchange="popDensityUpdated()"/>
+				</div>
+				<div class="input-group">
+					<div class="input-group-prepend">
+					      <div class="input-group-text">Maximum population density %</div>
+					</div>
+					<input type="number" class="form-control mr-sm-3" id="maxDensity" value="100" min="0" max="100" onchange="popDensityUpdated()"/>
 				</div>
 			</div>
+			<small class="form-text text-muted">
+				0% is ocean. 1% is barren road. With 5%, you will find signs of civilization. Anything above 50% is already very populated.
+			</small>
+
+			<hr/>
+
 			<div class="form-group">
 				<div class="input-group">
 					<div class="input-group-prepend">
@@ -85,6 +101,24 @@
 					</select>
 				</div>
 			</div>
+			<small class="form-text text-muted">
+				If you want to be able to always walk, change this to always.
+			</small>
+
+			<hr/>
+
+			<div class="form-group">
+				<div class="form-check form-check-inline">
+					<input class="form-check-input" type="checkbox" id="show-labels" name="show-labels" checked>
+					<label class="form-check-label" for="label">Show labels on map</label>
+				</div>
+			</div>
+			<small class="form-text text-muted">
+				Check this if the map should tell you how places are called.
+			</small>
+
+			<hr/>
+			
 			<div class="form-group">
 				<div class="input-group">
 					<div class="input-group-prepend">
@@ -100,6 +134,9 @@
 				</div>
 			</div>
 			<div id="bounds-map" style="width: 80%; height: 50vh; margin-left: 10%; margin-right: 10%;"></div>
+			<small class="form-text text-muted">
+				Constrain game to some bounds. Score is not changed by this yet, though.
+			</small>
 		</div>
 	</div>
 

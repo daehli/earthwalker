@@ -1,3 +1,5 @@
+// TODO: This file is getting out of hand.
+//
 // StreetViewService return service:
 // {
 //   "location": {
@@ -20,7 +22,7 @@
 //   }
 // }
 
-let debug = false;
+let debug = true;
 
 const PANO_SEARCH_RADIUS = 10000;
 const LAT_LIMIT = 85; // polar panos are discarded, they're usually garbage
@@ -29,12 +31,40 @@ const NOMINATIM_URL = (locStringEncoded) => `https://nominatim.openstreetmap.org
 
 let streetViewService = new google.maps.StreetViewService();
 
+// loadGeoTiff gets awaited at the start, so geoImage is always present.
+let tiff = undefined;
+// let geoImage = undefined;
+// let geoData = undefined;
+async function loadGeoTiff() {
+	const response = await fetch("/static/nasa_pop_data.tif");
+	const arrayBuffer = await response.arrayBuffer();
+	tiff = await GeoTIFF.fromArrayBuffer(arrayBuffer);
+	// geoImage = await tiff.getImage();
+	// [geoData] = await geoImage.readRasters();
+}
+async function getLocationPopulation(lat, lng) {
+	const delta = 0.1;
+	let value = await tiff.readRasters({
+		bbox: [lng, lat, lng + 10 * delta, lat + 10 * delta],
+		resX: delta,
+		resY: delta,
+	});
+	let actualValue = value[0][0];
+	// 255 means ocean
+	if (actualValue == 255) {
+		actualValue = 0;
+	}
+	return actualValue / 255;
+}
+
 let pageMapInfo = {
 	"numRounds": 5,
 	"locStrings": [],
 	"locPolygon": null,
 	"panoReqs": {
-		"panoConnectedness": "any"
+		"panoConnectedness": "any",
+		"populationMin": 0,
+		"populationMax": 1,
 	},
 	"panoCoords": []
 }
@@ -127,6 +157,8 @@ function fetchPolygonFromLocString(mapInfo) {
 	"locPolygon": (turf.multiPolygon, default to null TODO: convert polygon to multiPolygon)
 	"panoReqs": {
 		"panoConnectedness": (string, one of ["always", "never", "any"], default to "any")
+		"populationMin": (between 0 and 1, default 0),
+		"populationMax": (between 0 and 1, default 1),
 	}
 	// TODO: consider storing addition pano information, such as connectedness
 	"panoCoords": (array of google.maps.LatLng, default to [])
@@ -153,8 +185,19 @@ function fetchPanos(mapInfo) {
 // fetch a pano and add it to mapInfo["panoCoords"]
 // api query is repeated until a good pano is found
 // TODO: I think we've ended up with excessive numRounds checks here, try to clean it up
-function fetchPano(mapInfo) {
+async function fetchPano(mapInfo) {
 	let randomLatLng = getRandomLatLngInPolygon(mapInfo["locPolygon"]);
+
+	let handleFail = function() {
+		// user may have decreased numRounds, if so don't make another request
+		if (mapInfo["panoCoords"].length < mapInfo["numRounds"]) {
+			setTimeout(function() {
+				fetchPano(mapInfo);
+			}, 0);
+		} else {
+			updateSecretForm(mapInfo["panoCoords"], mapInfo["numRounds"]);
+		}
+	};
 
 	function handlePanoResponse(result, status) {
 		if (status == google.maps.StreetViewStatus.OK && resultPanoIsGood(result, mapInfo["panoReqs"], mapInfo["locPolygon"])) {
@@ -171,16 +214,19 @@ function fetchPano(mapInfo) {
 			updateSecretForm(mapInfo["panoCoords"], mapInfo["numRounds"]);
 		} else {
 			console.log("Failed to get location; api request: " + status.toString());
-			// user may have decreased numRounds, if so don't make another request
-			if (mapInfo["panoCoords"].length < mapInfo["numRounds"]) {
-				fetchPano(mapInfo);
-			} else {
-				updateSecretForm(mapInfo["panoCoords"], mapInfo["numRounds"]);
-			}
+			handleFail();
 		}
 	}
 
-	streetViewService.getPanoramaByLocation(randomLatLng, PANO_SEARCH_RADIUS, handlePanoResponse);
+	let population = await getLocationPopulation(randomLatLng.lat(), randomLatLng.lng());
+	let min = mapInfo["panoReqs"]["populationMin"];
+	let max = mapInfo["panoReqs"]["populationMax"];
+	if (population >= min && population <= max) {
+		streetViewService.getPanoramaByLocation(randomLatLng, PANO_SEARCH_RADIUS, handlePanoResponse);
+	} else {
+		console.log("Failed, population not right: " + population);
+		handleFail();
+	}
 }
 
 // returns whether result (pano) meets the requirements of mapInfo
@@ -299,17 +345,39 @@ function locStringUpdated() {
 	}
 }
 
+function popDensityUpdated() {
+	let newMin = document.getElementById("minDensity").value / 100;
+	let newMax = document.getElementById("maxDensity").value / 100;
+	let oldMin = pageMapInfo["panoReqs"]["populationMin"];
+	let oldMax = pageMapInfo["panoReqs"]["populationMax"];
+	if (newMin !== oldMin || newMax !== oldMax) {
+		pageMapInfo["panoReqs"]["populationMin"] = newMin;
+		pageMapInfo["panoReqs"]["populationMax"] = newMax;
+		disableSubmitButton();
+		previewMap.setView([0, 0], 1);
+		pageMapInfo["panoCoords"] = [];
+		polygonGroup.clearLayers();
+		markerGroup.clearLayers();
+		fetchPanos(pageMapInfo);
+	}
+}
+
 // settings may have been cached by the browser (wouldn't trigger the onchange),
 // so check them once the DOM has loaded
 window.addEventListener("DOMContentLoaded", (event) => {
 	// TODO: stick map stuff in a function
-	previewMap = L.map("bounds-map", {center: [0, 0], zoom: 1});
-	L.tileLayer("https://tiles.wmflabs.org/osm/{z}/{x}/{y}.png", {
-		attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> contributors, <a href="https://wikitech.wikimedia.org/wiki/Wikitech:Cloud_Services_Terms_of_use">Wikimedia Cloud Servides</a>'
-	}).addTo(previewMap);
-	markerGroup = L.layerGroup().addTo(previewMap);
-	polygonGroup = L.layerGroup().addTo(previewMap);
-	numberOfRoundsUpdated();
-	connectedOnlyUpdated();
-	locStringUpdated();
+	let load = async function() {
+		await loadGeoTiff();
+		previewMap = L.map("bounds-map", {center: [0, 0], zoom: 1});
+		L.tileLayer("https://tiles.wmflabs.org/osm/{z}/{x}/{y}.png", {
+			attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> contributors, <a href="https://wikitech.wikimedia.org/wiki/Wikitech:Cloud_Services_Terms_of_use">Wikimedia Cloud Services</a>'
+		}).addTo(previewMap);
+		markerGroup = L.layerGroup().addTo(previewMap);
+		polygonGroup = L.layerGroup().addTo(previewMap);
+		numberOfRoundsUpdated();
+		connectedOnlyUpdated();
+		locStringUpdated();
+		popDensityUpdated();
+	};
+	load();
 });
