@@ -74,7 +74,7 @@
 					<div class="input-group-prepend">
 					      <div class="input-group-text">Minimum population density %</div>
 					</div>
-					<input type="number" class="form-control mr-sm-3" id="minDensity" value="0" min="0" max="100" onchange="popDensityUpdated()"/>
+					<input type="number" class="form-control mr-sm-3" id="minDensity" value="15" min="0" max="100" onchange="popDensityUpdated()"/>
 				</div>
 				<div class="input-group">
 					<div class="input-group-prepend">
@@ -84,7 +84,7 @@
 				</div>
 			</div>
 			<small class="form-text text-muted">
-				0% is ocean. 1% is barren road. With 5%, you will find signs of civilization. Anything above 50% is already very populated.
+				0% is ocean. 10% is barren road. With 20%, you will find signs of civilization. Anything above 50% is already very populated.
 			</small>
 
 			<hr/>
@@ -95,9 +95,9 @@
 					      <div class="input-group-text">Panorama connectedness</div>
 					</div>
 					<select class="form-control" id="connectedOnly" name="connectedOnly" onchange="connectedOnlyUpdated()">
-						<option>any</option>
 						<option>always</option>
 						<option>never</option>
+						<option>any</option>
 					</select>
 				</div>
 			</div>

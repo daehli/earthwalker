@@ -24,7 +24,7 @@
 
 let debug = false;
 
-const PANO_SEARCH_RADIUS = 10000;
+const PANO_SEARCH_RADIUS = 50000;
 const LAT_LIMIT = 85; // polar panos are discarded, they're usually garbage
 // string formatting in javascript...
 const NOMINATIM_URL = (locStringEncoded) => `https://nominatim.openstreetmap.org/search?q=${locStringEncoded}&polygon_geojson=1&limit=5&format=json`;
@@ -62,8 +62,8 @@ let pageMapInfo = {
 	"locStrings": [],
 	"locPolygon": null,
 	"panoReqs": {
-		"panoConnectedness": "any",
-		"populationMin": 0,
+		"panoConnectedness": "always",
+		"populationMin": 0.15,
 		"populationMax": 1,
 	},
 	"panoCoords": []
