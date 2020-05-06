@@ -43,7 +43,7 @@ To use the docker container you have to run the following commands (given you al
     git clone https://gitlab.com/glatteis/earthwalker.git
     cd earthwalker
     docker build -t earthwalker:local .
-    docker run earthwalker:local
+    docker run earthwalker:local -p 8080:8080
 
 It might not be necessary to use the `-t earthwalker:local` param, but it makes it a little prettier.
 The website should be hosted at `localhost:8080`. The port can be remapped via docker.
