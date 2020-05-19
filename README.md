@@ -21,6 +21,8 @@ and filters out information from some Google packets that are sent to Street Vie
 
 ### Ok, I want to play the game now.
 
+#### Setup directly
+
 Are you set? Okay, first of all you need a server (which could also be your own computer), and some ports that are forwarded on it.
 Next, you need to install [Git](https://git-scm.com/) and [Go](https://golang.org/).
 Clone this repo and build the program:
@@ -33,6 +35,18 @@ The executable should be called `earthwalker` or `earthwalker.exe`.
 Just running it and going to `localhost:8080` in your browser should work for you.
 If you are running a server, you probably configure a custom port to work with your nginx or apache config.
 How to do this is described in the help: `./earthwalker(.exe) -h`.
+
+#### Docker
+
+To use the docker container you have to run the following commands (given you already have docker installed and configured).
+    
+    git clone https://gitlab.com/glatteis/earthwalker.git
+    cd earthwalker
+    docker build -t earthwalker:local .
+    docker run earthwalker:local -p 8080:8080
+
+It might not be necessary to use the `-t earthwalker:local` param, but it makes it a little prettier.
+The website should be hosted at `localhost:8080`. The port can be remapped via docker.
 
 ## Images
 
