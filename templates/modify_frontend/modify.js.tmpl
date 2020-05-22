@@ -125,7 +125,7 @@ function createMinimap() {
 	leafletMapDiv.id = "leaflet-map";
 	floatingContainer.appendChild(leafletMapDiv);
 
-	leafletMap = L.map("leaflet-map").setView([0.0, 0.0], 1);
+	leafletMap = L.map("leaflet-map");
 
 	// Load marker if it was previously stored (see reload button)
 	let oldMarker = null;
@@ -139,6 +139,15 @@ function createMinimap() {
 		}
 		sessionStorage.removeItem("lastMarker");
 	}
+
+	// Zoom out map
+	setTimeout(function() {
+		if (oldMarker == null) {
+			leafletMap.setView([0.0, 0.0], .1);
+		} else {
+			leafletMap.setView([oldMarker.lat, oldMarker.lng], 1);
+		}
+	}, 100);
 
 	// only show text labels on minimap if the user wishes so
 	let labelsEnabled = {{ .LabeledMinimap }};
@@ -241,7 +250,6 @@ function createMinimap() {
 		// https://www.phpied.com/files/location-location/location-location.html
 		location = location;
 	});
-
 }
 
 let sizes = [
