@@ -65,6 +65,7 @@ let pageMapInfo = {
 		"panoConnectedness": "always",
 		"populationMin": 0.15,
 		"populationMax": 1,
+		"onlyGoogle": "always",
 	},
 	"panoCoords": []
 }
@@ -233,6 +234,13 @@ async function fetchPano(mapInfo) {
 function resultPanoIsGood(result, panoReqs, polygon) {
 	if (result.location.latLng.lat() > LAT_LIMIT || result.location.latLng.lat() < -1 * LAT_LIMIT) {return false;}
 
+	console.log(result.links);
+	if (panoReqs["onlyGoogle"] === "always" && !result.copyright.includes("Google")) {
+		return false;
+	}
+	if (panoReqs["onlyGoogle"] === "never" && result.copyright.includes("Google")) {
+		return false;
+	}
 	if (panoReqs["panoConnectedness"] === "always" && result.links.length == 0) {
 		return false;
 	}
@@ -330,6 +338,17 @@ function connectedOnlyUpdated() {
 	}
 }
 
+function onlyGoogleUpdated() {
+	let newOnlyGoogle = document.getElementById("onlyGoogle").value;
+	if (pageMapInfo["panoReqs"]["onlyGoogle"] !== newOnlyGoogle) {
+		disableSubmitButton();
+		pageMapInfo["panoReqs"]["onlyGoogle"] = newOnlyGoogle;
+		pageMapInfo["panoCoords"] = []; // TODO: considering storing pano connectedness and only removing as necessary
+		markerGroup.clearLayers();
+		fetchPanos(pageMapInfo);
+	}
+}
+
 // TODO: support multiple loc strings
 function locStringUpdated() {
 	let old = pageMapInfo["locStrings"][0];
@@ -364,7 +383,7 @@ function popDensityUpdated() {
 
 // settings may have been cached by the browser (wouldn't trigger the onchange),
 // so check them once the DOM has loaded
-window.addEventListener("DOMContentLoaded", (event) => {
+window.addEventListener("DOMContentLoaded", (_) => {
 	// TODO: stick map stuff in a function
 	let load = async function() {
 		await loadGeoTiff();

@@ -95,14 +95,32 @@
 					      <div class="input-group-text">Panorama connectedness</div>
 					</div>
 					<select class="form-control" id="connectedOnly" name="connectedOnly" onchange="connectedOnlyUpdated()">
-						<option>always</option>
+						<option selected="selected">always</option>
 						<option>never</option>
 						<option>any</option>
 					</select>
 				</div>
 			</div>
 			<small class="form-text text-muted">
-				If you want to be able to always walk, change this to always.
+				If you want to be able to always walk somewhere or if you want single-image ones. 
+			</small>
+
+			<hr/>
+
+			<div class="form-group">
+				<div class="input-group">
+					<div class="input-group-prepend">
+					      <div class="input-group-text">Google panos</div>
+					</div>
+					<select class="form-control" id="onlyGoogle" name="onlyGoogle" onchange="onlyGoogleUpdated()">
+						<option selected="selected">always</option>
+						<option>never</option>
+						<option>any</option>
+					</select>
+				</div>
+			</div>
+			<small class="form-text text-muted">
+				If you only want to see Google panos or if you also want to see user-created ones.
 			</small>
 
 			<hr/>
