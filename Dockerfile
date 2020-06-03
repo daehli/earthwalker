@@ -1,6 +1,6 @@
 FROM golang:1.14.2-alpine
 
-COPY . /opt/earthwalker
+COPY . /opt/earthwalker/
 
 WORKDIR /opt/earthwalker
 
