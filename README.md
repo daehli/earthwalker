@@ -48,6 +48,17 @@ To use the docker container you have to run the following commands (given you al
 It might not be necessary to use the `-t earthwalker:local` param, but it makes it a little prettier.
 The website should be hosted at `localhost:8080`. The port can be remapped via docker.
 
+#### Additional Configuration
+
+Some configuration options can be read from environment variables; these are summarized below.  An example script setting these options is at `start.sh.sample`.
+
+| Variable | Default | Comments |
+|---|---|---|
+| EARTHWALKER_PORT | 8080 |   |
+| EARTHWALKER_DB_PATH_REL | executable | Sets what the location of the database directory is relative to.  Options are `executable` (relative to executable), `cwd` (relative to the current directory **at that point in the program execution**), and `absolute`. |
+| EARTHWALKER_DB_PATH | /badger | Where the database directory will be, relative as specified in `EARTHWALKER_DB_PATH_REL`. |
+| EARTHWALKER_STATIC_PATH | location of executable (usually `earthwalker`) | Absolute path to the directory containing `static` and `templates` |
+
 ## Images
 
 ![Create new game dialog](readme/image_create_new.png)

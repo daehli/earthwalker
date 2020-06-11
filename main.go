@@ -72,8 +72,14 @@ func main() {
 	}()
 
 	rand.Seed(time.Now().UnixNano())
-	port := flag.Int("port", 8080, "the port the server is running on")
-	flag.Parse()
+
+	// get port from config
+	port := os.Getenv("EARTHWALKER_PORT")
+	if port == "" {
+		portFlag := flag.Int("port", 8080, "the port the server is running on")
+		flag.Parse()
+		port = strconv.Itoa(*portFlag)
+	}
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		session, err := player.GetSessionFromCookie(r)
@@ -92,11 +98,11 @@ func main() {
 		redirectURL := "/game?c=" + session.GameID
 		http.Redirect(w, r, redirectURL, http.StatusFound)
 	})
-	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir(util.AppPath()+"/static"))))
+	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir(util.StaticPath()+"/static"))))
 	for path, function := range placesAndFunctions {
 		http.HandleFunc(path, function)
 	}
 
-	log.Println("earthwalker is running on ", *port)
-	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(*port), nil))
+	log.Println("earthwalker is running on ", port)
+	log.Fatal(http.ListenAndServe(":"+port, nil))
 }

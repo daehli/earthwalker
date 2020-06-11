@@ -12,7 +12,7 @@ import (
 	"gitlab.com/glatteis/earthwalker/util"
 )
 
-var scorePage = template.Must(template.ParseFiles(util.AppPath()+"/templates/main_template.html.tmpl", util.AppPath()+"/templates/score/score.html.tmpl"))
+var scorePage = template.Must(template.ParseFiles(util.StaticPath()+"/templates/main_template.html.tmpl", util.StaticPath()+"/templates/score/score.html.tmpl"))
 
 type guessedPositionsType struct {
 	GuessedPosition []float64

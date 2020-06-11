@@ -2,19 +2,42 @@
 package database
 
 import (
+	"log"
+	"os"
+
 	"github.com/dgraph-io/badger"
 	"gitlab.com/glatteis/earthwalker/util"
-	"log"
 )
 
 var database *badger.DB
 
 func init() {
-	var err error
-	database, err = badger.Open(badger.DefaultOptions(util.AppPath() + "/badger/"))
+	path, err := getDBPath()
 	if err != nil {
 		log.Fatal(err)
 	}
+	database, err = badger.Open(badger.DefaultOptions(path))
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func getDBPath() (string, error) {
+	path := ""
+	pathSuffix := os.Getenv("EARTHWALKER_DB_PATH")
+	pathRel := os.Getenv("EARTHWALKER_DB_PATH_REL")
+	if pathRel == "cwd" {
+		cwd, err := os.Getwd()
+		if err != nil {
+			return "", err
+		}
+		path = cwd + pathSuffix
+	} else if pathRel == "absolute" {
+		path = pathSuffix
+	} else { // default: relative to executable
+		path = util.AppPath() + pathSuffix
+	}
+	return path, nil
 }
 
 // CloseDB closes the datbase. This is there to be deferred in the main function.

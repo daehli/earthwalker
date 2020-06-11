@@ -3,13 +3,14 @@
 package streetviewserver
 
 import (
-	"github.com/golang/geo/s2"
-	"gitlab.com/glatteis/earthwalker/urlbuilder"
-	"gitlab.com/glatteis/earthwalker/util"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"strings"
+
+	"github.com/golang/geo/s2"
+	"gitlab.com/glatteis/earthwalker/urlbuilder"
+	"gitlab.com/glatteis/earthwalker/util"
 )
 
 func modifyMainPage(target string, w http.ResponseWriter, r *http.Request) {
@@ -26,7 +27,7 @@ func modifyMainPage(target string, w http.ResponseWriter, r *http.Request) {
 	}
 	bodyAsString := string(body)
 
-	insertBody, err := ioutil.ReadFile(util.AppPath() + "/templates/to_insert.html")
+	insertBody, err := ioutil.ReadFile(util.StaticPath() + "/templates/to_insert.html")
 	if err != nil {
 		log.Fatal(err)
 	}
