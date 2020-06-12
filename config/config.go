@@ -65,10 +65,10 @@ func init() {
 		EarthwalkerStaticPath: orDefault(os.Getenv("EARTHWALKER_STATIC_PATH"), util.AppPath()),
 		EarthwalkerDBPath:     getDBPath(),
 		EarthwalkerPort:       orDefault(os.Getenv("EARTHWALKER_PORT"), ""), // Default is intentionally "" s.t. the command line port gets respected
-		EarthwalkerConfigPath: orDefault(os.Getenv("EARTHWALKER_CONFIG_PATH"), "config.toml.sample"),
+		EarthwalkerConfigPath: orDefault(os.Getenv("EARTHWALKER_CONFIG_PATH"), "config.toml"),
 	}
-	// Initialize Config File
 
+	// Initialize Config File
 	tomlData, err := ioutil.ReadFile(Env.EarthwalkerConfigPath)
 	if err != nil {
 		log.Println("defaulting to default config.")
