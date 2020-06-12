@@ -28,6 +28,7 @@ type scoreServeStruct struct {
 	ActualPosition   []float64
 	LastScorePage    bool
 	YourColor        int
+	Config           config.FileType
 }
 
 // ServeScores serves the scores page.
@@ -76,6 +77,7 @@ func ServeScores(w http.ResponseWriter, r *http.Request) {
 		ActualPosition:   actualPositionAsFloats,
 		LastScorePage:    session.Round()-1 == foundChallenge.Settings.NumRounds,
 		YourColor:        session.IconColor,
+		Config:           config.File,
 	}
 
 	w.Header().Set("Cache-Control", "no-cache")

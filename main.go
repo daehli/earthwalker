@@ -44,6 +44,7 @@ import (
 
 var placesAndFunctions = map[string]func(w http.ResponseWriter, r *http.Request){
 	"/newgame":            getplaces.ServeGetPlaces,
+	"/get_places.js":      getplaces.ServeGetPlacesJS,
 	"/beforestart":        beforestart.ServeBeforeStart,
 	"/game":               challenge.ServeChallenge,
 	"/maps/":              streetviewserver.ServeMaps,

@@ -152,11 +152,11 @@ function createMinimap() {
 	// only show text labels on minimap if the user wishes so
 	let labelsEnabled = {{ .LabeledMinimap }};
 	{{ if .LabeledMinimap }}
-		L.tileLayer("https://tiles.wmflabs.org/osm/{z}/{x}/{y}.png", {
+		L.tileLayer("{{ .Config.TileServerURL }}", {
 			attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> contributors, <a href="https://wikitech.wikimedia.org/wiki/Wikitech:Cloud_Services_Terms_of_use">Wikimedia Cloud Servides</a>'
 		}).addTo(leafletMap);
 	{{ else }}
-		L.tileLayer("https://tiles.wmflabs.org/osm-no-labels/{z}/{x}/{y}.png", {
+		L.tileLayer("{{ .Config.NoLabelTileServerURL }}", {
 			attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> contributors, <a href="https://wikitech.wikimedia.org/wiki/Wikitech:Cloud_Services_Terms_of_use">Wikimedia Cloud Servides</a>'
 		}).addTo(leafletMap);
 	{{ end }}

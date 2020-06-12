@@ -19,6 +19,7 @@ type modifyServeStruct struct {
 	RoundNumber    int
 	NumberOfRounds int
 	GameID         string
+	Config         config.FileType
 }
 
 var modifyScript = template.Must(template.ParseFiles(config.Env.EarthwalkerStaticPath + "/templates/modify_frontend/modify.js.tmpl"))
@@ -35,7 +36,13 @@ func ServeModifyFrontend(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "the game does not exist", http.StatusNotFound)
 	}
 
-	var toServe modifyServeStruct
+	toServe := modifyServeStruct{
+		LabeledMinimap: game.Settings.LabeledMinimap,
+		RoundNumber:    session.Round(),
+		NumberOfRounds: game.Settings.NumRounds,
+		GameID:         game.UniqueIdentifier,
+		Config:         config.File,
+	}
 
 	if game.Settings.TimerDuration != nil {
 		toServe.TimerEnabled = true
@@ -51,11 +58,6 @@ func ServeModifyFrontend(w http.ResponseWriter, r *http.Request) {
 			toServe.TimerDuration = 1
 		}
 	}
-
-	toServe.LabeledMinimap = game.Settings.LabeledMinimap
-	toServe.RoundNumber = session.Round()
-	toServe.NumberOfRounds = game.Settings.NumRounds
-	toServe.GameID = game.UniqueIdentifier
 
 	err = modifyScript.Execute(w, toServe)
 	if err != nil {

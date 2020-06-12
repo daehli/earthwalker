@@ -42,6 +42,7 @@ type summaryServeStruct struct {
 	HasDistanceInfo bool
 	GameID          string
 	DistanceInfo    []distanceType
+	Config          config.FileType
 }
 
 // ServeSummary serves the summary page.
@@ -126,6 +127,7 @@ func ServeSummary(w http.ResponseWriter, r *http.Request) {
 		ActualPositions: actualPositionsAsFloats,
 		HasDistanceInfo: hasSession,
 		DistanceInfo:    distanceInfo,
+		Config:          config.File,
 	})
 	if err != nil {
 		log.Println(err)
