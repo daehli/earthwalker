@@ -43,7 +43,7 @@ func orDefault(envInput string, def string) string {
 
 func getDBPath() string {
 	path := ""
-	pathSuffix := os.Getenv("EARTHWALKER_DB_PATH")
+	pathSuffix := orDefault(os.Getenv("EARTHWALKER_DB_PATH"), "badger/")
 	pathRel := os.Getenv("EARTHWALKER_DB_PATH_REL")
 	if pathRel == "cwd" {
 		cwd, err := os.Getwd()
