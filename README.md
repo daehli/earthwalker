@@ -51,6 +51,7 @@ The website should be hosted at `localhost:8080`. The port can be remapped via d
 #### Changing the Tile Server
 
 If you are unhappy with the default tile server, you can change it in the configuration file (per default, this is called `config.toml`).
+You need to `cp config.toml.sample config.toml` to start configuring.
 
 #### Additional Configuration (Environment Variables)
 

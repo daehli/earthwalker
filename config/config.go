@@ -65,13 +65,17 @@ func init() {
 		EarthwalkerStaticPath: orDefault(os.Getenv("EARTHWALKER_STATIC_PATH"), util.AppPath()),
 		EarthwalkerDBPath:     getDBPath(),
 		EarthwalkerPort:       orDefault(os.Getenv("EARTHWALKER_PORT"), ""), // Default is intentionally "" s.t. the command line port gets respected
-		EarthwalkerConfigPath: orDefault(os.Getenv("EARTHWALKER_CONFIG_PATH"), "config.toml"),
+		EarthwalkerConfigPath: orDefault(os.Getenv("EARTHWALKER_CONFIG_PATH"), "config.toml.sample"),
 	}
 	// Initialize Config File
 
 	tomlData, err := ioutil.ReadFile(Env.EarthwalkerConfigPath)
 	if err != nil {
-		log.Fatal(err)
+		log.Println("defaulting to default config.")
+		File = FileType{
+			TileServerURL:        "https://tiles.wmflabs.org/osm/{z}/{x}/{y}.png",
+			NoLabelTileServerURL: "https://tiles.wmflabs.org/osm-no-labels/{z}/{x}/{y}.png",
+		}
 	}
 	if err := toml.Unmarshal(tomlData, &File); err != nil {
 		log.Fatal(err)
