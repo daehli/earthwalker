@@ -1,2 +1,10 @@
 earthwalker
 badger/
+
+__debug_bin
+
+.vscode/launch.json
+
+.DS_Store
+
+start.sh

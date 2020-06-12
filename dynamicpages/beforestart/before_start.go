@@ -10,7 +10,7 @@ import (
 	"gitlab.com/glatteis/earthwalker/util"
 )
 
-var beforeStart = template.Must(template.ParseFiles(util.AppPath()+"/templates/main_template.html.tmpl", util.AppPath()+"/templates/before_start/before_start.html.tmpl"))
+var beforeStart = template.Must(template.ParseFiles(util.StaticPath()+"/templates/main_template.html.tmpl", util.StaticPath()+"/templates/before_start/before_start.html.tmpl"))
 
 type beforeStartServeStruct struct {
 	GameID string
