@@ -48,7 +48,11 @@ To use the docker container you have to run the following commands (given you al
 It might not be necessary to use the `-t earthwalker:local` param, but it makes it a little prettier.
 The website should be hosted at `localhost:8080`. The port can be remapped via docker.
 
-#### Additional Configuration
+#### Changing the Tile Server
+
+If you are unhappy with the default tile server, you can change it in the configuration file (per default, this is called `config.toml`).
+
+#### Additional Configuration (Environment Variables)
 
 Some configuration options can be read from environment variables; these are summarized below.  An example script setting these options is at `start.sh.sample`.
 
