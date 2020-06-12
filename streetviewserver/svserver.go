@@ -70,6 +70,7 @@ func ServeLocation(l s2.LatLng, w http.ResponseWriter, r *http.Request) {
 	modifyMainPage(mapsURL, w, r)
 }
 
+// ServeMaps is a proxy to google maps
 func ServeMaps(w http.ResponseWriter, r *http.Request) {
 	fullURL := r.URL
 	fullURL.Host = "www.google.com"

@@ -63,8 +63,8 @@ func RespondToPoints(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/beforestart?c="+resultingChallenge.UniqueIdentifier, http.StatusFound)
 }
 
-func createSettingsFromForm(r *http.Request) (challenge.ChallengeSettings, error) {
-	var settings challenge.ChallengeSettings
+func createSettingsFromForm(r *http.Request) (challenge.Settings, error) {
+	var settings challenge.Settings
 	r.ParseForm()
 
 	showLabelsStr := r.FormValue("show-labels")
@@ -75,10 +75,10 @@ func createSettingsFromForm(r *http.Request) (challenge.ChallengeSettings, error
 	numRoundsStr := r.FormValue("rounds")
 	roundsAsInt, err := strconv.Atoi(numRoundsStr)
 	if err != nil {
-		return challenge.ChallengeSettings{}, errors.New("rounds is not an integer")
+		return challenge.Settings{}, errors.New("rounds is not an integer")
 	}
 	if roundsAsInt == 0 {
-		return challenge.ChallengeSettings{}, errors.New("rounds must not be zero")
+		return challenge.Settings{}, errors.New("rounds must not be zero")
 	}
 	settings.NumRounds = roundsAsInt
 
@@ -109,7 +109,7 @@ func createSettingsFromForm(r *http.Request) (challenge.ChallengeSettings, error
 	}
 done:
 	if incorrectFormat {
-		return challenge.ChallengeSettings{}, errors.New("time is in an incorrect format")
+		return challenge.Settings{}, errors.New("time is in an incorrect format")
 	}
 
 	return settings, nil

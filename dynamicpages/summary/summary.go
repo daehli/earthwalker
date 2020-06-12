@@ -188,7 +188,7 @@ func makeMap(foundChallenge challenge.Challenge) ([][]float64, []map[string]gues
 	return actualPositionsAsFloats, allGuessedPositions
 }
 
-func makeDistanceInfo(session player.PlayerSession) []distanceType {
+func makeDistanceInfo(session player.Session) []distanceType {
 	var distances []distanceType
 	for i, distance := range session.Distances {
 		distances = append(distances, distanceType{

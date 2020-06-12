@@ -6,11 +6,11 @@ import (
 	"time"
 )
 
-// The PlayerSessionNotFoundError is the error that occurs when no player session is found.
+// ErrPlayerSessionNotFound is the error that occurs when no player session is found.
 var ErrPlayerSessionNotFound = errors.New("no player session found")
 
 // SetSessionCookie sets the session cookie of a session into the browser.
-func SetSessionCookie(session PlayerSession, w http.ResponseWriter) {
+func SetSessionCookie(session Session, w http.ResponseWriter) {
 	c := http.Cookie{
 		Name:   "earthwalker-session",
 		Value:  session.UniqueIdentifier,
@@ -20,7 +20,7 @@ func SetSessionCookie(session PlayerSession, w http.ResponseWriter) {
 }
 
 // GetSessionFromCookie retrieves the cookie from a session
-func GetSessionFromCookie(r *http.Request) (PlayerSession, error) {
+func GetSessionFromCookie(r *http.Request) (Session, error) {
 	var cookie *http.Cookie
 	for _, c := range r.Cookies() {
 		if c.Name == "earthwalker-session" {
@@ -28,12 +28,12 @@ func GetSessionFromCookie(r *http.Request) (PlayerSession, error) {
 		}
 	}
 	if cookie == nil {
-		return PlayerSession{}, ErrPlayerSessionNotFound
+		return Session{}, ErrPlayerSessionNotFound
 	}
 
 	session, err := LoadPlayerSession(cookie.Value)
 	if err != nil {
-		return PlayerSession{}, err
+		return Session{}, err
 	}
 
 	return session, nil

@@ -18,11 +18,11 @@ type Challenge struct {
 	Guesses          [][]Guess
 	UniqueIdentifier string
 	SummaryPassword  string // The "password" behind the link for the summary.
-	Settings         ChallengeSettings
+	Settings         Settings
 }
 
-// The ChallengeSettings contain user-configurable options about the game.
-type ChallengeSettings struct {
+// The Settings contain user-configurable options about the game.
+type Settings struct {
 	NumRounds      int
 	TimerDuration  *time.Duration // the timer duration per round. Nil if there is no timer set.
 	ConnectedOnly  bool           // include only connected panoramas
@@ -40,7 +40,7 @@ type Guess struct {
 }
 
 // NewChallenge creates a new challenge with the parameters and stores it.
-func NewChallenge(places []s2.LatLng, settings ChallengeSettings) (Challenge, error) {
+func NewChallenge(places []s2.LatLng, settings Settings) (Challenge, error) {
 	randSeq := func(n int) string {
 		var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 		b := make([]rune, n)
@@ -75,7 +75,7 @@ func StoreChallenge(challenge Challenge) error {
 	})
 }
 
-// The ErrChallengeNotFound is the error that is returned by GetChallenge when no challenge
+// ErrChallengeNotFound is the error that is returned by GetChallenge when no challenge
 // of that id is present.
 var ErrChallengeNotFound = errors.New("challenge not found")
 

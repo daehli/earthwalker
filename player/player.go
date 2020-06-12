@@ -12,7 +12,8 @@ import (
 	"time"
 )
 
-type PlayerSession struct {
+// A Session stores the data of a player
+type Session struct {
 	// UniqueIdentifier is the session identifier stored in the key.
 	UniqueIdentifier string
 	// The Nickname the player gives themselves.
@@ -28,13 +29,12 @@ type PlayerSession struct {
 	// TimeStarted is the time that a player started a specific round from the challenge.
 	// If the player hasn't started the round yet, this will be nil.
 	TimeStarted *time.Time
-	// TODO CurrentGuess is the player's current guess as a float64 tuple ([lat, lng]).
-	CurrentGuess []float64
 	// IconColor is the player's icon color (see static/icons).
 	IconColor int
 }
 
-func (p PlayerSession) Round() int {
+// Round returns the round the player is currently in
+func (p Session) Round() int {
 	return 1 + len(p.Points)
 }
 
@@ -48,15 +48,16 @@ func randSeq(n int) string {
 	return string(b)
 }
 
-func NewSession() PlayerSession {
-	return PlayerSession{
+// NewSession creates a new player session
+func NewSession() Session {
+	return Session{
 		UniqueIdentifier: randSeq(10),
 		IconColor:        (rand.Int() % 200) + 1,
 	}
 }
 
 // StorePlayerSession stores a player session in the database.
-func StorePlayerSession(session PlayerSession) error {
+func StorePlayerSession(session Session) error {
 	err := database.GetDB().Update(func(txn *badger.Txn) error {
 		var buffer bytes.Buffer
 		gob.NewEncoder(&buffer).Encode(session)
@@ -70,7 +71,7 @@ func StorePlayerSession(session PlayerSession) error {
 }
 
 // RemovePlayerSession removes a player session in the database.
-func RemovePlayerSession(session PlayerSession) error {
+func RemovePlayerSession(session Session) error {
 	err := database.GetDB().Update(func(txn *badger.Txn) error {
 		var buffer bytes.Buffer
 		gob.NewEncoder(&buffer).Encode(session)
@@ -83,11 +84,12 @@ func RemovePlayerSession(session PlayerSession) error {
 	return nil
 }
 
+// ErrPlayerSessionDoesNotExist is the error that is thrown when a player does not exist
 var ErrPlayerSessionDoesNotExist = errors.New("this player does not exist")
 
 // LoadPlayerSession loads a player session from the database.
 // You should probably use GetSessionFromCookie in cookies.go.
-func LoadPlayerSession(id string) (PlayerSession, error) {
+func LoadPlayerSession(id string) (Session, error) {
 	var playerBytes []byte
 
 	err := database.GetDB().Update(func(txn *badger.Txn) error {
@@ -111,12 +113,12 @@ func LoadPlayerSession(id string) (PlayerSession, error) {
 	})
 
 	if err == badger.ErrKeyNotFound {
-		return PlayerSession{}, ErrPlayerSessionDoesNotExist
+		return Session{}, ErrPlayerSessionDoesNotExist
 	} else if err != nil {
-		return PlayerSession{}, err
+		return Session{}, err
 	}
 
-	var foundSession PlayerSession
+	var foundSession Session
 	gob.NewDecoder(bytes.NewBuffer(playerBytes)).Decode(&foundSession)
 
 	return foundSession, nil
