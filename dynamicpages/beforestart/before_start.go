@@ -7,10 +7,10 @@ import (
 	"net/http"
 
 	"github.com/pkg/errors"
-	"gitlab.com/glatteis/earthwalker/util"
+	"gitlab.com/glatteis/earthwalker/config"
 )
 
-var beforeStart = template.Must(template.ParseFiles(util.StaticPath()+"/templates/main_template.html.tmpl", util.StaticPath()+"/templates/before_start/before_start.html.tmpl"))
+var beforeStart = template.Must(template.ParseFiles(config.Env.EarthwalkerStaticPath+"/templates/main_template.html.tmpl", config.Env.EarthwalkerStaticPath+"/templates/before_start/before_start.html.tmpl"))
 
 type beforeStartServeStruct struct {
 	GameID string

@@ -10,11 +10,11 @@ import (
 
 	"github.com/pkg/errors"
 	"gitlab.com/glatteis/earthwalker/challenge"
+	"gitlab.com/glatteis/earthwalker/config"
 	"gitlab.com/glatteis/earthwalker/player"
-	"gitlab.com/glatteis/earthwalker/util"
 )
 
-var summaryPage = template.Must(template.ParseFiles(util.StaticPath()+"/templates/main_template.html.tmpl", util.StaticPath()+"/templates/summary/summary.html.tmpl"))
+var summaryPage = template.Must(template.ParseFiles(config.Env.EarthwalkerStaticPath+"/templates/main_template.html.tmpl", config.Env.EarthwalkerStaticPath+"/templates/summary/summary.html.tmpl"))
 
 type guessedPositionsType struct {
 	GuessedPosition []float64

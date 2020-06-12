@@ -1,0 +1,2 @@
+TileServerURL = "https://tiles.wmflabs.org/osm/{z}/{x}/{y}.png"
+NoLabelTileServerURL = "https://tiles.wmflabs.org/osm-no-labels/{z}/{x}/{y}.png"

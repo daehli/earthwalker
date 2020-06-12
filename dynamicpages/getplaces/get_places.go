@@ -6,10 +6,10 @@ import (
 	"log"
 	"net/http"
 
-	"gitlab.com/glatteis/earthwalker/util"
+	"gitlab.com/glatteis/earthwalker/config"
 )
 
-var getPlaces = template.Must(template.ParseFiles(util.StaticPath()+"/templates/main_template.html.tmpl", util.StaticPath()+"/templates/get_places/get_places.html.tmpl"))
+var getPlaces = template.Must(template.ParseFiles(config.Env.EarthwalkerStaticPath+"/templates/main_template.html.tmpl", config.Env.EarthwalkerStaticPath+"/templates/get_places/get_places.html.tmpl"))
 
 // ServeGetPlaces serves the get_places template.
 func ServeGetPlaces(w http.ResponseWriter, r *http.Request) {

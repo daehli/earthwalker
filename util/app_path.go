@@ -15,14 +15,3 @@ func AppPath() string {
 	}
 	return path.Dir(appPath)
 }
-
-// StaticPath returns the path to parent directory of 'static' and 'templates'
-// By default (no env variables) this is equivalent to AppPath()
-// (moving these files is left to the user)
-func StaticPath() string {
-	staticPath := os.Getenv("EARTHWALKER_STATIC_PATH")
-	if staticPath == "" {
-		return AppPath()
-	}
-	return staticPath
-}

@@ -7,11 +7,11 @@ import (
 	"net/http"
 
 	"github.com/pkg/errors"
+	"gitlab.com/glatteis/earthwalker/config"
 	"gitlab.com/glatteis/earthwalker/player"
-	"gitlab.com/glatteis/earthwalker/util"
 )
 
-var setNickname = template.Must(template.ParseFiles(util.StaticPath()+"/templates/main_template.html.tmpl", util.StaticPath()+"/templates/set_nickname/set_nickname.html.tmpl"))
+var setNickname = template.Must(template.ParseFiles(config.Env.EarthwalkerStaticPath+"/templates/main_template.html.tmpl", config.Env.EarthwalkerStaticPath+"/templates/set_nickname/set_nickname.html.tmpl"))
 
 type nicknameServeStruct struct {
 	GameID string

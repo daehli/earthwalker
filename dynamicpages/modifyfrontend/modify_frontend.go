@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"gitlab.com/glatteis/earthwalker/challenge"
+	"gitlab.com/glatteis/earthwalker/config"
 	"gitlab.com/glatteis/earthwalker/player"
-	"gitlab.com/glatteis/earthwalker/util"
 )
 
 type modifyServeStruct struct {
@@ -21,7 +21,7 @@ type modifyServeStruct struct {
 	GameID         string
 }
 
-var modifyScript = template.Must(template.ParseFiles(util.StaticPath() + "/templates/modify_frontend/modify.js.tmpl"))
+var modifyScript = template.Must(template.ParseFiles(config.Env.EarthwalkerStaticPath + "/templates/modify_frontend/modify.js.tmpl"))
 
 // ServeModifyFrontend serves the modify_frontend.js template.
 func ServeModifyFrontend(w http.ResponseWriter, r *http.Request) {

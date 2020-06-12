@@ -8,11 +8,11 @@ import (
 	"strconv"
 
 	"gitlab.com/glatteis/earthwalker/challenge"
+	"gitlab.com/glatteis/earthwalker/config"
 	"gitlab.com/glatteis/earthwalker/player"
-	"gitlab.com/glatteis/earthwalker/util"
 )
 
-var scorePage = template.Must(template.ParseFiles(util.StaticPath()+"/templates/main_template.html.tmpl", util.StaticPath()+"/templates/score/score.html.tmpl"))
+var scorePage = template.Must(template.ParseFiles(config.Env.EarthwalkerStaticPath+"/templates/main_template.html.tmpl", config.Env.EarthwalkerStaticPath+"/templates/score/score.html.tmpl"))
 
 type guessedPositionsType struct {
 	GuessedPosition []float64

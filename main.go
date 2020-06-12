@@ -28,6 +28,7 @@ import (
 	"time"
 
 	"gitlab.com/glatteis/earthwalker/challenge"
+	"gitlab.com/glatteis/earthwalker/config"
 	"gitlab.com/glatteis/earthwalker/database"
 	"gitlab.com/glatteis/earthwalker/dynamicpages/beforestart"
 	"gitlab.com/glatteis/earthwalker/dynamicpages/continuegame"
@@ -39,7 +40,6 @@ import (
 	"gitlab.com/glatteis/earthwalker/placefinder"
 	"gitlab.com/glatteis/earthwalker/player"
 	"gitlab.com/glatteis/earthwalker/streetviewserver"
-	"gitlab.com/glatteis/earthwalker/util"
 )
 
 var placesAndFunctions = map[string]func(w http.ResponseWriter, r *http.Request){
@@ -74,7 +74,7 @@ func main() {
 	rand.Seed(time.Now().UnixNano())
 
 	// get port from config
-	port := os.Getenv("EARTHWALKER_PORT")
+	port := config.Env.EarthwalkerPort
 	if port == "" {
 		portFlag := flag.Int("port", 8080, "the port the server is running on")
 		flag.Parse()
@@ -98,7 +98,7 @@ func main() {
 		redirectURL := "/game?c=" + session.GameID
 		http.Redirect(w, r, redirectURL, http.StatusFound)
 	})
-	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir(util.StaticPath()+"/static"))))
+	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir(config.Env.EarthwalkerStaticPath+"/static"))))
 	for path, function := range placesAndFunctions {
 		http.HandleFunc(path, function)
 	}
