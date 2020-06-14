@@ -191,7 +191,13 @@ function fetchPanos(mapInfo) {
 async function fetchPano(mapInfo) {
 	let randomLatLng = getRandomLatLngInPolygon(mapInfo["locPolygon"]);
 
+	let oldPanoReqs = Object.assign(pageMapInfo["panoReqs"]);
+
 	let handleFail = function() {
+		// if pano reqs have changed, stop searching
+		if (pageMapInfo["panoReqs"] !== oldPanoReqs) {
+			return;
+		}
 		// user may have decreased numRounds, if so don't make another request
 		if (mapInfo["panoCoords"].length < mapInfo["numRounds"]) {
 			setTimeout(function() {
