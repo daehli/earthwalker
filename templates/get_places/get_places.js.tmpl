@@ -57,6 +57,7 @@ async function getLocationPopulation(lat, lng) {
 	return actualValue / 255;
 }
 
+// TODO: decouple form text from option/state (use enum?)
 let pageMapInfo = {
 	"numRounds": 5,
 	"locStrings": [],
@@ -65,7 +66,8 @@ let pageMapInfo = {
 		"panoConnectedness": "always",
 		"populationMin": 0.15,
 		"populationMax": 1,
-		"onlyGoogle": "always",
+		"outdoors": "outdoors only",
+		"copyright": "any",
 	},
 	"panoCoords": []
 }
@@ -201,7 +203,7 @@ async function fetchPano(mapInfo) {
 	};
 
 	function handlePanoResponse(result, status) {
-		if (status == google.maps.StreetViewStatus.OK && resultPanoIsGood(result, mapInfo["panoReqs"], mapInfo["locPolygon"])) {
+		if (status == google.maps.StreetViewStatus.OK && resultPanoIsGood(result, mapInfo)) {
 			if (debug) {
 				L.marker([result.location.latLng.lat(), result.location.latLng.lng()]).addTo(markerGroup); // DEBUGGING: show selected places on map
 			}
@@ -214,43 +216,55 @@ async function fetchPano(mapInfo) {
 			updateFetchingBar(mapInfo["panoCoords"], mapInfo["numRounds"]);
 			updateSecretForm(mapInfo["panoCoords"], mapInfo["numRounds"]);
 		} else {
-			console.log("Failed to get location; api request: " + status.toString());
+			console.log("Failed to get location; api request: " + status.toString() + "\n");
 			handleFail();
 		}
 	}
 
+	let source = mapInfo["outdoors"] === "outdoors only" ? google.maps.StreetViewSource.OUTDOOR : google.maps.StreetViewSource.DEFAULT;
 	let population = await getLocationPopulation(randomLatLng.lat(), randomLatLng.lng());
 	let min = mapInfo["panoReqs"]["populationMin"];
 	let max = mapInfo["panoReqs"]["populationMax"];
 	if (population >= min && population <= max) {
-		streetViewService.getPanoramaByLocation(randomLatLng, PANO_SEARCH_RADIUS, handlePanoResponse);
+		streetViewService.getPanorama({
+			location: randomLatLng,
+			preference: google.maps.StreetViewPreference.NEAREST,
+			radius: PANO_SEARCH_RADIUS,
+			source: source,
+		}, handlePanoResponse);
 	} else {
-		console.log("Failed, population not right: " + population);
 		handleFail();
 	}
 }
 
 // returns whether result (pano) meets the requirements of mapInfo
-function resultPanoIsGood(result, panoReqs, polygon) {
+function resultPanoIsGood(result, mapInfo) {
 	if (result.location.latLng.lat() > LAT_LIMIT || result.location.latLng.lat() < -1 * LAT_LIMIT) {return false;}
 
-	console.log(result.links);
-	if (panoReqs["onlyGoogle"] === "always" && !result.copyright.includes("Google")) {
+	if (mapInfo["panoReqs"]["copyright"] === "Google only" && !result.copyright.includes("Google")) {
 		return false;
 	}
-	if (panoReqs["onlyGoogle"] === "never" && result.copyright.includes("Google")) {
+	if (mapInfo["panoReqs"]["onlyGoogle"] === "third party only" && result.copyright.includes("Google")) {
 		return false;
 	}
-	if (panoReqs["panoConnectedness"] === "always" && result.links.length == 0) {
+
+	if (mapInfo["panoReqs"]["panoConnectedness"] === "always" && result.links.length == 0) {
 		return false;
 	}
-	if (panoReqs["panoConnectedness"] === "never" && result.links.length > 0) {
+	if (mapInfo["panoReqs"]["panoConnectedness"] === "never" && result.links.length > 0) {
 		return false;
 	}
 
 	let locationTurfPoint = turf.point([result.location.latLng.lng(), result.location.latLng.lat()]);
-	if (polygon != null && !turf.booleanPointInPolygon(locationTurfPoint, polygon)) {
+	if (mapInfo["locPolygon"] != null && !turf.booleanPointInPolygon(locationTurfPoint, mapInfo["locPolygon"])) {
 		return false;
+	}
+
+	for (let i = 0; i < mapInfo["panoCoords"].length; i++) {
+		if (mapInfo["panoCoords"][i].equals(result.location.latLng)) {
+			console.log("duplicate!");
+			return false;
+		}
 	}
 
 	return true;
@@ -275,7 +289,6 @@ function updateSecretForm(panoCoords, numRounds) {
 	if (panoCoords.length >= numRounds) {
 		if (panoCoords.length > numRounds) {
 			console.warn("Too many panoCoords?! mapInfo:");
-			console.log(pageMapInfo); // DEBUGGING: should probably remove use of this global
 		}
 		let input = document.getElementById("hidden-input");
 		let button = document.getElementById("submit-button");
@@ -313,6 +326,7 @@ function getRandomLatLngInPolygon(polygon) {
 
 // ===== Form Change Handlers =====
 
+
 function numberOfRoundsUpdated() {
 	let newNumRounds = document.getElementById("rounds").value;
 	if (!newNumRounds) {
@@ -338,13 +352,26 @@ function connectedOnlyUpdated() {
 	}
 }
 
-function onlyGoogleUpdated() {
-	let newOnlyGoogle = document.getElementById("onlyGoogle").value;
-	if (pageMapInfo["panoReqs"]["onlyGoogle"] !== newOnlyGoogle) {
+function outdoorsUpdated() {
+	let newOutdoors = document.getElementById("outdoors").value;
+	if (pageMapInfo["panoReqs"]["outdoors"] !== newOutdoors) {
 		disableSubmitButton();
-		pageMapInfo["panoReqs"]["onlyGoogle"] = newOnlyGoogle;
+		pageMapInfo["panoReqs"]["outdoors"] = newOutdoors;
 		pageMapInfo["panoCoords"] = []; // TODO: considering storing pano connectedness and only removing as necessary
 		markerGroup.clearLayers();
+		updateFetchingBar(pageMapInfo["panoCoords"], pageMapInfo["numRounds"]);
+		fetchPanos(pageMapInfo);
+	}
+}
+
+function onlyGoogleUpdated() {
+	let newOnlyGoogle = document.getElementById("onlyGoogle").value;
+	if (pageMapInfo["panoReqs"]["copyright"] !== newOnlyGoogle) {
+		disableSubmitButton();
+		pageMapInfo["panoReqs"]["copyright"] = newOnlyGoogle;
+		pageMapInfo["panoCoords"] = []; // TODO: considering storing pano connectedness and only removing as necessary
+		markerGroup.clearLayers();
+		updateFetchingBar(pageMapInfo["panoCoords"], pageMapInfo["numRounds"]);
 		fetchPanos(pageMapInfo);
 	}
 }
@@ -361,6 +388,8 @@ function locStringUpdated() {
 		polygonGroup.clearLayers();
 		markerGroup.clearLayers();
 		pageMapInfo["locPolygon"] = fetchPolygonFromLocString(pageMapInfo);
+		updateFetchingBar(pageMapInfo["panoCoords"], pageMapInfo["numRounds"]);
+		fetchPanos(pageMapInfo);
 	}
 }
 
@@ -377,6 +406,7 @@ function popDensityUpdated() {
 		pageMapInfo["panoCoords"] = [];
 		polygonGroup.clearLayers();
 		markerGroup.clearLayers();
+		updateFetchingBar(pageMapInfo["panoCoords"], pageMapInfo["numRounds"]);
 		fetchPanos(pageMapInfo);
 	}
 }

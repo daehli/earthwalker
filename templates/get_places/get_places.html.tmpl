@@ -110,17 +110,34 @@
 			<div class="form-group">
 				<div class="input-group">
 					<div class="input-group-prepend">
-					      <div class="input-group-text">Google panos</div>
+					      <div class="input-group-text">Copyright</div>
 					</div>
 					<select class="form-control" id="onlyGoogle" name="onlyGoogle" onchange="onlyGoogleUpdated()">
-						<option selected="selected">always</option>
-						<option>never</option>
+						<option selected="selected">any</option>
+						<option>Google only</option>
+						<option>third party only</option>
+					</select>
+				</div>
+			</div>
+			<small class="form-text text-muted">
+				If you want to see only Google panos or also include third party panos.
+			</small>
+
+			<hr/>
+
+			<div class="form-group">
+				<div class="input-group">
+					<div class="input-group-prepend">
+					      <div class="input-group-text">Source</div>
+					</div>
+					<select class="form-control" id="outdoors" name="outdoors" onchange="outdoorsUpdated()">
+						<option selected="selected">outdoors only</option>
 						<option>any</option>
 					</select>
 				</div>
 			</div>
 			<small class="form-text text-muted">
-				If you only want to see Google panos or if you also want to see user-created ones.
+				If you want to exclude panoramas inside businesses.
 			</small>
 
 			<hr/>

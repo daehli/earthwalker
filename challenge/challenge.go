@@ -5,11 +5,12 @@ import (
 	"bytes"
 	"encoding/gob"
 	"errors"
+	"math/rand"
+	"time"
+
 	"github.com/dgraph-io/badger"
 	"github.com/golang/geo/s2"
 	"gitlab.com/glatteis/earthwalker/database"
-	"math/rand"
-	"time"
 )
 
 // A Challenge represents a number of places along with all kinds of associated data.
