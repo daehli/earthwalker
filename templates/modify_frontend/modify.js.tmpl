@@ -200,23 +200,22 @@ function createMinimap() {
 	compass.parentNode.removeChild(compass);
 	compassContianer.appendChild(compass);
 	
-	appendScoreContainer();
+	// score, round number, and timer
+	let roundInfoContainer = document.createElement("div");
+	roundInfoContainer.id = "round-info-container";
+	document.body.appendChild(roundInfoContainer);
 
-	// The timer & stuff!
-	let timerContainer = document.createElement("div");
-	timerContainer.id = "timer-container";
-	document.body.appendChild(timerContainer);
-
-	let timerSpan = document.createElement("span");
-	timerSpan.className = "timer-span align-middle";
-	timerContainer.appendChild(timerSpan);
+	let roundInfoSpan = document.createElement("span");
+	roundInfoSpan.className = "round-info-span align-middle";
+	roundInfoContainer.appendChild(roundInfoSpan);
 	if (timerEnabled) {
 		let remainingTime = timerDurationSeconds;
 		setTimer = function() {
 			minutes = Math.floor(remainingTime / 60);
 			seconds = Math.floor(remainingTime % 60).toString();
 			while (seconds.length < 2) seconds = "0" + seconds;
-			timerSpan.innerHTML = roundNumber + "/" + numberOfRounds + "  " + minutes + ":" + seconds;
+			let remainingTimeInfo = "Time: " + minutes + ":" + seconds;
+			roundInfoSpan.innerHTML = getScoreInfo() + "<br/>" + getRoundInfo() + "<br/>" + remainingTimeInfo + "<br/>";
 		}
 		let interval = setInterval(function() {
 			remainingTime -= 1;
@@ -231,14 +230,14 @@ function createMinimap() {
 			setTimer();
 		}, 1000);
 	} else {
-		timerSpan.innerHTML = roundNumber + "/" + numberOfRounds;
+		roundInfoSpan.innerHTML = getScoreInfo() + "<br/>" + getRoundInfo() + "<br/>";
 	}
 
 	// The "Back home" button
 	let backHomeButton = document.createElement("button");
 	backHomeButton.className = "btn btn-light mx-sm-2 align-middle";
 	backHomeButton.innerHTML = "go to start";
-	timerContainer.appendChild(backHomeButton);
+	roundInfoContainer.appendChild(backHomeButton);
 	backHomeButton.addEventListener("click", function() {
 		if (marker != null) {
 			// Put marker into session storage
@@ -255,15 +254,12 @@ function createMinimap() {
 	});
 }
 
-function appendScoreContainer() {
-	let container = document.createElement("div");
-	container.id = "score-container";
-	document.body.appendChild(container);
-	
-	let scoreSpan = document.createElement("span");
-	scoreSpan.className = "score-span align-middle";
-	container.appendChild(scoreSpan);
-	scoreSpan.innerHTML = "&sum;&thinsp;" + currentScore;
+function getRoundInfo() {
+	return "Round: " + roundNumber + "/" + numberOfRounds;
+}
+
+function getScoreInfo() {
+	return "Total points: " + currentScore;
 }
 
 let sizes = [

@@ -54,20 +54,11 @@
 	height: calc(100% - 30px);
 }
 
-#timer-container {
-	width: 200px;
+#round-info-container {
+	width: 400px;
 	height: 100px;
 	position: absolute;
 	right: 30px;
-	top: 30px;
-	text-align: right;
-}
-
-#score-container {
-	width: 200px;
-	height: 100px;
-	position: absolute;
-	right: 200px;
 	top: 30px;
 	text-align: right;
 }
@@ -85,14 +76,7 @@
 	height: 30px;
 }
 
-.timer-span {
-	color: white;
-	font-size: 30px;
-	text-shadow: 2px 2px black;
-	font-weight: bold;
-}
-
-.score-span {
+.round-info-span {
 	color: white;
 	font-size: 30px;
 	text-shadow: 2px 2px black;
