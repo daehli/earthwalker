@@ -6,6 +6,7 @@ let timerEnabled = {{ .TimerEnabled }};
 let timerDurationSeconds = {{ .TimerDuration }};
 let roundNumber = {{ .RoundNumber }};
 let numberOfRounds = {{ .NumberOfRounds }};
+let currentScore = {{ .CurrentScore }};
 let gameID = "{{ .GameID }}";
 
 function injectStylesheet() {
@@ -198,6 +199,8 @@ function createMinimap() {
 	let compass = document.getElementById("compass");
 	compass.parentNode.removeChild(compass);
 	compassContianer.appendChild(compass);
+	
+	appendScoreContainer();
 
 	// The timer & stuff!
 	let timerContainer = document.createElement("div");
@@ -250,6 +253,17 @@ function createMinimap() {
 		// https://www.phpied.com/files/location-location/location-location.html
 		location = location;
 	});
+}
+
+function appendScoreContainer() {
+	let container = document.createElement("div");
+	container.id = "score-container";
+	document.body.appendChild(container);
+	
+	let scoreSpan = document.createElement("span");
+	scoreSpan.className = "score-span align-middle";
+	container.appendChild(scoreSpan);
+	scoreSpan.innerHTML = "&sum;&thinsp;" + currentScore;
 }
 
 let sizes = [

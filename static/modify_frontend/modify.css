@@ -63,6 +63,15 @@
 	text-align: right;
 }
 
+#score-container {
+	width: 200px;
+	height: 100px;
+	position: absolute;
+	right: 200px;
+	top: 30px;
+	text-align: right;
+}
+
 #compass-container {
 	width: 200px;
 	height: 100px;
@@ -77,6 +86,13 @@
 }
 
 .timer-span {
+	color: white;
+	font-size: 30px;
+	text-shadow: 2px 2px black;
+	font-weight: bold;
+}
+
+.score-span {
 	color: white;
 	font-size: 30px;
 	text-shadow: 2px 2px black;
