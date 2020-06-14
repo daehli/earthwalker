@@ -52,10 +52,12 @@ const (
 // is generated.  Formerly challenge/Settings
 type Map struct {
 	MapID         string
+	Name          string
 	Polygon       string  // geoJSON string bounding the game area(s)
 	Area          float32 // area in Polygon
 	NumRounds     int
 	TimeLimit     *time.Duration // time limit per round
+	GraceDistance int            // radius in meters within which max points are awarded
 	MinDensity    int            // minimum population density
 	MaxDensity    int            // maximum population density
 	Connectedness PanoConnectedness
@@ -67,18 +69,23 @@ type Map struct {
 // MapStore is implemented by structs which provide access to a database
 // containing Maps.
 type MapStore interface {
+	Insert(Map) error
+	Get(MapID string) (Map, error)
 }
 
 // Challenge is a list of coordinates of panos.
 type Challenge struct {
 	ChallengeID string
 	MapID       string
-	Places      []ChallengePlace `db:"-"`
+	Map         Map              `db:"-"` // non-stored field, for convenience
+	Places      []ChallengePlace `db:"-"` // non-stored field, for convenience
 }
 
 // ChallengeStore is implemented by structs which provide access to a database
 // containing Challenges.
 type ChallengeStore interface {
+	Insert(Challenge) error
+	Get(ChallengeID string) (Challenge, error)
 }
 
 // ChallengePlace is the location of a pano.
@@ -90,7 +97,9 @@ type ChallengePlace struct {
 
 // ChallengePlaceStore is implemented by structs which provide access to a
 // database containing ChallengePlaces.
-type ChallengePlaceStore struct {
+type ChallengePlaceStore interface {
+	Insert(ChallengePlace) error
+	GetAll(ChallengeID string) ([]ChallengePlace, error)
 }
 
 // ChallengeResult is a player's Guesses in a challenge.
@@ -106,12 +115,15 @@ type ChallengeResult struct {
 	Icon      int
 	StartTime *time.Time
 
-	Guesses []Guess `db:"-"`
+	Guesses []Guess `db:"-"` // non-stored field, for convenience
 }
 
 // ChallengeResultStore is implemented by structs which provide access to a
 // database containing ChallengeResults.
 type ChallengeResultStore interface {
+	Insert(ChallengeResult) error
+	Get(ChallengeResultID string) (ChallengeResult, error)
+	GetAll(ChallengeID string) ([]ChallengeResult, error)
 }
 
 // Guess is a guessed location for one pano in a Challenge.
@@ -123,4 +135,6 @@ type Guess struct {
 // GuessStore is implemented by structs which provide access to a database
 // containing Guesses.
 type GuessStore interface {
+	Insert(Guess) error
+	GetAll(ChallengeResultID string) ([]Guess, error)
 }
