@@ -36,6 +36,10 @@ Just running it and going to `localhost:8080` in your browser should work for yo
 If you are running a server, you probably configure a custom port to work with your nginx or apache config.
 How to do this is described in the help: `./earthwalker(.exe) -h`.
 
+#### Updating
+
+You can update earthwalker by running `git pull` in its directory and then running `go build` again.
+
 #### Docker
 
 To use the docker container you have to run the following commands (given you already have docker installed and configured).
