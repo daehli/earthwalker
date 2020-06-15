@@ -17,6 +17,7 @@ type modifyServeStruct struct {
 	TimerDuration  int
 	LabeledMinimap bool
 	RoundNumber    int
+	CurrentScore   int
 	NumberOfRounds int
 	GameID         string
 	Config         config.FileType
@@ -39,6 +40,7 @@ func ServeModifyFrontend(w http.ResponseWriter, r *http.Request) {
 	toServe := modifyServeStruct{
 		LabeledMinimap: game.Settings.LabeledMinimap,
 		RoundNumber:    session.Round(),
+		CurrentScore:   computeCurrentScore(session),
 		NumberOfRounds: game.Settings.NumRounds,
 		GameID:         game.UniqueIdentifier,
 		Config:         config.File,
@@ -65,4 +67,14 @@ func ServeModifyFrontend(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "there was some kind of internal error, sorry!", http.StatusUnprocessableEntity)
 		return
 	}
+}
+
+func computeCurrentScore(session player.Session) int {
+	var currentScore int
+
+	for i := range session.Points {
+		currentScore += session.Points[i]
+	}
+
+	return currentScore
 }
