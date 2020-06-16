@@ -12,29 +12,38 @@ import (
 
 	"github.com/golang/geo/s2"
 	"gitlab.com/glatteis/earthwalker/challenge"
+	"gitlab.com/glatteis/earthwalker/domain"
 	"gitlab.com/glatteis/earthwalker/player"
 )
 
-// RespondToPoints responds to found places.
-func RespondToPoints(w http.ResponseWriter, r *http.Request) {
+// NewMapHandler responds to the get_places form by creating
+// and storing a new Map, Challenge, and ChallengeResult, then
+// redirecting the client to the beforestart page for that Challenge
+// TODO: this was created to replace RespondToPoints -
+//       Map and Challenge creation should be decoupled in future
+func NewMapHandler(w http.ResponseWriter, r *http.Request) {
 	type jsonPoint struct {
 		Lat float64 `json:"lat"`
 		Lng float64 `json:"lng"`
+	}
+	challenge := domain.Challenge{
+		Places: []domain.ChallengePlace
 	}
 
 	r.ParseForm()
 	result := r.FormValue("result")
 
-	var content []jsonPoint
-
-	if err := json.Unmarshal([]byte(result), &content); err != nil {
+	var locations []jsonPoint
+	if err := json.Unmarshal([]byte(result), &locations); err != nil {
+		// TODO: this should probably be 500 ISE or something
 		http.Error(w, err.Error(), http.StatusForbidden)
 		return
 	}
-
-	locations := make([]s2.LatLng, len(content))
-	for i := range content {
-		locations[i] = s2.LatLngFromDegrees(content[i].Lat, content[i].Lng)
+	// convert from degrees to radians (ffs) and populate challenge.Places
+	for i := range locations {
+		challenge.Places = append(challenge.Places, domain.ChallengePlace{
+			Location: s2.LatLngFromDegrees(locations[i].Lat, locations[i].Lng)
+		})
 	}
 
 	nickname := r.FormValue("nickname")

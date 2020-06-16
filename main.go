@@ -27,9 +27,9 @@ import (
 	"syscall"
 	"time"
 
+	"gitlab.com/glatteis/earthwalker/badgerdb"
 	"gitlab.com/glatteis/earthwalker/challenge"
 	"gitlab.com/glatteis/earthwalker/config"
-	"gitlab.com/glatteis/earthwalker/database"
 	"gitlab.com/glatteis/earthwalker/dynamicpages/beforestart"
 	"gitlab.com/glatteis/earthwalker/dynamicpages/continuegame"
 	"gitlab.com/glatteis/earthwalker/dynamicpages/getplaces"
@@ -56,19 +56,24 @@ var placesAndFunctions = map[string]func(w http.ResponseWriter, r *http.Request)
 	"/guess":              challenge.HandleGuess,
 }
 
-func cleanup() {
-	database.CloseDB()
+func cleanup(db) {
+	badgerdb.Close(db)
 }
 
 func main() {
+	db, err := badgerdb.Init(config.Env.EarthwalkerDBPath)
+	if err != nil {
+		log.Fatalf("Failed to open db at %s: %v\n", config.Env.EarthwalkerDBPath, err)
+	}
+
 	// Either defer cleanup for when the program exits...
-	defer cleanup()
+	defer cleanup(db)
 	// Or listen for SIGTERM and also clean up.
 	c := make(chan os.Signal)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-c
-		cleanup()
+		cleanup(db)
 		os.Exit(0)
 	}()
 

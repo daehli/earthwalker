@@ -47,6 +47,7 @@ const (
 )
 
 // == Domain Types and Stores ========
+// TODO: consider reducing stutter (Map.MapID, Challenge.ChallengeID, etc.)
 
 // Map is a collection of user provided settings from which a Challenge
 // is generated.  Formerly challenge/Settings
@@ -70,22 +71,23 @@ type Map struct {
 // containing Maps.
 type MapStore interface {
 	Insert(Map) error
-	Get(MapID string) (Map, error)
+	Get(mapID string) (Map, error)
 }
 
 // Challenge is a list of coordinates of panos.
 type Challenge struct {
-	ChallengeID string
-	MapID       string
-	Map         Map              `db:"-"` // non-stored field, for convenience
-	Places      []ChallengePlace `db:"-"` // non-stored field, for convenience
+	ChallengeID      string
+	MapID            string
+	Map              Map               `db:"-"` // non-stored convenience field, consider removing
+	Places           []ChallengePlace  `db:"-"` // non-stored convenience field, consider removing
+	ChallengeResults []ChallengeResult `db:"-"` // non-stored convenience field, consider removing
 }
 
 // ChallengeStore is implemented by structs which provide access to a database
 // containing Challenges.
 type ChallengeStore interface {
 	Insert(Challenge) error
-	Get(ChallengeID string) (Challenge, error)
+	Get(challengeID string) (Challenge, error)
 }
 
 // ChallengePlace is the location of a pano.
@@ -99,7 +101,7 @@ type ChallengePlace struct {
 // database containing ChallengePlaces.
 type ChallengePlaceStore interface {
 	Insert(ChallengePlace) error
-	GetAll(ChallengeID string) ([]ChallengePlace, error)
+	GetAll(challengeID string) ([]ChallengePlace, error)
 }
 
 // ChallengeResult is a player's Guesses in a challenge.
@@ -122,13 +124,14 @@ type ChallengeResult struct {
 // database containing ChallengeResults.
 type ChallengeResultStore interface {
 	Insert(ChallengeResult) error
-	Get(ChallengeResultID string) (ChallengeResult, error)
-	GetAll(ChallengeID string) ([]ChallengeResult, error)
+	Get(challengeResultID string) (ChallengeResult, error)
+	GetAll(challengeID string) ([]ChallengeResult, error)
 }
 
 // Guess is a guessed location for one pano in a Challenge.
 type Guess struct {
 	ChallengeResultID string
+	RoundNum          int
 	Location          s2.LatLng
 }
 
@@ -136,5 +139,5 @@ type Guess struct {
 // containing Guesses.
 type GuessStore interface {
 	Insert(Guess) error
-	GetAll(ChallengeResultID string) ([]Guess, error)
+	GetAll(challengeResultID string) ([]Guess, error)
 }

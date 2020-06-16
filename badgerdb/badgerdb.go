@@ -35,6 +35,18 @@ func getBytesFunc(key string, bytes []byte) func(*badger.Txn) error {
 	}
 }
 
+func Init(path string) (*badger.DB, error) {
+	db, err := badger.Open(badger.DefaultOptions(path))
+	if err != nil {
+		return nil, err
+	}
+	return db, nil
+}
+
+func Close(db *badger.DB) {
+	db.Close()
+}
+
 type MapStore struct {
 	DB *badger.DB
 }
@@ -47,6 +59,7 @@ func (store MapStore) Insert(m domain.Map) error {
 	return nil
 }
 
+// TODO: reduce code repetition in Get methods
 func (store MapStore) Get(mapID string) (domain.Map, error) {
 	var mapBytes []byte
 	err := store.DB.View(getBytesFunc("map-"+mapID, mapBytes))
@@ -60,4 +73,31 @@ func (store MapStore) Get(mapID string) (domain.Map, error) {
 		return domain.Map{}, fmt.Errorf("Failed to decode map from bytes: %v\n", err)
 	}
 	return foundMap, nil
+}
+
+type ChallengeStore struct {
+	DB *badger.DB
+}
+
+func (store ChallengeStore) Insert(c domain.Challenge) error {
+	err := store.DB.Update(setBytesFunc("challenge-"+c.ChallengeID, c))
+	if err != nil {
+		return fmt.Errorf("Failed to write challenge to badger DB: %v\n", err)
+	}
+	return nil
+}
+
+func (store ChallengeStore) Get(challengeID string) (domain.Challenge, error) {
+	var challengeBytes []byte
+	err := store.DB.View(getBytesFunc("challenge-"+challengeID, challengeBytes))
+	if err != nil {
+		return domain.Challenge{}, fmt.Errorf("Failed to read challenge from badger DB: %v\n", err)
+	}
+
+	var foundChallenge domain.Challenge
+	err = gob.NewDecoder(bytes.NewBuffer(challengeBytes)).Decode(&foundChallenge)
+	if err != nil {
+		return domain.Challenge{}, fmt.Errorf("Failed to decode challenge from bytes: %v\n", err)
+	}
+	return foundChallenge, nil
 }

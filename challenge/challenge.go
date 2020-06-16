@@ -11,10 +11,11 @@ import (
 	"github.com/dgraph-io/badger"
 	"github.com/golang/geo/s2"
 	"gitlab.com/glatteis/earthwalker/database"
+	"gitlab.com/glatteis/earthwalker/domain"
 )
 
 // A Challenge represents a number of places along with all kinds of associated data.
-type Challenge struct {
+type Old_Challenge struct {
 	Places           []s2.LatLng
 	Guesses          [][]Guess
 	UniqueIdentifier string
@@ -23,7 +24,7 @@ type Challenge struct {
 }
 
 // The Settings contain user-configurable options about the game.
-type Settings struct {
+type Old_Settings struct {
 	NumRounds      int
 	TimerDuration  *time.Duration // the timer duration per round. Nil if there is no timer set.
 	ConnectedOnly  bool           // include only connected panoramas
@@ -33,7 +34,7 @@ type Settings struct {
 // A Guess contains a guess on a round from someone.
 // This already contains the user's nickname so that the user
 // doesn't have to be looked up from the database every time.
-type Guess struct {
+type Old_Guess struct {
 	GuessLocation  s2.LatLng
 	PlayerID       string
 	PlayerNickname string
@@ -41,7 +42,8 @@ type Guess struct {
 }
 
 // NewChallenge creates a new challenge with the parameters and stores it.
-func NewChallenge(places []s2.LatLng, settings Settings) (Challenge, error) {
+func NewChallenge(places []s2.LatLng, settings Settings) (domain.Challenge, error) {
+	// TODO: this function is broadly applicable, move it elsewhere
 	randSeq := func(n int) string {
 		var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 		b := make([]rune, n)
