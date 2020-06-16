@@ -78,9 +78,8 @@ type MapStore interface {
 type Challenge struct {
 	ChallengeID      string
 	MapID            string
-	Map              Map               `db:"-"` // non-stored convenience field, consider removing
-	Places           []ChallengePlace  `db:"-"` // non-stored convenience field, consider removing
-	ChallengeResults []ChallengeResult `db:"-"` // non-stored convenience field, consider removing
+	Places           []ChallengePlace  `db:"-"`
+	ChallengeResults []ChallengeResult `db:"-"`
 }
 
 // ChallengeStore is implemented by structs which provide access to a database
@@ -94,6 +93,7 @@ type ChallengeStore interface {
 // (May contain FOV, heading, etc. in the future.)
 type ChallengePlace struct {
 	ChallengeID string
+	RoundNum    int
 	Location    s2.LatLng
 }
 

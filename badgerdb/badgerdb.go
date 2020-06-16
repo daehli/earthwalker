@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
+	"strconv"
 
 	"github.com/dgraph-io/badger"
 	"gitlab.com/glatteis/earthwalker/domain"
@@ -100,4 +101,16 @@ func (store ChallengeStore) Get(challengeID string) (domain.Challenge, error) {
 		return domain.Challenge{}, fmt.Errorf("Failed to decode challenge from bytes: %v\n", err)
 	}
 	return foundChallenge, nil
+}
+
+type ChallengePlaceStore struct {
+	DB *badger.DB
+}
+
+func (store ChallengePlaceStore) Insert(p domain.ChallengePlace) error {
+	err := store.DB.Update(setBytesFunc("challengePlace-"+p.ChallengeID+strconv.Itoa(p.RoundNum), p))
+	if err != nil {
+		return fmt.Errorf("Failed to write ChallengePlace to badger DB: %v\n", err)
+	}
+	return nil
 }

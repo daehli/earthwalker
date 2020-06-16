@@ -1,36 +1,48 @@
-// Package player handles player objects and serves stuff based on that.
-package player
+// handles session management
+package handlers
 
 import (
 	"bytes"
 	"encoding/gob"
 	"errors"
-	"github.com/dgraph-io/badger"
-	"gitlab.com/glatteis/earthwalker/database"
 	"math/rand"
 	"net/http"
 	"time"
+
+	"github.com/dgraph-io/badger"
 )
 
-// A Session stores the data of a player
-type Session struct {
-	// UniqueIdentifier is the session identifier stored in the key.
-	UniqueIdentifier string
-	// The Nickname the player gives themselves.
-	Nickname string
-	// GameID is game identifier the player might be currently in.
-	GameID string
-	// Points is the number of points of rounds that the player has already completed.
-	Points []int
-	// Distances are the respective distances as floats.
-	Distances []float64
-	// GuessedPositions are the guessed positions as float64 tuples ([lat, lng])
-	GuessedPositions [][]float64
-	// TimeStarted is the time that a player started a specific round from the challenge.
-	// If the player hasn't started the round yet, this will be nil.
-	TimeStarted *time.Time
-	// IconColor is the player's icon color (see static/icons).
-	IconColor int
+// ErrPlayerSessionNotFound is the error that occurs when no player session is found.
+var ErrPlayerSessionNotFound = errors.New("no player session found")
+
+// SetSessionCookie sets the session cookie of a session into the browser.
+func SetSessionCookie(session Session, w http.ResponseWriter) {
+	c := http.Cookie{
+		Name:   "earthwalker-session",
+		Value:  session.UniqueIdentifier,
+		MaxAge: int((24 * time.Hour).Seconds()),
+	}
+	http.SetCookie(w, &c)
+}
+
+// GetSessionFromCookie retrieves the cookie from a session
+func GetSessionFromCookie(r *http.Request) (Session, error) {
+	var cookie *http.Cookie
+	for _, c := range r.Cookies() {
+		if c.Name == "earthwalker-session" {
+			cookie = c
+		}
+	}
+	if cookie == nil {
+		return Session{}, ErrPlayerSessionNotFound
+	}
+
+	session, err := LoadPlayerSession(cookie.Value)
+	if err != nil {
+		return Session{}, err
+	}
+
+	return session, nil
 }
 
 // Round returns the round the player is currently in
