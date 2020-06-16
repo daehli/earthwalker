@@ -1,5 +1,5 @@
 // handlers in this file serve the actual Earthwalker game
-// similar to former challenge/server.go
+// similar to former challenge/server.go + challenge/guess.go
 package handlers
 
 import (
@@ -10,7 +10,6 @@ import (
 
 	"github.com/golang/geo/s2"
 	"github.com/pkg/errors"
-	"gitlab.com/glatteis/earthwalker/player"
 	"gitlab.com/glatteis/earthwalker/streetviewserver"
 )
 
@@ -22,7 +21,7 @@ func (handler *ChallengeHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 	challengeKey, ok := r.URL.Query()["c"]
 	// This is probably what they call "user error"
 	if !ok || len(challengeKey) == 0 {
-		http.Redirect(w, r, "/", http.StatusFound)
+		http.Redirect(w, r, "/", http.StatusNotFound)
 		return
 	}
 	actualKey := challengeKey[0]

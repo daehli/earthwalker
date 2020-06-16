@@ -1,4 +1,4 @@
-// Package `domain` defines domain types which are used throughout the application.
+// Package domain defines domain types which are used throughout the application.
 // It imports only external packages which compose domain types.
 // TODO: Might be nice to rename this package "earthwalker", but conflicts with
 //       the default executable filename.
@@ -16,9 +16,12 @@ import (
 type PanoConnectedness int
 
 const (
-	ConnectedAny    PanoConnectedness = iota
-	ConnectedAlways                   // include only panos with at least one adjacent pano
-	ConnectedNever                    // include only panos with no adjacent panos
+	// ConnectedAny is no restriction
+	ConnectedAny PanoConnectedness = iota
+	// ConnectedAlways is include only panos with at least one adjacent pano
+	ConnectedAlways
+	// ConnectedNever is include only panos with no adjacent panos
+	ConnectedNever
 )
 
 func (c PanoConnectedness) String() string {
@@ -29,9 +32,12 @@ func (c PanoConnectedness) String() string {
 type PanoCopyright int
 
 const (
-	CopyrightAny        PanoCopyright = iota
-	CopyrightGoogle                   // include only panos with Google in the copyright
-	CopyrightThirdParty               // include only panos without Google in the copyright
+	// CopyrightAny is no restriction
+	CopyrightAny PanoCopyright = iota
+	// CopyrightGoogle is include only panos with Google in the copyright
+	CopyrightGoogle
+	// CopyrightThirdParty is include only panos without Google in the copyright
+	CopyrightThirdParty
 )
 
 func (c PanoCopyright) String() string {
@@ -42,8 +48,10 @@ func (c PanoCopyright) String() string {
 type PanoSource int
 
 const (
-	SourceAny      PanoSource = iota
-	SourceOutdoors            // query the streetview API only for outdoors panos
+	// SourceAny specifies to query the streetview API for all panos
+	SourceAny PanoSource = iota
+	// SourceOutdoors specifies to query the API only for outdoors panos
+	SourceOutdoors
 )
 
 // == Domain Types and Stores ========
@@ -76,10 +84,9 @@ type MapStore interface {
 
 // Challenge is a list of coordinates of panos.
 type Challenge struct {
-	ChallengeID      string
-	MapID            string
-	Places           []ChallengePlace  `db:"-"`
-	ChallengeResults []ChallengeResult `db:"-"`
+	ChallengeID string
+	MapID       string
+	Places      []ChallengePlace `db:"-"`
 }
 
 // ChallengeStore is implemented by structs which provide access to a database
@@ -99,6 +106,8 @@ type ChallengePlace struct {
 
 // ChallengePlaceStore is implemented by structs which provide access to a
 // database containing ChallengePlaces.
+// TODO: consider removing this interface definition and treating place
+//       storage as internal to the implementation
 type ChallengePlaceStore interface {
 	Insert(ChallengePlace) error
 	GetAll(challengeID string) ([]ChallengePlace, error)

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
-	"strconv"
 
 	"github.com/dgraph-io/badger"
 	"gitlab.com/glatteis/earthwalker/domain"
@@ -36,6 +35,8 @@ func getBytesFunc(key string, bytes []byte) func(*badger.Txn) error {
 	}
 }
 
+// Init opens and returns a badger database connection
+// don't forget to close it
 func Init(path string) (*badger.DB, error) {
 	db, err := badger.Open(badger.DefaultOptions(path))
 	if err != nil {
@@ -44,73 +45,119 @@ func Init(path string) (*badger.DB, error) {
 	return db, nil
 }
 
+// Close closes the given badger database connection
+// (provided so you don't have to import badger just to do this)
 func Close(db *badger.DB) {
 	db.Close()
 }
 
+// MapStore badger implementation (see domain)
 type MapStore struct {
 	DB *badger.DB
 }
 
+const mapPrefix = "map-"
+
+// Insert a domain.Map into store's badger db
 func (store MapStore) Insert(m domain.Map) error {
-	err := store.DB.Update(setBytesFunc("map-"+m.MapID, m))
+	err := store.DB.Update(setBytesFunc(mapPrefix+m.MapID, m))
 	if err != nil {
-		return fmt.Errorf("Failed to write map to badger DB: %v\n", err)
+		return fmt.Errorf("failed to write map to badger DB: %v", err)
 	}
 	return nil
 }
 
+// Get a domain.Map with the given mapID from store's badger db
 // TODO: reduce code repetition in Get methods
 func (store MapStore) Get(mapID string) (domain.Map, error) {
 	var mapBytes []byte
-	err := store.DB.View(getBytesFunc("map-"+mapID, mapBytes))
+	err := store.DB.View(getBytesFunc(mapPrefix+mapID, mapBytes))
 	if err != nil {
-		return domain.Map{}, fmt.Errorf("Failed to read map from badger DB: %v\n", err)
+		return domain.Map{}, fmt.Errorf("failed to read map from badger DB: %v", err)
 	}
 
 	var foundMap domain.Map
 	err = gob.NewDecoder(bytes.NewBuffer(mapBytes)).Decode(&foundMap)
 	if err != nil {
-		return domain.Map{}, fmt.Errorf("Failed to decode map from bytes: %v\n", err)
+		return domain.Map{}, fmt.Errorf("failed to decode map from bytes: %v", err)
 	}
 	return foundMap, nil
 }
 
+// ChallengeStore badger implementation (see domain)
 type ChallengeStore struct {
 	DB *badger.DB
 }
 
+const challengePrefix = "challenge-"
+
+// Insert a domain.Challenge into store's badger db
 func (store ChallengeStore) Insert(c domain.Challenge) error {
-	err := store.DB.Update(setBytesFunc("challenge-"+c.ChallengeID, c))
+	err := store.DB.Update(setBytesFunc(challengePrefix+c.ChallengeID, c))
 	if err != nil {
-		return fmt.Errorf("Failed to write challenge to badger DB: %v\n", err)
+		return fmt.Errorf("failed to write challenge to badger DB: %v", err)
 	}
 	return nil
 }
 
+// Get a domain.Challenge with the given challengeID from store's badger db
 func (store ChallengeStore) Get(challengeID string) (domain.Challenge, error) {
 	var challengeBytes []byte
-	err := store.DB.View(getBytesFunc("challenge-"+challengeID, challengeBytes))
+	err := store.DB.View(getBytesFunc(challengePrefix+challengeID, challengeBytes))
 	if err != nil {
-		return domain.Challenge{}, fmt.Errorf("Failed to read challenge from badger DB: %v\n", err)
+		return domain.Challenge{}, fmt.Errorf("failed to read challenge from badger DB: %v", err)
 	}
 
 	var foundChallenge domain.Challenge
 	err = gob.NewDecoder(bytes.NewBuffer(challengeBytes)).Decode(&foundChallenge)
 	if err != nil {
-		return domain.Challenge{}, fmt.Errorf("Failed to decode challenge from bytes: %v\n", err)
+		return domain.Challenge{}, fmt.Errorf("failed to decode challenge from bytes: %v", err)
 	}
 	return foundChallenge, nil
 }
 
-type ChallengePlaceStore struct {
+// note: no ChallengePlaceStore implementation,
+// because we just store the entire Challenge as a blob
+// one will probably be necessary for relational databases
+// (which don't take well to arbitrary length fields)
+
+// ChallengeResultStore badger implementation (see domain)
+type ChallengeResultStore struct {
 	DB *badger.DB
 }
 
-func (store ChallengePlaceStore) Insert(p domain.ChallengePlace) error {
-	err := store.DB.Update(setBytesFunc("challengePlace-"+p.ChallengeID+strconv.Itoa(p.RoundNum), p))
+const challengeResultPrefix = "result-"
+
+// Insert a domain.ChallengeResult into store's badger db
+func (store ChallengeResultStore) Insert(r domain.ChallengeResult) error {
+	err := store.DB.Update(setBytesFunc(challengeResultPrefix+r.ChallengeResultID, r))
 	if err != nil {
-		return fmt.Errorf("Failed to write ChallengePlace to badger DB: %v\n", err)
+		return fmt.Errorf("failed to write challenge result to badger DB: %v", err)
 	}
 	return nil
 }
+
+// Get a domain.ChallengeResult with the given challengeResultID from store's badger db
+func (store ChallengeResultStore) Get(challengeResultID string) (domain.ChallengeResult, error) {
+	var resultBytes []byte
+	err := store.DB.View(getBytesFunc(challengeResultPrefix, resultBytes))
+	if err != nil {
+		return domain.ChallengeResult{}, fmt.Errorf("failed to read result from badger DB: %v", err)
+	}
+
+	var foundResult domain.ChallengeResult
+	err = gob.NewDecoder(bytes.NewBuffer(resultBytes)).Decode(&foundResult)
+	if err != nil {
+		return domain.ChallengeResult{}, fmt.Errorf("failed to decode result from bytes: %v", err)
+	}
+	return foundResult, nil
+}
+
+// GetAll is not implemented
+// TODO: implement this if necessary, otherwise consider removing it from the interface
+func (store ChallengeResultStore) GetAll(challengeID string) ([]domain.ChallengeResult, error) {
+	return make([]domain.ChallengeResult, 0), fmt.Errorf("ChallengeResultStore.GetAll is not implemented")
+}
+
+// note: as above, no GuessStore implementation,
+// because we just store the entire ChallengeResult as a blob
