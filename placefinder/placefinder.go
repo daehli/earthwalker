@@ -11,115 +11,109 @@ import (
 	"time"
 
 	"github.com/golang/geo/s2"
-	"gitlab.com/glatteis/earthwalker/challenge"
 	"gitlab.com/glatteis/earthwalker/domain"
-	"gitlab.com/glatteis/earthwalker/player"
 )
 
-// NewMapHandler responds to the get_places form by creating
-// and storing a new Map, Challenge, and ChallengeResult, then
-// redirecting the client to the beforestart page for that Challenge
-// TODO: this was created to replace RespondToPoints -
-//       Map and Challenge creation should be decoupled in future
-func NewMapHandler(w http.ResponseWriter, r *http.Request) {
+type NewMapHandler struct {
+	MapStore domain.MapStore
+}
+
+func (handler *NewMapHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	mapData := r.FormValue("mapData")
+	if mapData == "" {
+		http.Error(w, "No mapData received", http.StatusBadRequest)
+		return
+	}
+	newMap, err := mapFromData(mapData)
+	if err != nil {
+		log.Printf("Failed to create map from data: %v\n", err)
+		http.Error("Failed to create map from data.", http.StatusInternalServerError)
+		return
+	}
+	err = handler.MapStore.Insert(newMap)
+	if err != nil {
+		log.Printf("Failed to insert new map into store: %v\n", err)
+		http.Error("Failed to insert new map into store.", http.StatusInternalServerError)
+		return
+	}
+	// TODO: redirect (to new challenge page for this map?)
+}
+
+func mapFromData(mapData string) (domain.Map, error) {
+	newMap := domain.Map{
+		MapID: "",
+		Name: "", // TODO: not yet implemented
+		Polygon: nil, // TODO: not yet sent from client
+		Area: -1, // TODO: not yet implemented
+		GraceDistance: 10, // TODO: option not implemented on client side
+	}
+	err := json.Unmarshal([]byte(mapData), &newMap)
+	if err != nil {
+		return newMap, fmt.Errorf("Failed to unmarshal newMap from JSON: %v", err)
+	}
+	// we want to make sure we don't take the ID from the client request
+	newMap.MapID = domain.RandAlpha(10)
+	return newMap, nil
+}
+
+type NewChallengeHandler struct {
+	ChallengeStore domain.ChallengeStore
+}
+
+func (handler *NewChallengeHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	challengeData := r.FormValue("challengeData")
+	if challengeData == "" {
+		http.Error(w, "No challengeData received", http.StatusBadRequest)
+		return
+	}
+	newChallenge, err := challengeFromData(challengeData)
+	if err != nil {
+		log.Printf("Failed to create challenge from data: %v\n", err)
+		http.Error("Failed to create challenge from data.", http.StatusInternalServerError)
+		return
+	}
+	err = handler.ChallengeStore.Insert(newChallenge)
+	if err != nil {
+		log.Printf("Failed to insert new challenge into store: %v\n", err)
+		http.Error("Failed to insert new challenge into store.", http.StatusInternalServerError)
+		return
+	}
+	// TODO: redirect (to before_start page for this challenge?)
+}
+
+func challengeFromData(challengeData string) (domain.Challenge, error) {
 	type jsonPoint struct {
 		Lat float64 `json:"lat"`
 		Lng float64 `json:"lng"`
 	}
-	challenge := domain.Challenge{
-		Places: []domain.ChallengePlace
+	newChallenge := domain.Challenge{
+		ChallengeID: domain.RandAlpha(10),
+		Places: make([]domain.ChallengePlace, 0),
 	}
-
-	r.ParseForm()
-	result := r.FormValue("result")
-
 	var locations []jsonPoint
 	if err := json.Unmarshal([]byte(result), &locations); err != nil {
-		// TODO: this should probably be 500 ISE or something
-		http.Error(w, err.Error(), http.StatusForbidden)
-		return
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
 	}
 	// convert from degrees to radians (ffs) and populate challenge.Places
 	for i := range locations {
-		challenge.Places = append(challenge.Places, domain.ChallengePlace{
+		challenge.Places = append(newChallenge.Places, domain.ChallengePlace{
+			ChallengeID: newChallenge.ChallengeID,
 			Location: s2.LatLngFromDegrees(locations[i].Lat, locations[i].Lng)
 		})
 	}
-
-	nickname := r.FormValue("nickname")
-	if nickname == "" {
-		http.Error(w, "Nickname cannot be empty!", http.StatusUnprocessableEntity)
-		return
-	}
-
-	player.WriteNicknameAndSession(w, r, nickname)
-
-	settings, err := createSettingsFromForm(r)
-
-	if err != nil {
-		http.Error(w, "There was something wrong with your parameters: "+err.Error(), http.StatusUnprocessableEntity)
-		return
-	}
-
-	resultingChallenge, err := challenge.NewChallenge(locations, settings)
-
-	if err != nil {
-		log.Println(err)
-		http.Error(w, "Internal server error! Please contact an administrator or something", http.StatusInternalServerError)
-		return
-	}
-
-	http.Redirect(w, r, "/beforestart?c="+resultingChallenge.UniqueIdentifier, http.StatusFound)
 }
 
-func createSettingsFromForm(r *http.Request) (challenge.Settings, error) {
-	var settings challenge.Settings
-	r.ParseForm()
+type NewChallengeResultHandler struct {
+	ChallengeResultStore domain.ChallengeResultStore
+}
 
-	showLabelsStr := r.FormValue("show-labels")
-	if showLabelsStr != "" {
-		settings.LabeledMinimap = true
-	}
-
-	numRoundsStr := r.FormValue("rounds")
-	roundsAsInt, err := strconv.Atoi(numRoundsStr)
-	if err != nil {
-		return challenge.Settings{}, errors.New("rounds is not an integer")
-	}
-	if roundsAsInt == 0 {
-		return challenge.Settings{}, errors.New("rounds must not be zero")
-	}
-	settings.NumRounds = roundsAsInt
-
-	var incorrectFormat bool
-	roundDurationStr := r.FormValue("time")
-	if roundDurationStr != "" {
-		twoNumbers := strings.Split(roundDurationStr, ":")
-		if len(twoNumbers) != 2 {
-			incorrectFormat = true
-			goto done
-		}
-		minutes, err := strconv.Atoi(twoNumbers[0])
-		if err != nil {
-			incorrectFormat = true
-			goto done
-		}
-		seconds, err := strconv.Atoi(twoNumbers[1])
-		if err != nil {
-			incorrectFormat = true
-			goto done
-		}
-		duration := time.Duration(minutes)*time.Minute + time.Duration(seconds)*time.Second
-		if duration <= 0 {
-			incorrectFormat = true
-			goto done
-		}
-		settings.TimerDuration = &duration
-	}
-done:
-	if incorrectFormat {
-		return challenge.Settings{}, errors.New("time is in an incorrect format")
-	}
-
-	return settings, nil
+func (handler *NewChallengeResultHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// TODO: create new ChallengeResult from form
+	// TODO: validate ChallengeResult
+	//       nickname not empty
+	// TODO: insert into store
+	// TODO: redirect to actual game
 }
