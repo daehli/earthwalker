@@ -2,6 +2,7 @@
 package config
 
 import (
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -10,40 +11,47 @@ import (
 	"gitlab.com/glatteis/earthwalker/util"
 )
 
-// EnvType represents the environment file contents
-type EnvType struct {
-	// EarthwalkerStaticPath is documented in start.sh.sample
-	EarthwalkerStaticPath string
-	// EarthwalkerDBPath is documented in start.sh.sample
-	EarthwalkerDBPath string
-	// EarthwalkerPort is documented in start.sh.sample
-	EarthwalkerPort string
-	// EarthwalkerConfigPath is documented in start.sh.sample
-	EarthwalkerConfigPath string
-}
-
-var Env EnvType
-
-// FileType represents the config file contents
-type FileType struct {
-	// TileServerURL is the url of the tile server
-	TileServerURL string
-	// NoLabelTileServerURL is the url of the tile server when no labels are activated
+// Config holds server-wide settings
+type Config struct {
+	ConfigPath           string
+	StaticPath           string
+	DBPath               string
+	Port                 string
+	TileServerURL        string
 	NoLabelTileServerURL string
 }
 
-var File FileType
-
-func orDefault(envInput string, def string) string {
-	if envInput == "" {
-		return def
+// Read a Config from environment variables and TOML file, and return it
+func Read() (Config, error) {
+	conf := Config{
+		ConfigPath: getEnv("EARTHWALKER_CONFIG_PATH", "config.toml"),
+		StaticPath: getEnv("EARTHWALKER_STATIC_PATH", util.AppPath()),
+		DBPath:     getDBPath(),
+		Port:       getEnv("EARTHWALKER_PORT", "8080"),
 	}
-	return envInput
+
+	tomlData, err := ioutil.ReadFile(conf.ConfigPath)
+	if err != nil {
+		log.Printf("Error reading/no config file at '%s', using defaults.\n", conf.ConfigPath)
+		conf.TileServerURL = "https://tiles.wmflabs.org/osm/{z}/{x}/{y}.png"
+		conf.NoLabelTileServerURL = "https://tiles.wmflabs.org/osm-no-labels/{z}/{x}/{y}.png"
+	}
+	if err := toml.Unmarshal(tomlData, &conf); err != nil {
+		return conf, fmt.Errorf("error parsing TOML config file: %v", err)
+	}
+	return conf, nil
+}
+
+func getEnv(key string, fallback string) string {
+	if v, ok := os.LookupEnv(key); ok {
+		return v
+	}
+	return fallback
 }
 
 func getDBPath() string {
 	path := ""
-	pathSuffix := orDefault(os.Getenv("EARTHWALKER_DB_PATH"), "/badger/")
+	pathSuffix := getEnv(os.Getenv("EARTHWALKER_DB_PATH"), "/badger/")
 	pathRel := os.Getenv("EARTHWALKER_DB_PATH_REL")
 	if pathRel == "cwd" {
 		cwd, err := os.Getwd()
@@ -57,27 +65,4 @@ func getDBPath() string {
 		path = util.AppPath() + pathSuffix
 	}
 	return path
-}
-
-func init() {
-	// Initialize Env
-	Env = EnvType{
-		EarthwalkerStaticPath: orDefault(os.Getenv("EARTHWALKER_STATIC_PATH"), util.AppPath()),
-		EarthwalkerDBPath:     getDBPath(),
-		EarthwalkerPort:       orDefault(os.Getenv("EARTHWALKER_PORT"), ""), // Default is intentionally "" s.t. the command line port gets respected
-		EarthwalkerConfigPath: orDefault(os.Getenv("EARTHWALKER_CONFIG_PATH"), "config.toml"),
-	}
-
-	// Initialize Config File
-	tomlData, err := ioutil.ReadFile(Env.EarthwalkerConfigPath)
-	if err != nil {
-		log.Println("defaulting to default config.")
-		File = FileType{
-			TileServerURL:        "https://tiles.wmflabs.org/osm/{z}/{x}/{y}.png",
-			NoLabelTileServerURL: "https://tiles.wmflabs.org/osm-no-labels/{z}/{x}/{y}.png",
-		}
-	}
-	if err := toml.Unmarshal(tomlData, &File); err != nil {
-		log.Fatal(err)
-	}
 }
