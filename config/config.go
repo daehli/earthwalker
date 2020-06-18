@@ -8,22 +8,13 @@ import (
 	"os"
 
 	"github.com/BurntSushi/toml"
+	"gitlab.com/glatteis/earthwalker/domain"
 	"gitlab.com/glatteis/earthwalker/util"
 )
 
-// Config holds server-wide settings
-type Config struct {
-	ConfigPath           string
-	StaticPath           string
-	DBPath               string
-	Port                 string
-	TileServerURL        string
-	NoLabelTileServerURL string
-}
-
 // Read a Config from environment variables and TOML file, and return it
-func Read() (Config, error) {
-	conf := Config{
+func Read() (domain.Config, error) {
+	conf := domain.Config{
 		ConfigPath: getEnv("EARTHWALKER_CONFIG_PATH", "config.toml"),
 		StaticPath: getEnv("EARTHWALKER_STATIC_PATH", util.AppPath()),
 		DBPath:     getDBPath(),

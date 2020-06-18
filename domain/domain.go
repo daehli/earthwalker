@@ -10,6 +10,18 @@ import (
 	"github.com/golang/geo/s2"
 )
 
+// == Shared Internal Structs ========
+
+// Config holds server-wide settings
+type Config struct {
+	ConfigPath           string
+	StaticPath           string
+	DBPath               string
+	Port                 string
+	TileServerURL        string
+	NoLabelTileServerURL string
+}
+
 // == Domain Enums ========
 
 // PanoConnectedness is the enum representing that Map option
