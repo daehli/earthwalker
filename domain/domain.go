@@ -75,7 +75,7 @@ type Map struct {
 	MapID         string
 	Name          string
 	Polygon       string  // geoJSON string bounding the game area(s)
-	Area          float32 // area in Polygon
+	Area          float32 // area bounded by Polygon, in square meters
 	NumRounds     int
 	TimeLimit     *time.Duration // time limit per round
 	GraceDistance int            // radius in meters within which max points are awarded

@@ -1,0 +1,96 @@
+let mapSettings = {
+    Name: "Unnamed Map",
+    Polygon: null,
+    Area: 0,
+    NumRounds: 0,
+    TimeLimit: 0,
+    GraceDistance: 10,
+    MinDensity: 0,
+    MaxDensity: 100,
+    Connectedness: 0,
+    Copyright: 0,
+    Source: 0,
+    ShowLabels: true
+};
+
+const NOMINATIM_URL = (locStringEncoded) => `https://nominatim.openstreetmap.org/search?q=${locStringEncoded}&polygon_geojson=1&limit=5&format=json`;
+
+let locString = "";
+let previewMap;
+let previewPolyGroup;
+
+document.addEventListener('DOMContentLoaded', (event) => {
+    previewMap = L.map("bounds-map", {center: [0, 0], zoom: 1});
+    L.tileLayer("{{ .TileServerURL }}", {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> contributors, <a href="https://wikitech.wikimedia.org/wiki/Wikitech:Cloud_Services_Terms_of_use">Wikimedia Cloud Services</a>'
+    }).addTo(previewMap);
+    previewPolyGroup = L.layerGroup().addTo(previewMap);
+});
+
+// collates mapeditor form data into a JSON object, then runs get_places on it
+// to determine whether it gets results in a reasonable amount of time/number
+// of requests.  Finally, sends a newmap request with the JSON to the server
+function handleFormSubmit() {
+    console.log("collecting form data...");
+    Object.keys(mapSettings).forEach(key => {
+        formInput = document.getElementById(key);
+        if (formInput) {
+            if (formInput.type === "checkbox") {
+                mapSettings[key] = formInput.checked;
+            } else {
+                mapSettings[key] = formInput.value;
+            }
+        }
+    });
+    // TODO: evaluate challenge generation
+    // TODO: send to server /newmap
+    console.log(mapSettings);
+}
+
+function locStringUpdated() {
+    let old = locString;
+    let locStringInput = document.getElementById("locString");
+    if (locStringInput) {
+        locString = document.getElementById("locString").value;
+    }
+	if (old !== locString) {
+        updatePolygonFromLocString();
+	}
+}
+
+function showPolygonOnMap() {
+    previewPolyGroup.clearLayers();
+	let map_poly = L.geoJSON(mapSettings.Polygon).addTo(previewPolyGroup);
+	previewMap.fitBounds(map_poly.getBounds());
+}
+
+function updatePolygonFromLocString() {
+	if (locString === "" || !locString) {
+		mapSettings.Polygon = "";
+		return;
+    }
+    
+    fetch(NOMINATIM_URL(encodeURI(locString.replace(" ", "+"))))
+        .then(response => response.json())
+        .then(data => {
+            mapSettings.Polygon = geojsonFromNominatim(data);
+            mapSettings.Area = turf.area(mapSettings.Polygon);
+            showPolygonOnMap();
+        });
+}
+
+// given Nominatim results, takes the most significant one with a polygon or
+// multipolygon and returns it as a turf.multiPolygon
+function geojsonFromNominatim(data) {
+    console.log("getting geojson...");
+    for (let i = 0; i < data.length; i++) {
+        let type = data[i].geojson.type.toLowerCase();
+        if (type === "multipolygon") {
+            return turf.multiPolygon(data[i].geojson.coordinates);
+        } else if (type === "polygon") {
+            return turf.multiPolygon([data[i].geojson.coordinates]);
+        }
+    }
+    console.log("No matching polygon!");
+    return null;
+}

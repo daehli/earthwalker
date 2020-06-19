@@ -34,7 +34,7 @@ func Read() (domain.Config, error) {
 }
 
 func getEnv(key string, fallback string) string {
-	if v, ok := os.LookupEnv(key); ok {
+	if v, ok := os.LookupEnv(key); ok && len(v) > 0 {
 		return v
 	}
 	return fallback

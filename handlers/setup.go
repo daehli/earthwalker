@@ -12,11 +12,11 @@ import (
 	"gitlab.com/glatteis/earthwalker/domain"
 )
 
-type NewMapHandler struct {
+type NewMap struct {
 	MapStore domain.MapStore
 }
 
-func (handler *NewMapHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (handler NewMap) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	mapData := r.FormValue("mapData")
 	if mapData == "" {
@@ -55,11 +55,31 @@ func mapFromData(mapData string) (domain.Map, error) {
 	return newMap, nil
 }
 
-type NewChallengeHandler struct {
+type Map struct {
+	MapStore domain.MapStore
+}
+
+func (handler Map) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	mapID, ok := r.URL.Query()["id"]
+	if !ok || len(mapID) == 0 {
+		http.Error(w, "no id!", http.StatusBadRequest)
+		log.Printf("no map id!\n")
+		return
+	}
+	foundMap, err := handler.MapStore.Get(mapID[0])
+	if err != nil {
+		http.Error(w, "failed to get map", http.StatusInternalServerError)
+		log.Printf("Failed to get map: %v\n", err)
+	}
+	json.NewEncoder(w).Encode(foundMap)
+	//http.Error(w, "not implemented", http.StatusNotImplemented)
+}
+
+type NewChallenge struct {
 	ChallengeStore domain.ChallengeStore
 }
 
-func (handler *NewChallengeHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (handler *NewChallenge) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	challengeData := r.FormValue("challengeData")
 	if challengeData == "" {
@@ -105,11 +125,11 @@ func challengeFromData(challengeData string) (domain.Challenge, error) {
 	return newChallenge, nil
 }
 
-type NewChallengeResultHandler struct {
+type NewChallengeResult struct {
 	ChallengeResultStore domain.ChallengeResultStore
 }
 
-func (handler *NewChallengeResultHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (handler *NewChallengeResult) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// TODO: create new ChallengeResult from form
 	// TODO: validate ChallengeResult
 	//       nickname not empty
