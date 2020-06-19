@@ -1,5 +1,9 @@
+//
+
+const NOMINATIM_URL = (locStringEncoded) => `https://nominatim.openstreetmap.org/search?q=${locStringEncoded}&polygon_geojson=1&limit=5&format=json`;
+
 let mapSettings = {
-    Name: "Unnamed Map",
+    Name: "",
     Polygon: null,
     Area: 0,
     NumRounds: 0,
@@ -12,9 +16,6 @@ let mapSettings = {
     Source: 0,
     ShowLabels: true
 };
-
-const NOMINATIM_URL = (locStringEncoded) => `https://nominatim.openstreetmap.org/search?q=${locStringEncoded}&polygon_geojson=1&limit=5&format=json`;
-
 let locString = "";
 let previewMap;
 let previewPolyGroup;
@@ -27,24 +28,66 @@ document.addEventListener('DOMContentLoaded', (event) => {
     previewPolyGroup = L.layerGroup().addTo(previewMap);
 });
 
-// collates mapeditor form data into a JSON object, then runs get_places on it
-// to determine whether it gets results in a reasonable amount of time/number
-// of requests.  Finally, sends a newmap request with the JSON to the server
+// collates mapeditor form data into a JSON object, 
+// then sends a newmap request to the server
 function handleFormSubmit() {
-    console.log("collecting form data...");
-    Object.keys(mapSettings).forEach(key => {
-        formInput = document.getElementById(key);
-        if (formInput) {
-            if (formInput.type === "checkbox") {
-                mapSettings[key] = formInput.checked;
-            } else {
-                mapSettings[key] = formInput.value;
-            }
-        }
-    });
-    // TODO: evaluate challenge generation
-    // TODO: send to server /newmap
-    console.log(mapSettings);
+    mapSettings.Name          = strById("Name");
+    mapSettings.NumRounds     = intById("NumRounds");
+    mapSettings.GraceDistance = intById("GraceDistance");
+    mapSettings.MinDensity    = intById("MinDensity");
+    mapSettings.MaxDensity    = intById("MaxDensity");
+    mapSettings.Connectedness = intById("Connectedness");
+    mapSettings.Copyright     = intById("Copyright");
+    mapSettings.Source        = intById("Source");
+    
+    showLabelsInput = document.getElementById("ShowLabels");
+    if (showLabelsInput) {
+        mapSettings.ShowLabels = showLabelsInput.checked;
+    }
+
+    // read total TimeLimit
+    mapSettings.TimeLimit = 0;
+    mapSettings.TimeLimit += 60 * intById("TimeLimit_minutes");
+    mapSettings.TimeLimit += intById("TimeLimit_seconds");
+
+    // sanity check density fields
+    // TODO: nicer error messages than alerts
+    if (mapSettings.MinDensity > mapSettings.MaxDensity) {
+        alert("Max density must be greater than min density.");
+        return;
+    }
+    // TODO: evaluate challenge generation (to make sure mapSettings aren't so
+    //       specific that it takes a huge number of API requests to find good
+    //       panos)
+    // send to server /newmap
+    fetch("/newmap", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(mapSettings),
+    })
+        .then(console.log("mapSettings sent to server"));
+}
+
+function intById(id, fallback=0) {
+    input = document.getElementById(id);
+    if (input) {
+        return parseInt(input.value, 10);
+    } else {
+        console.log("Couldn't find input '" + id + "', using fallback.")
+        return fallback;
+    }
+}
+
+function strById(id, fallback="") {
+    input = document.getElementById(id);
+    if (input) {
+        return input.value;
+    } else {
+        console.log("Couldn't find input '" + id + "', using fallback.")
+        return fallback;
+    }
 }
 
 function locStringUpdated() {
@@ -66,7 +109,7 @@ function showPolygonOnMap() {
 
 function updatePolygonFromLocString() {
 	if (locString === "" || !locString) {
-		mapSettings.Polygon = "";
+		mapSettings.Polygon = null;
 		return;
     }
     

@@ -70,12 +70,15 @@ func main() {
 		os.Exit(0)
 	}()
 
+	mapStore := badgerdb.MapStore{DB: db}
+
 	// == HANDLERS ========
 	var mainTemplate string = conf.StaticPath + "/templates/main_template.html.tmpl"
 	http.Handle("/", handlers.Root{})
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir(conf.StaticPath+"/static"))))
 	http.Handle("/mapeditor", handlers.DynamicHTML{Template: htemplate.Must(htemplate.ParseFiles(mainTemplate, conf.StaticPath+"/templates/mapeditor.html.tmpl")), Data: conf})
 	http.Handle("/mapeditor.js", handlers.DynamicText{Template: ttemplate.Must(ttemplate.ParseFiles(conf.StaticPath + "/templates/mapeditor.js.tmpl")), Data: conf})
+	http.Handle("/newmap", handlers.NewMap{MapStore: mapStore})
 	http.Handle("/get_places.js", handlers.DynamicText{Template: ttemplate.Must(ttemplate.ParseFiles(conf.StaticPath + "/templates/get_places.js.tmpl")), Data: conf})
 	http.HandleFunc("/map?id=", func(w http.ResponseWriter, r *http.Request) {
 		// serve existing map json

@@ -17,16 +17,10 @@ type NewMap struct {
 }
 
 func (handler NewMap) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	r.ParseForm()
-	mapData := r.FormValue("mapData")
-	if mapData == "" {
-		http.Error(w, "No mapData received", http.StatusBadRequest)
-		return
-	}
-	newMap, err := mapFromData(mapData)
+	newMap, err := mapFromRequest(r)
 	if err != nil {
-		log.Printf("Failed to create map from data: %v\n", err)
-		http.Error(w, "Failed to create map from data.", http.StatusInternalServerError)
+		log.Printf("Failed to create map from request: %v\n", err)
+		http.Error(w, "Failed to create map from request.", http.StatusInternalServerError)
 		return
 	}
 	err = handler.MapStore.Insert(newMap)
@@ -36,19 +30,15 @@ func (handler NewMap) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// TODO: redirect (to new challenge page for this map?)
+	// TODO: remove this debugging response
+	json.NewEncoder(w).Encode(newMap)
 }
 
-func mapFromData(mapData string) (domain.Map, error) {
-	newMap := domain.Map{
-		MapID:         "",
-		Name:          "", // TODO: not yet implemented
-		Polygon:       "", // TODO: not yet sent from client
-		Area:          -1, // TODO: not yet implemented
-		GraceDistance: 10, // TODO: option not implemented on client side
-	}
-	err := json.Unmarshal([]byte(mapData), &newMap)
+func mapFromRequest(r *http.Request) (domain.Map, error) {
+	newMap := domain.Map{}
+	err := json.NewDecoder(r.Body).Decode(&newMap)
 	if err != nil {
-		return newMap, fmt.Errorf("Failed to unmarshal newMap from JSON: %v", err)
+		return newMap, fmt.Errorf("Failed to decode newMap from request: %v", err)
 	}
 	// we want to make sure we don't take the ID from the client request
 	newMap.MapID = domain.RandAlpha(10)
