@@ -31,7 +31,7 @@ func (handler NewMap) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	// TODO: redirect (to new challenge page for this map?)
 	// TODO: remove this debugging response
-	json.NewEncoder(w).Encode(newMap)
+	http.Redirect(w, r, "/map?id="+newMap.MapID, http.StatusFound)
 }
 
 func mapFromRequest(r *http.Request) (domain.Map, error) {
@@ -60,9 +60,9 @@ func (handler Map) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, "failed to get map", http.StatusInternalServerError)
 		log.Printf("Failed to get map: %v\n", err)
+		return
 	}
 	json.NewEncoder(w).Encode(foundMap)
-	//http.Error(w, "not implemented", http.StatusNotImplemented)
 }
 
 type NewChallenge struct {

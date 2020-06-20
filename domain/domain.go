@@ -74,13 +74,13 @@ const (
 type Map struct {
 	MapID         string
 	Name          string
-	Polygon       string  // geoJSON string bounding the game area(s)
-	Area          float32 // area bounded by Polygon, in square meters
+	Polygon       map[string]interface{} // geoJSON bounding the game area(s)
+	Area          float32                // area bounded by Polygon, in square meters
 	NumRounds     int
-	TimeLimit     *time.Duration // time limit per round
-	GraceDistance int            // radius in meters within which max points are awarded
-	MinDensity    int            // minimum population density
-	MaxDensity    int            // maximum population density
+	TimeLimit     int // time limit per round, in seconds
+	GraceDistance int // radius in meters within which max points are awarded
+	MinDensity    int // minimum population density, 0-100
+	MaxDensity    int // maximum population density, 0-100
 	Connectedness PanoConnectedness
 	Copyright     PanoCopyright
 	Source        PanoSource

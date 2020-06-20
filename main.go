@@ -80,9 +80,7 @@ func main() {
 	http.Handle("/mapeditor.js", handlers.DynamicText{Template: ttemplate.Must(ttemplate.ParseFiles(conf.StaticPath + "/templates/mapeditor.js.tmpl")), Data: conf})
 	http.Handle("/newmap", handlers.NewMap{MapStore: mapStore})
 	http.Handle("/get_places.js", handlers.DynamicText{Template: ttemplate.Must(ttemplate.ParseFiles(conf.StaticPath + "/templates/get_places.js.tmpl")), Data: conf})
-	http.HandleFunc("/map?id=", func(w http.ResponseWriter, r *http.Request) {
-		// serve existing map json
-	})
+	http.Handle("/map", handlers.Map{MapStore: mapStore})
 
 	// == ENGAGE ========
 	log.Println("earthwalker is running on ", port)

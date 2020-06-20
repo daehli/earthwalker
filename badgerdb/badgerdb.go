@@ -9,30 +9,38 @@ import (
 	"gitlab.com/glatteis/earthwalker/domain"
 )
 
-// TODO: simpler method, this logic was lifted straight from challenge.go
-func setBytesFunc(key string, t interface{}) func(*badger.Txn) error {
-	return func(txn *badger.Txn) error {
+// TODO: make store and get more symmetrical?
+func storeStruct(db *badger.DB, key string, t interface{}) error {
+	err := db.Update(func(txn *badger.Txn) error {
 		var buffer bytes.Buffer
-		gob.NewEncoder(&buffer).Encode(t)
+		gob.Register(map[string]interface{}{})
+		gob.Register([]interface{}{})
+		err := gob.NewEncoder(&buffer).Encode(t)
+		if err != nil {
+			return err
+		}
 		return txn.Set([]byte(key), buffer.Bytes())
-	}
+	})
+	return err
 }
 
-func getBytesFunc(key string, bytes []byte) func(*badger.Txn) error {
-	return func(txn *badger.Txn) error {
+func getBytes(db *badger.DB, key string) ([]byte, error) {
+	var byteSlice []byte
+	err := db.View(func(txn *badger.Txn) error {
 		item, err := txn.Get([]byte(key))
 		if err != nil {
 			return err
 		}
 		err = item.Value(func(val []byte) error {
-			bytes = append([]byte{}, val...)
+			byteSlice = append([]byte{}, val...)
 			return nil
 		})
 		if err != nil {
 			return err
 		}
 		return nil
-	}
+	})
+	return byteSlice, err
 }
 
 // Init opens and returns a badger database connection
@@ -60,7 +68,7 @@ const mapPrefix = "map-"
 
 // Insert a domain.Map into store's badger db
 func (store MapStore) Insert(m domain.Map) error {
-	err := store.DB.Update(setBytesFunc(mapPrefix+m.MapID, m))
+	err := storeStruct(store.DB, mapPrefix+m.MapID, m)
 	if err != nil {
 		return fmt.Errorf("failed to write map to badger DB: %v", err)
 	}
@@ -70,13 +78,13 @@ func (store MapStore) Insert(m domain.Map) error {
 // Get a domain.Map with the given mapID from store's badger db
 // TODO: reduce code repetition in Get methods
 func (store MapStore) Get(mapID string) (domain.Map, error) {
-	var mapBytes []byte
-	err := store.DB.View(getBytesFunc(mapPrefix+mapID, mapBytes))
-	if err != nil {
+	mapBytes, err := getBytes(store.DB, mapPrefix+mapID)
+	if err != nil || len(mapBytes) == 0 {
 		return domain.Map{}, fmt.Errorf("failed to read map from badger DB: %v", err)
 	}
 
 	var foundMap domain.Map
+	gob.Register(foundMap)
 	err = gob.NewDecoder(bytes.NewBuffer(mapBytes)).Decode(&foundMap)
 	if err != nil {
 		return domain.Map{}, fmt.Errorf("failed to decode map from bytes: %v", err)
@@ -93,7 +101,7 @@ const challengePrefix = "challenge-"
 
 // Insert a domain.Challenge into store's badger db
 func (store ChallengeStore) Insert(c domain.Challenge) error {
-	err := store.DB.Update(setBytesFunc(challengePrefix+c.ChallengeID, c))
+	err := storeStruct(store.DB, challengePrefix+c.ChallengeID, c)
 	if err != nil {
 		return fmt.Errorf("failed to write challenge to badger DB: %v", err)
 	}
@@ -103,7 +111,7 @@ func (store ChallengeStore) Insert(c domain.Challenge) error {
 // Get a domain.Challenge with the given challengeID from store's badger db
 func (store ChallengeStore) Get(challengeID string) (domain.Challenge, error) {
 	var challengeBytes []byte
-	err := store.DB.View(getBytesFunc(challengePrefix+challengeID, challengeBytes))
+	challengeBytes, err := getBytes(store.DB, challengePrefix+challengeID)
 	if err != nil {
 		return domain.Challenge{}, fmt.Errorf("failed to read challenge from badger DB: %v", err)
 	}
@@ -130,7 +138,7 @@ const challengeResultPrefix = "result-"
 
 // Insert a domain.ChallengeResult into store's badger db
 func (store ChallengeResultStore) Insert(r domain.ChallengeResult) error {
-	err := store.DB.Update(setBytesFunc(challengeResultPrefix+r.ChallengeResultID, r))
+	err := storeStruct(store.DB, challengeResultPrefix+r.ChallengeResultID, r)
 	if err != nil {
 		return fmt.Errorf("failed to write challenge result to badger DB: %v", err)
 	}
@@ -139,8 +147,7 @@ func (store ChallengeResultStore) Insert(r domain.ChallengeResult) error {
 
 // Get a domain.ChallengeResult with the given challengeResultID from store's badger db
 func (store ChallengeResultStore) Get(challengeResultID string) (domain.ChallengeResult, error) {
-	var resultBytes []byte
-	err := store.DB.View(getBytesFunc(challengeResultPrefix, resultBytes))
+	resultBytes, err := getBytes(store.DB, challengeResultPrefix+challengeResultID)
 	if err != nil {
 		return domain.ChallengeResult{}, fmt.Errorf("failed to read result from badger DB: %v", err)
 	}
