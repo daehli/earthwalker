@@ -1,0 +1,72 @@
+// TODO: This script currently assumes that mapSettings is good and valid.
+//       However, there's no validation in place to make sure that is the
+//       case.  We should either handle missing/bad information here, or
+//       implement a "trial run" fetchPanos at the end of the map creation
+//       process.
+
+// search radius in meters - using 500 (formerly 50,000) causes more NO_RESULTS
+// responses, but the API also takes much less time to fulfill the requests.
+// It also means we can use StreetViewPreference.BEST without so many duplicate
+// responses.
+const PANO_SEARCH_RADIUS = 500;
+// NEAREST or BEST.  BEST seems to give more actual streetview results (rather
+// than third party photospheres) so I'm going with that.
+const SV_PREF = google.maps.StreetViewPreference.BEST;
+// discard polar panos, they're usually garbage
+const LAT_LIMIT = 85;
+const mapURL = "/map?id="
+const popTIFLoc = "/static/nasa_pop_data.tif"
+
+let streetViewService = new google.maps.StreetViewService();
+
+let mapSettings = undefined;
+let popTIF = undefined;
+
+document.addEventListener('DOMContentLoaded', async (event) => {
+    popTIF = await loadGeoTIF(popTIFLoc);
+    mapSettings = await fetchMapSettings(mapURL);
+    console.log(mapSettings);
+    
+});
+
+// == MAP SETTINGS ========
+async function fetchMapSettings(url) {
+    let params = new URLSearchParams(window.location.search)
+    if (!params.has("mapid")) {
+        alert("URL has no map ID!");
+        return;
+    }
+    let mapID = params.get("mapid");
+    let response = await fetch(url+mapID);
+    return response.json();
+}
+
+// == POPULATION DENSITY ========
+async function loadGeoTIF(loc) {
+	const response = await fetch("/static/nasa_pop_data.tif");
+	const arrayBuffer = await response.arrayBuffer();
+	return await GeoTIFF.fromArrayBuffer(arrayBuffer);
+}
+async function getLocationPopulation(lat, lng) {
+	const delta = 0.1;
+	let value = await tiff.readRasters({
+		bbox: [lng, lat, lng + 10 * delta, lat + 10 * delta],
+		resX: delta,
+		resY: delta,
+	});
+	let actualValue = value[0][0];
+	// 255 means ocean
+	if (actualValue == 255) {
+		actualValue = 0;
+	}
+	return actualValue / 255;
+}
+
+// == GET PANOS ========
+async function fetchPanos(svService, settings) {
+
+}
+
+async function fetchPano(svService, settings) {
+    
+}

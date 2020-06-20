@@ -1,5 +1,7 @@
 // Package domain defines domain types which are used throughout the application.
 // It imports only external packages which compose domain types.
+// Use this file as a reference for Javascript objects, enums, etc.  They should
+// all match as closely as possible.
 // TODO: Might be nice to rename this package "earthwalker", but conflicts with
 //       the default executable filename.
 package domain

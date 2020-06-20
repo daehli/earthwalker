@@ -76,11 +76,16 @@ func main() {
 	var mainTemplate string = conf.StaticPath + "/templates/main_template.html.tmpl"
 	http.Handle("/", handlers.Root{})
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir(conf.StaticPath+"/static"))))
-	http.Handle("/mapeditor", handlers.DynamicHTML{Template: htemplate.Must(htemplate.ParseFiles(mainTemplate, conf.StaticPath+"/templates/mapeditor.html.tmpl")), Data: conf})
-	http.Handle("/mapeditor.js", handlers.DynamicText{Template: ttemplate.Must(ttemplate.ParseFiles(conf.StaticPath + "/templates/mapeditor.js.tmpl")), Data: conf})
+	// map editor frontend
+	http.Handle("/createmap", handlers.DynamicHTML{Template: htemplate.Must(htemplate.ParseFiles(mainTemplate, conf.StaticPath+"/templates/createmap.html.tmpl")), Data: conf})
+	http.Handle("/createmap.js", handlers.DynamicText{Template: ttemplate.Must(ttemplate.ParseFiles(conf.StaticPath + "/templates/createmap.js.tmpl")), Data: conf})
+	// submit map JSON to be stored
 	http.Handle("/newmap", handlers.NewMap{MapStore: mapStore})
-	http.Handle("/get_places.js", handlers.DynamicText{Template: ttemplate.Must(ttemplate.ParseFiles(conf.StaticPath + "/templates/get_places.js.tmpl")), Data: conf})
+	// retrieve map JSON by ?id=
 	http.Handle("/map", handlers.Map{MapStore: mapStore})
+	// challenge creation frontend, provide map ?mapid=
+	http.Handle("/createchallenge", handlers.DynamicHTML{Template: htemplate.Must(htemplate.ParseFiles(mainTemplate, conf.StaticPath+"/templates/createchallenge.html.tmpl")), Data: conf})
+	http.Handle("/createchallenge.js", handlers.DynamicText{Template: ttemplate.Must(ttemplate.ParseFiles(conf.StaticPath + "/templates/createchallenge.js.tmpl")), Data: conf})
 
 	// == ENGAGE ========
 	log.Println("earthwalker is running on ", port)

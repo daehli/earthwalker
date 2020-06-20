@@ -84,7 +84,8 @@ func (store MapStore) Get(mapID string) (domain.Map, error) {
 	}
 
 	var foundMap domain.Map
-	gob.Register(foundMap)
+	gob.Register(map[string]interface{}{})
+	gob.Register([]interface{}{})
 	err = gob.NewDecoder(bytes.NewBuffer(mapBytes)).Decode(&foundMap)
 	if err != nil {
 		return domain.Map{}, fmt.Errorf("failed to decode map from bytes: %v", err)

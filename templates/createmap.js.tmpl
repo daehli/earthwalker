@@ -1,6 +1,6 @@
 //
 
-const NOMINATIM_URL = (locStringEncoded) => `https://nominatim.openstreetmap.org/search?q=${locStringEncoded}&polygon_geojson=1&limit=5&format=json`;
+const NOMINATIM_URL = (locStringEncoded) => `https://nominatim.openstreetmap.org/search?q=${locStringEncoded}&polygon_geojson=1&limit=5&polygon_threshold=0.005&format=json`;
 
 let mapSettings = {
     Name: "",
@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
     previewPolyGroup = L.layerGroup().addTo(previewMap);
 });
 
-// collates mapeditor form data into a JSON object, 
+// collates createmap form data into a JSON object, 
 // then sends a newmap request to the server
 function handleFormSubmit() {
     mapSettings.Name          = strById("Name");

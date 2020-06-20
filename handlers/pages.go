@@ -14,7 +14,7 @@ type Root struct{}
 func (handler Root) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	challengeID, err := challengeIDFromRequest(r)
 	if err != nil || challengeID == "" {
-		http.Redirect(w, r, "/mapeditor", http.StatusFound)
+		http.Redirect(w, r, "/createmap", http.StatusFound)
 		return
 	}
 	http.Redirect(w, r, "/challenge?c="+challengeID, http.StatusFound)

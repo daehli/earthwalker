@@ -1,0 +1,39 @@
+{{ define "head_insert" }}
+<meta name="referrer" content="no-referrer"/>
+<script src="https://maps.google.com/maps/api/js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@turf/turf@5/turf.min.js"></script>
+<script src="/static/leaflet/leaflet.js"></script>
+<script src="/static/geotiff.bundle.min.js"></script>
+<script src="/createchallenge.js"></script>
+{{ end }}
+
+{{ define "content" }}
+
+<div class="container">
+
+<br>
+
+<h2>Creating a New Challenge...</h2>
+
+<br>
+
+<form action="javascript:handleNewChallenge()" method="post">
+    <div class="progress">
+		<div class="progress-bar" id="loading-progress" role="progressbar"></div>
+	</div>
+	<small class="text-muted">
+	Earthwalker is getting random locations from Google Street View.
+	This happens in your browser, because there is only an API in JavaScript for this.
+	Yes, that is kind of silly, I'm sorry.
+	</small>
+
+    <br/>
+    <br/>
+
+	<button id="submit-button" type="submit" class="btn btn-primary" style="margin-bottom: 2em;" disabled>Create Challenge</button>
+
+</form>
+<link rel="stylesheet" href="static/leaflet/leaflet.css"/>
+</div>
+
+{{ end }}
