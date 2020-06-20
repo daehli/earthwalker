@@ -17,17 +17,33 @@ const LAT_LIMIT = 85;
 const mapURL = "/map?id="
 const popTIFLoc = "/static/nasa_pop_data.tif"
 
+let statusReadout;
+
 let streetViewService = new google.maps.StreetViewService();
 
 let mapSettings = undefined;
 let popTIF = undefined;
 
+let foundCoords = [];
+
 document.addEventListener('DOMContentLoaded', async (event) => {
+    statusReadout = document.getElementById("status");
+    statusReadout.textContent = "Looking up population density data...";
     popTIF = await loadGeoTIF(popTIFLoc);
+    statusReadout.textContent = "Getting Map settings...";
     mapSettings = await fetchMapSettings(mapURL);
+    statusReadout.textContent = "Fetching panoramas...";
     console.log(mapSettings);
-    
+    await fetchPanos(streetViewService, mapSettings);
+    console.log(foundCoords);
+    statusReadout.textContent = "Done!"
 });
+
+
+// TODO: remove debug
+function printCoords() {
+    foundCoords.forEach((coord) => {console.log(coord.lat().toString() + ", " + coord.lng().toString())});
+}
 
 // == MAP SETTINGS ========
 async function fetchMapSettings(url) {
@@ -48,8 +64,9 @@ async function loadGeoTIF(loc) {
 	return await GeoTIFF.fromArrayBuffer(arrayBuffer);
 }
 async function getLocationPopulation(lat, lng) {
-	const delta = 0.1;
-	let value = await tiff.readRasters({
+    const delta = 0.1;
+    // TODO: consider passing popTIF as arg
+	let value = await popTIF.readRasters({
 		bbox: [lng, lat, lng + 10 * delta, lat + 10 * delta],
 		resX: delta,
 		resY: delta,
@@ -64,9 +81,102 @@ async function getLocationPopulation(lat, lng) {
 
 // == GET PANOS ========
 async function fetchPanos(svService, settings) {
-
+    const promises = [];
+    for (let i = 0; i < settings.NumRounds; i++) {
+        promises.push(fetchPano(svService, settings));
+    }
+    await Promise.all(promises);
 }
 
 async function fetchPano(svService, settings) {
+    // TODO: check population density in here vvv rather than immediately prior to request
+    let randomLatLng = getRandomLatLngInPolygon(settings.Polygon);
     
+    function handlePanoResponse(result, status) {
+        if (status == google.maps.StreetViewStatus.OK && resultPanoIsGood(result, settings)) {
+            foundCoords.push(result.location.latLng);
+            updateFetchingBar(foundCoords.length, settings.NumRounds);
+		} else {
+			console.log("Failed to get location; api request: " + status.toString() + "\n");
+			fetchPano(svService, settings);
+		}
+    }
+
+    let source = settings.Source == 1 ? google.maps.StreetViewSource.OUTDOOR : google.maps.StreetViewSource.DEFAULT;
+    let population = (await getLocationPopulation(randomLatLng.lat(), randomLatLng.lng())) * 100;
+    console.log(population);
+	if (population >= settings.MinDensity && population <= settings.MaxDensity) {
+		streetViewService.getPanorama({
+			location: randomLatLng,
+			preference: SV_PREF,
+			radius: PANO_SEARCH_RADIUS,
+			source: source,
+		}, handlePanoResponse);
+	} else {
+        console.log("Didn't meet pop density, recursing...");
+		fetchPano(svService, settings);
+	}
+}
+
+// returns whether result (pano) meets the requirements of mapInfo
+function resultPanoIsGood(result, settings) {
+	if (result.location.latLng.lat() > LAT_LIMIT || result.location.latLng.lat() < -1 * LAT_LIMIT) {return false;}
+
+	if (settings.Copyright == 1 && !result.copyright.includes("Google")) {
+		return false;
+	}
+	if (settings.Copyright == 2 && result.copyright.includes("Google")) {
+		return false;
+	}
+
+	if (settings.Connectedness == 1 && result.links.length == 0) {
+		return false;
+	}
+	if (settings.Connectedness == 2 && result.links.length > 0) {
+		return false;
+	}
+
+	let locationTurfPoint = turf.point([result.location.latLng.lng(), result.location.latLng.lat()]);
+	if (settings.Polygon != null && !turf.booleanPointInPolygon(locationTurfPoint, settings.Polygon)) {
+		return false;
+	}
+/*
+	for (let i = 0; i < mapInfo["panoCoords"].length; i++) {
+		if (settings["panoCoords"][i].equals(result.location.latLng)) {
+			console.log("duplicate!");
+			return false;
+		}
+	}*/
+
+	return true;
+}
+
+// get a random google.maps.LatLng within the specified turf.polygon or turf.multiPolygon
+function getRandomLatLngInPolygon(polygon) {
+	if (polygon == null) {
+		return getRandomLatLng(); // fall back to global
+	}
+	let bounds = turf.bbox(polygon);
+	let randomLng, randomLat, lnglat;
+	do { 
+		randomLng = (Math.random() * (bounds[2] - bounds[0]) + bounds[0]);
+		randomLat = (Math.random() * (bounds[3] - bounds[1]) + bounds[1]);
+		lnglat = turf.point([randomLng, randomLat]);
+	} while (!turf.booleanPointInPolygon(lnglat, polygon));
+	return new google.maps.LatLng(randomLat, randomLng);
+}
+
+// get a random google.maps.LatLng, anywhere
+function getRandomLatLng() {
+	let randomLng = (Math.random() * 360 - 180);
+	let randomLat = (Math.random() * 180 - 90);
+	return new google.maps.LatLng(randomLat, randomLng);
+}
+
+// ==  ========
+
+function updateFetchingBar(numFound, numRounds) {
+    bar = document.getElementById("loading-progress")
+    bar.setAttribute("style", "width: " + ((100 * numFound) / numRounds) + "%;");
+    bar.textContent = numFound.toString() + "/" + numRounds.toString();
 }
