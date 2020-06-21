@@ -52,6 +52,9 @@ function handleFormSubmit() {
 
     // sanity check density fields
     // TODO: nicer error messages than alerts
+    // TODO: check that population density in Polygon overlaps with the
+    //       specified range (otherwise we'll never be able to find good
+    //       panos.)
     if (mapSettings.MinDensity > mapSettings.MaxDensity) {
         alert("Max density must be greater than min density.");
         return;
@@ -66,13 +69,15 @@ function handleFormSubmit() {
             "Content-Type": "application/json",
         },
         body: JSON.stringify(mapSettings),
-    })
-        .then(console.log("mapSettings sent to server"));
+    }).then(console.log("mapSettings sent to server"));
 }
 
 function intById(id, fallback=0) {
     input = document.getElementById(id);
     if (input) {
+        if (!input.value) {
+            return fallback;
+        }
         return parseInt(input.value, 10);
     } else {
         console.log("Couldn't find input '" + id + "', using fallback.")
