@@ -8,7 +8,6 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/golang/geo/s2"
 	"gitlab.com/glatteis/earthwalker/domain"
 )
 
@@ -69,14 +68,8 @@ type NewChallenge struct {
 	ChallengeStore domain.ChallengeStore
 }
 
-func (handler *NewChallenge) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	r.ParseForm()
-	challengeData := r.FormValue("challengeData")
-	if challengeData == "" {
-		http.Error(w, "No challengeData received", http.StatusBadRequest)
-		return
-	}
-	newChallenge, err := challengeFromData(challengeData)
+func (handler NewChallenge) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	newChallenge, err := challengeFromRequest(r)
 	if err != nil {
 		log.Printf("Failed to create challenge from data: %v\n", err)
 		http.Error(w, "Failed to create challenge from data.", http.StatusInternalServerError)
@@ -88,38 +81,51 @@ func (handler *NewChallenge) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to insert new challenge into store.", http.StatusInternalServerError)
 		return
 	}
-	// TODO: redirect (to before_start page for this challenge?)
+	// TODO: redirect (to new challenge page for this challenge?)
+	// TODO: remove this debugging response
+	http.Redirect(w, r, "/challenge?id="+newChallenge.ChallengeID, http.StatusFound)
 }
 
-func challengeFromData(challengeData string) (domain.Challenge, error) {
-	type jsonPoint struct {
-		Lat float64 `json:"lat"`
-		Lng float64 `json:"lng"`
-	}
+func challengeFromRequest(r *http.Request) (domain.Challenge, error) {
 	newChallenge := domain.Challenge{
-		ChallengeID: domain.RandAlpha(10),
-		Places:      make([]domain.ChallengePlace, 0),
+		Places: make([]domain.ChallengePlace, 0),
 	}
-	var locations []jsonPoint
-	if err := json.Unmarshal([]byte(challengeData), &locations); err != nil {
-		return newChallenge, err
+	err := json.NewDecoder(r.Body).Decode(&newChallenge)
+	if err != nil {
+		return newChallenge, fmt.Errorf("Failed to decode newChallenge from request: %v", err)
 	}
-	// convert from degrees to radians (ffs) and populate challenge.Places
-	for i := range locations {
-		newChallenge.Places = append(newChallenge.Places, domain.ChallengePlace{
-			ChallengeID: newChallenge.ChallengeID,
-			Location:    s2.LatLngFromDegrees(locations[i].Lat, locations[i].Lng),
-		})
+	newChallenge.ChallengeID = domain.RandAlpha(10)
+	for _, place := range newChallenge.Places {
+		place.ChallengeID = newChallenge.ChallengeID
 	}
+	return newChallenge, err
+}
 
-	return newChallenge, nil
+type Challenge struct {
+	ChallengeStore domain.ChallengeStore
+}
+
+func (handler Challenge) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	challengeID, ok := r.URL.Query()["id"]
+	if !ok || len(challengeID) == 0 {
+		http.Error(w, "no id!", http.StatusBadRequest)
+		log.Printf("no challenge id!\n")
+		return
+	}
+	foundChallenge, err := handler.ChallengeStore.Get(challengeID[0])
+	if err != nil {
+		http.Error(w, "failed to get challenge", http.StatusInternalServerError)
+		log.Printf("Failed to get challenge: %v\n", err)
+		return
+	}
+	json.NewEncoder(w).Encode(foundChallenge)
 }
 
 type NewChallengeResult struct {
 	ChallengeResultStore domain.ChallengeResultStore
 }
 
-func (handler *NewChallengeResult) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (handler NewChallengeResult) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// TODO: create new ChallengeResult from form
 	// TODO: validate ChallengeResult
 	//       nickname not empty
