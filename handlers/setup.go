@@ -1,6 +1,8 @@
+package handlers
+
 // handlers in this file create and store new structs before the game begins
 // (Map, Challenge, ChallengeResult)
-package handlers
+// TODO: lots of duplicated code in this file.  Consider consolidating.
 
 import (
 	"encoding/json"
@@ -83,7 +85,6 @@ func (handler NewChallenge) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// TODO: redirect (to new challenge page for this challenge?)
-	// TODO: remove this debugging response
 	w.Write([]byte(newChallenge.ChallengeID))
 }
 
@@ -108,7 +109,7 @@ type Challenge struct {
 
 func (handler Challenge) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	challengeID, ok := r.URL.Query()["id"]
-	if !ok || len(challengeID) == 0 {
+	if !ok || len(challengeID) == 0 || len(challengeID[0]) == 0 {
 		http.Error(w, "no id!", http.StatusBadRequest)
 		log.Printf("no challenge id!\n")
 		return
@@ -152,8 +153,7 @@ func (handler NewChallengeResult) ServeHTTP(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	// TODO: redirect to actual game
-	// TODO: remove debug response
-	json.NewEncoder(w).Encode(newChallengeResult)
+	w.Write([]byte(newChallengeResult.ChallengeResultID))
 }
 
 func challengeResultFromRequest(r *http.Request) (domain.ChallengeResult, error) {
@@ -163,4 +163,24 @@ func challengeResultFromRequest(r *http.Request) (domain.ChallengeResult, error)
 		return newChallengeResult, fmt.Errorf("failed to decode newChallengeResult from request: %v", err)
 	}
 	return newChallengeResult, nil
+}
+
+type ChallengeResult struct {
+	ChallengeResultStore domain.ChallengeResultStore
+}
+
+func (handler ChallengeResult) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	challengeResultID, ok := r.URL.Query()["id"]
+	if !ok || len(challengeResultID) == 0 || len(challengeResultID[0]) == 0 {
+		http.Error(w, "no id!", http.StatusBadRequest)
+		log.Printf("no challengeResult id!\n")
+		return
+	}
+	foundChallengeResult, err := handler.ChallengeResultStore.Get(challengeResultID[0])
+	if err != nil {
+		http.Error(w, "failed to get challengeResult", http.StatusInternalServerError)
+		log.Printf("Failed to get challengeResult: %v\n", err)
+		return
+	}
+	json.NewEncoder(w).Encode(foundChallengeResult)
 }

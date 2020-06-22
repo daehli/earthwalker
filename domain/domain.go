@@ -7,8 +7,6 @@
 package domain
 
 import (
-	"time"
-
 	"github.com/golang/geo/s2"
 )
 
@@ -136,11 +134,10 @@ type ChallengeResult struct {
 
 	// these could potentially be replaced with UserID if we were to
 	// implement user auth/accounts
-	Nickname  string
-	Icon      int
-	StartTime *time.Time
+	Nickname string
+	Icon     int
 
-	Guesses []Guess `db:"-"` // non-stored field, for convenience
+	Guesses []Guess
 }
 
 // ChallengeResultStore is implemented by structs which provide access to a

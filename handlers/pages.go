@@ -17,7 +17,7 @@ func (handler Root) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/createmap", http.StatusFound)
 		return
 	}
-	http.Redirect(w, r, "/challenge?c="+challengeID, http.StatusFound)
+	http.Redirect(w, r, "/play", http.StatusFound)
 }
 
 type DynamicHTML struct {
