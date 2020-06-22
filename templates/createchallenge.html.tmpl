@@ -11,33 +11,33 @@
 
 <div class="container">
 
-<br>
+	<br>
 
-<h2>New Challenge</h2>
+	<h2>New Challenge</h2>
 
-<br>
+	<br>
 
-<h4 class="text-center" id="status">Twiddling thumbs...</h4>
+	<h4 class="text-center" id="status">Twiddling thumbs...</h4>
 
-<form action="javascript:handleNewChallenge()" method="post">
-    <div class="progress">
-		<div class="progress-bar" id="loading-progress" role="progressbar"></div>
+	<div action="" method="post">
+		<div class="progress">
+			<div class="progress-bar" id="loading-progress" role="progressbar"></div>
+		</div>
+		<small class="text-muted">
+			Earthwalker is getting random locations from Google Street View.
+			This happens in your browser, because there is only an API in JavaScript for this.
+			Yes, that is kind of silly, I'm sorry.
+		</small>
+
+		<!-- TODO: show map settings -->
+
+		<br/>
+		<br/>
+
+		<a id="submit-button" class="btn btn-primary" style="margin-bottom: 2em; color: #fff;" disabled>Start Challenge</a>
+
 	</div>
-	<small class="text-muted">
-	Earthwalker is getting random locations from Google Street View.
-	This happens in your browser, because there is only an API in JavaScript for this.
-	Yes, that is kind of silly, I'm sorry.
-	</small>
-
-    <!-- TODO: show map settings -->
-
-    <br/>
-    <br/>
-
-	<button id="submit-button" type="submit" class="btn btn-primary" style="margin-bottom: 2em;" disabled>Create Challenge</button>
-
-</form>
-<link rel="stylesheet" href="static/leaflet/leaflet.css"/>
+	<link rel="stylesheet" href="static/leaflet/leaflet.css"/>
 </div>
 
 {{ end }}

@@ -83,7 +83,7 @@ func (handler NewChallenge) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	// TODO: redirect (to new challenge page for this challenge?)
 	// TODO: remove this debugging response
-	http.Redirect(w, r, "/challenge?id="+newChallenge.ChallengeID, http.StatusFound)
+	w.Write([]byte(newChallenge.ChallengeID))
 }
 
 func challengeFromRequest(r *http.Request) (domain.Challenge, error) {

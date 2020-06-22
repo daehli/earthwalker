@@ -39,13 +39,18 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     fetchPanos(streetViewService, mapSettings);
 });
 
-function updateUI(numFound, numRounds) {
+async function updateUI(numFound, numRounds) {
     bar = document.getElementById("loading-progress")
     bar.setAttribute("style", "width: " + ((100 * numFound) / numRounds) + "%;");
 	bar.textContent = numFound.toString() + "/" + numRounds.toString();
 	if (numFound == numRounds) {
-		document.getElementById("status").textContent = "Done!";
-		document.getElementById("submit-button").disabled = false;
+		let challengeID = await submitNewChallenge();
+		let challengeLink = window.location.origin + "/challenge?id=" + challengeID
+		// TODO: nicer challenge link readout
+		document.getElementById("status").textContent = "Done! Challenge Link: " + challengeLink;
+		let button = document.getElementById("submit-button");
+		button.href = challengeLink;
+		button.disabled = false;
 	}
 }
 
@@ -54,7 +59,7 @@ function printCoords() {
     foundCoords.forEach((coord) => {console.log(coord.lat().toString() + ", " + coord.lng().toString())});
 }
 
-function handleNewChallenge() {
+async function submitNewChallenge() {
 	let convertedCoords = foundCoords.map((coord, i) => ({RoundNum: i, Location: {Lat: coord.lat(), Lng: coord.lng()}}));
 	let challenge = JSON.stringify({
 		MapID: mapID,
@@ -62,18 +67,20 @@ function handleNewChallenge() {
 	});
 
 	console.log(challenge);
-	fetch("/newchallenge", {
+	let response = await fetch("/newchallenge", {
 		method: "POST",
 		headers: {
 			"Content-Type": "application/json",
 		},
 		body: challenge,
-	}).then(console.log("challenge sent to server"));
+	});
+	return response.text();
 }
 
 // == MAP SETTINGS ========
 async function fetchMapSettings(url) {
-    let params = new URLSearchParams(window.location.search)
+	let params = new URLSearchParams(window.location.search)
+	// TODO: consider having default map settings if there's no ID
     if (!params.has("mapid")) {
         alert("URL has no map ID!");
         return;
