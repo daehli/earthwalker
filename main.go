@@ -72,6 +72,7 @@ func main() {
 
 	mapStore := badgerdb.MapStore{DB: db}
 	challengeStore := badgerdb.ChallengeStore{DB: db}
+	challengeResultStore := badgerdb.ChallengeResultStore{DB: db}
 
 	// == HANDLERS ========
 	var mainTemplate string = conf.StaticPath + "/templates/main_template.html.tmpl"
@@ -91,6 +92,10 @@ func main() {
 	http.Handle("/newchallenge", handlers.NewChallenge{ChallengeStore: challengeStore})
 	// retrieve challenge JSON by ?id=
 	http.Handle("/challenge", handlers.Challenge{ChallengeStore: challengeStore})
+	// submit ChallengeResult JSON to be stored
+	http.Handle("/newchallengeresult", handlers.NewChallengeResult{ChallengeResultStore: challengeResultStore})
+	// start challenge, ?challengeid=
+	// http.Handle("/play", )
 
 	// == ENGAGE ========
 	log.Println("earthwalker is running on ", port)

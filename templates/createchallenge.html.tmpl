@@ -9,7 +9,7 @@
 
 {{ define "content" }}
 
-<div class="container">
+<form action="javascript:handleFormSubmit()" class="container">
 
 	<br>
 
@@ -34,10 +34,19 @@
 		<br/>
 		<br/>
 
-		<a id="submit-button" class="btn btn-primary" style="margin-bottom: 2em; color: #fff;" disabled>Start Challenge</a>
+		<div class="form-group">
+			<div class="input-group">
+				<div class="input-group-prepend">
+					<div class="input-group-text">Your Nickname</div>
+				</div>
+				<input required type="text" class="form-control" id="Nickname"/>
+			</div>
+		</div>
+
+		<button id="submit-button" class="btn btn-primary" style="margin-bottom: 2em; color: #fff;" disabled>Start Challenge</button>
 
 	</div>
 	<link rel="stylesheet" href="static/leaflet/leaflet.css"/>
-</div>
+</form>
 
 {{ end }}

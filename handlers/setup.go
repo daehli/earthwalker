@@ -1,11 +1,12 @@
 // handlers in this file create and store new structs before the game begins
-// (Map, Challenge, ChallengeResult, etc.)
+// (Map, Challenge, ChallengeResult)
 package handlers
 
 import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
 
 	"gitlab.com/glatteis/earthwalker/domain"
@@ -37,7 +38,7 @@ func mapFromRequest(r *http.Request) (domain.Map, error) {
 	newMap := domain.Map{}
 	err := json.NewDecoder(r.Body).Decode(&newMap)
 	if err != nil {
-		return newMap, fmt.Errorf("Failed to decode newMap from request: %v", err)
+		return newMap, fmt.Errorf("failed to decode newMap from request: %v", err)
 	}
 	// we want to make sure we don't take the ID from the client request
 	newMap.MapID = domain.RandAlpha(10)
@@ -71,8 +72,8 @@ type NewChallenge struct {
 func (handler NewChallenge) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	newChallenge, err := challengeFromRequest(r)
 	if err != nil {
-		log.Printf("Failed to create challenge from data: %v\n", err)
-		http.Error(w, "Failed to create challenge from data.", http.StatusInternalServerError)
+		log.Printf("Failed to create challenge from request: %v\n", err)
+		http.Error(w, "Failed to create challenge from request.", http.StatusInternalServerError)
 		return
 	}
 	err = handler.ChallengeStore.Insert(newChallenge)
@@ -92,13 +93,13 @@ func challengeFromRequest(r *http.Request) (domain.Challenge, error) {
 	}
 	err := json.NewDecoder(r.Body).Decode(&newChallenge)
 	if err != nil {
-		return newChallenge, fmt.Errorf("Failed to decode newChallenge from request: %v", err)
+		return newChallenge, fmt.Errorf("failed to decode newChallenge from request: %v", err)
 	}
 	newChallenge.ChallengeID = domain.RandAlpha(10)
 	for _, place := range newChallenge.Places {
 		place.ChallengeID = newChallenge.ChallengeID
 	}
-	return newChallenge, err
+	return newChallenge, nil
 }
 
 type Challenge struct {
@@ -126,9 +127,40 @@ type NewChallengeResult struct {
 }
 
 func (handler NewChallengeResult) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// TODO: create new ChallengeResult from form
-	// TODO: validate ChallengeResult
-	//       nickname not empty
-	// TODO: insert into store
+	// create new ChallengeResult from form
+	newChallengeResult, err := challengeResultFromRequest(r)
+	if err != nil {
+		log.Printf("Failed to create challengeResult from request: %v\n", err)
+		http.Error(w, "Failed to create challengeResult from request.", http.StatusInternalServerError)
+		return
+	}
+	// must have ChallengeID
+	if len(newChallengeResult.ChallengeID) == 0 {
+		log.Printf("No ChallengeID for new ChallengeResult!\n")
+		http.Error(w, "No ChallengeID for new ChallengeResult!", http.StatusBadRequest)
+		return
+	}
+	// assign a random Icon color and ID, empty Guesses slice
+	newChallengeResult.ChallengeResultID = domain.RandAlpha(10)
+	newChallengeResult.Icon = rand.Intn(200) + 1
+	newChallengeResult.Guesses = make([]domain.Guess, 0)
+	// insert into store
+	err = handler.ChallengeResultStore.Insert(newChallengeResult)
+	if err != nil {
+		log.Printf("Failed to insert new challengeResult into store: %v\n", err)
+		http.Error(w, "Failed to insert new challengeResult into store.", http.StatusInternalServerError)
+		return
+	}
 	// TODO: redirect to actual game
+	// TODO: remove debug response
+	json.NewEncoder(w).Encode(newChallengeResult)
+}
+
+func challengeResultFromRequest(r *http.Request) (domain.ChallengeResult, error) {
+	newChallengeResult := domain.ChallengeResult{}
+	err := json.NewDecoder(r.Body).Decode(&newChallengeResult)
+	if err != nil {
+		return newChallengeResult, fmt.Errorf("failed to decode newChallengeResult from request: %v", err)
+	}
+	return newChallengeResult, nil
 }

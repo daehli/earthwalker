@@ -26,6 +26,7 @@ let mapSettings = undefined;
 let popTIF = undefined;
 
 let mapID;
+let challengeID;
 let foundCoords = [];
 
 document.addEventListener('DOMContentLoaded', async (event) => {
@@ -44,14 +45,26 @@ async function updateUI(numFound, numRounds) {
     bar.setAttribute("style", "width: " + ((100 * numFound) / numRounds) + "%;");
 	bar.textContent = numFound.toString() + "/" + numRounds.toString();
 	if (numFound == numRounds) {
-		let challengeID = await submitNewChallenge();
+		challengeID = await submitNewChallenge();
 		let challengeLink = window.location.origin + "/challenge?id=" + challengeID
 		// TODO: nicer challenge link readout
 		document.getElementById("status").textContent = "Done! Challenge Link: " + challengeLink;
-		let button = document.getElementById("submit-button");
-		button.href = challengeLink;
-		button.disabled = false;
+		document.getElementById("submit-button").disabled = false;
 	}
+}
+
+function handleFormSubmit() {
+	let challengeResult = JSON.stringify({
+		ChallengeID: challengeID,
+		Nickname: document.getElementById("Nickname").value,
+	});
+	fetch("/newchallengeresult", {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+		},
+		body: challengeResult,
+	});
 }
 
 // TODO: remove debug
