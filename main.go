@@ -18,7 +18,6 @@ package main
 
 import (
 	"flag"
-	htemplate "html/template"
 	"log"
 	"math/rand"
 	"net/http"
@@ -26,12 +25,11 @@ import (
 	"os/signal"
 	"strconv"
 	"syscall"
-	ttemplate "text/template"
 	"time"
 
 	"gitlab.com/glatteis/earthwalker/badgerdb"
 	"gitlab.com/glatteis/earthwalker/config"
-	"gitlab.com/glatteis/earthwalker/handlers"
+	"gitlab.com/glatteis/earthwalker/handlers/api"
 )
 
 func main() {
@@ -75,28 +73,30 @@ func main() {
 	challengeResultStore := badgerdb.ChallengeResultStore{DB: db}
 
 	// == HANDLERS ========
-	var mainTemplate string = conf.StaticPath + "/templates/main_template.html.tmpl"
-	http.Handle("/", handlers.Root{})
-	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir(conf.StaticPath+"/static"))))
-	// map editor frontend
-	http.Handle("/createmap", handlers.DynamicHTML{Template: htemplate.Must(htemplate.ParseFiles(mainTemplate, conf.StaticPath+"/templates/createmap.html.tmpl")), Data: conf})
-	http.Handle("/createmap.js", handlers.DynamicText{Template: ttemplate.Must(ttemplate.ParseFiles(conf.StaticPath + "/templates/createmap.js.tmpl")), Data: conf})
-	// submit map JSON to be stored
-	http.Handle("/newmap", handlers.NewMap{MapStore: mapStore})
-	// retrieve map JSON by ?id=
-	http.Handle("/map", handlers.Map{MapStore: mapStore})
-	// challenge creation frontend, provide map ?mapid=
-	http.Handle("/createchallenge", handlers.DynamicHTML{Template: htemplate.Must(htemplate.ParseFiles(mainTemplate, conf.StaticPath+"/templates/createchallenge.html.tmpl")), Data: conf})
-	http.Handle("/createchallenge.js", handlers.DynamicText{Template: ttemplate.Must(ttemplate.ParseFiles(conf.StaticPath + "/templates/createchallenge.js.tmpl")), Data: conf})
-	// submit challenge JSON to be stored
-	http.Handle("/newchallenge", handlers.NewChallenge{ChallengeStore: challengeStore})
-	// retrieve challenge JSON by ?id=
-	http.Handle("/challenge", handlers.Challenge{ChallengeStore: challengeStore})
-	// submit ChallengeResult JSON to be stored
-	http.Handle("/newchallengeresult", handlers.NewChallengeResult{ChallengeResultStore: challengeResultStore})
-	// start challenge, ?challengeid=
-	// http.Handle("/play", )
+	//var mainTemplate string = conf.StaticPath + "/templates/main_template.html.tmpl"
+	http.Handle("/api/", http.StripPrefix("/api/", api.Root{
+		Config:               conf,
+		MapStore:             mapStore,
+		ChallengeStore:       challengeStore,
+		ChallengeResultStore: challengeResultStore,
 
+		ConfigHandler: api.Config{
+			Config: conf,
+		},
+		MapsHandler: api.Maps{
+			MapStore: mapStore,
+		},
+		ChallengesHandler: api.Challenges{
+			ChallengeStore: challengeStore,
+		},
+		ResultsHandler: api.Results{
+			ChallengeResultStore: challengeResultStore,
+		},
+		GuessesHandler: api.Guesses{
+			ChallengeResultStore: challengeResultStore,
+		},
+	}))
+	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir(conf.StaticPath+"/static"))))
 	// == ENGAGE ========
 	log.Println("earthwalker is running on ", port)
 	log.Fatal(http.ListenAndServe(":"+port, nil))

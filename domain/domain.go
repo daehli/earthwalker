@@ -98,7 +98,7 @@ type MapStore interface {
 type Challenge struct {
 	ChallengeID string
 	MapID       string
-	Places      []ChallengePlace `db:"-"`
+	Places      []ChallengePlace
 }
 
 // ChallengeStore is implemented by structs which provide access to a database
@@ -114,15 +114,6 @@ type ChallengePlace struct {
 	ChallengeID string
 	RoundNum    int
 	Location    s2.LatLng
-}
-
-// ChallengePlaceStore is implemented by structs which provide access to a
-// database containing ChallengePlaces.
-// TODO: consider removing this interface definition and treating place
-//       storage as internal to the implementation
-type ChallengePlaceStore interface {
-	Insert(ChallengePlace) error
-	GetAll(challengeID string) ([]ChallengePlace, error)
 }
 
 // ChallengeResult is a player's Guesses in a challenge.
@@ -153,11 +144,4 @@ type Guess struct {
 	ChallengeResultID string
 	RoundNum          int
 	Location          s2.LatLng
-}
-
-// GuessStore is implemented by structs which provide access to a database
-// containing Guesses.
-type GuessStore interface {
-	Insert(Guess) error
-	GetAll(challengeResultID string) ([]Guess, error)
 }
