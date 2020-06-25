@@ -6,17 +6,17 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path"
 
 	"github.com/BurntSushi/toml"
 	"gitlab.com/glatteis/earthwalker/domain"
-	"gitlab.com/glatteis/earthwalker/util"
 )
 
 // Read a Config from environment variables and TOML file, and return it
 func Read() (domain.Config, error) {
 	conf := domain.Config{
 		ConfigPath: getEnv("EARTHWALKER_CONFIG_PATH", "config.toml"),
-		StaticPath: getEnv("EARTHWALKER_STATIC_PATH", util.AppPath()),
+		StaticPath: getEnv("EARTHWALKER_STATIC_PATH", AppPath()),
 		DBPath:     getDBPath(),
 		Port:       getEnv("EARTHWALKER_PORT", "8080"),
 	}
@@ -53,7 +53,16 @@ func getDBPath() string {
 	} else if pathRel == "absolute" {
 		path = pathSuffix
 	} else { // default: relative to executable
-		path = util.AppPath() + pathSuffix
+		path = AppPath() + pathSuffix
 	}
 	return path
+}
+
+// AppPath gets the executable's path.
+func AppPath() string {
+	appPath, err := os.Executable()
+	if err != nil {
+		log.Fatal("App path not accessible!")
+	}
+	return path.Dir(appPath)
 }

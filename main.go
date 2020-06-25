@@ -73,7 +73,7 @@ func main() {
 	challengeResultStore := badgerdb.ChallengeResultStore{DB: db}
 
 	// == HANDLERS ========
-	//var mainTemplate string = conf.StaticPath + "/templates/main_template.html.tmpl"
+	// API
 	http.Handle("/api/", http.StripPrefix("/api/", api.Root{
 		Config:               conf,
 		MapStore:             mapStore,
@@ -96,7 +96,11 @@ func main() {
 			ChallengeResultStore: challengeResultStore,
 		},
 	}))
-	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir(conf.StaticPath+"/static"))))
+	// Public static files
+	http.Handle("/public/", http.StripPrefix("/public/", http.FileServer(http.Dir(conf.StaticPath+"/public"))))
+	// Otherwise, just serve index.html and let the frontend deal with the consequences
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) { http.ServeFile(w, r, "public/index.html") })
+
 	// == ENGAGE ========
 	log.Println("earthwalker is running on ", port)
 	log.Fatal(http.ListenAndServe(":"+port, nil))
