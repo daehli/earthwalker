@@ -11,3 +11,5 @@ start.sh
 **.vlog
 **.sst
 config.toml
+
+public/build/*
