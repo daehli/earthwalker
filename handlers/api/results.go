@@ -53,5 +53,7 @@ func challengeResultFromRequest(r *http.Request) (domain.ChallengeResult, error)
 	if err != nil {
 		return newChallengeResult, fmt.Errorf("failed to decode newChallengeResult from request: %v", err)
 	}
+	newChallengeResult.ChallengeResultID = domain.RandAlpha(10)
+	newChallengeResult.Guesses = make([]domain.Guess, 0)
 	return newChallengeResult, nil
 }

@@ -25,7 +25,8 @@
 
     onMount(async () => {
         previewMap = L.map("bounds-map", {center: [0, 0], zoom: 1});
-        L.tileLayer("https://api.mapbox.com/styles/v1/jwlarocque/ckb5ngk3e1rq11lr5ztqekj5b/tiles/256/{z}/{x}/{y}?access_token=pk.eyJ1IjoiandsYXJvY3F1ZSIsImEiOiJja2I1bmRtMW0xNm16MnlxcDl3ZTh3cTBoIn0.CJk6LRRfs-Chwmm--NiBfw", {
+        let tileServer = await getTileServer();
+        L.tileLayer(tileServer, {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> contributors, <a href="https://wikitech.wikimedia.org/wiki/Wikitech:Cloud_Services_Terms_of_use">Wikimedia Cloud Services</a>'
         }).addTo(previewMap);
         previewPolyGroup = L.layerGroup().addTo(previewMap);
@@ -65,14 +66,15 @@
         // TODO: evaluate challenge generation (to make sure mapSettings aren't so
         //       specific that it takes a huge number of API requests to find good
         //       panos)
-        // send to server /newmap
-        fetch("/newmap", {
+        // send new map to server
+        fetch("/api/maps", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
             },
             body: JSON.stringify(mapSettings),
         }).then(console.log("mapSettings sent to server"));
+        // TODO: redirect to createchallenge
     }
 
     function intById(id, fallback=0) {
@@ -96,6 +98,14 @@
             console.log("Couldn't find input '" + id + "', using fallback.")
             return fallback;
         }
+    }
+
+    async function getTileServer() {
+        let response = await fetch("/api/config/tileserver", {
+            method: "GET",
+        });
+        let data = await response.json();
+        return data.tileserver;
     }
 
     function locStringUpdated() {

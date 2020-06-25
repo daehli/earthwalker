@@ -1,5 +1,6 @@
 <script>
 	import CreateMap from './CreateMap.svelte'
+	import CreateChallenge from './CreateChallenge.svelte'
 	$: console.log(window.location.pathname)
 </script>
 
@@ -22,7 +23,7 @@
 	{:else if window.location.pathname === "/createmap"}
 		<CreateMap/>
 	{:else if window.location.pathname === "/createchallenge"}
-		<p>Create a new challenge.</p>
+		<CreateChallenge/>
 	{:else}
 		<h3>404.  That's an error.</h3>
 	{/if}

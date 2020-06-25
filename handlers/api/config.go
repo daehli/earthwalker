@@ -19,9 +19,9 @@ func (handler Config) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var respJSON string
 	switch head, _ := shiftPath(r.URL.Path); head {
 	case "tileserver":
-		respJSON = "{tileserver: \"" + handler.Config.TileServerURL + "\"}"
+		respJSON = "{\"tileserver\": \"" + handler.Config.TileServerURL + "\"}"
 	case "nolabeltileserver":
-		respJSON = "{nolabeltileserver: \"" + handler.Config.NoLabelTileServerURL + "\"}"
+		respJSON = "{\"nolabeltileserver\": \"" + handler.Config.NoLabelTileServerURL + "\"}"
 	default:
 		sendError(w, fmt.Sprintf("api/config endpoint '%s' does not exist.", r.URL.Path), http.StatusNotFound)
 		return
