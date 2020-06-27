@@ -1,6 +1,7 @@
 
 ### Endpoints
 
+TODO: config api is weird
 GET /api/config/tileserver : get TileServerURL  
 GET /api/config/nolabeltileserver : get NoLabelTileServerURL  
 

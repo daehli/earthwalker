@@ -48,12 +48,13 @@ func (handler Results) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func challengeResultFromRequest(r *http.Request) (domain.ChallengeResult, error) {
-	newChallengeResult := domain.ChallengeResult{}
+	newChallengeResult := domain.ChallengeResult{
+		Guesses: make([]domain.Guess, 0),
+	}
 	err := json.NewDecoder(r.Body).Decode(&newChallengeResult)
 	if err != nil {
 		return newChallengeResult, fmt.Errorf("failed to decode newChallengeResult from request: %v", err)
 	}
 	newChallengeResult.ChallengeResultID = domain.RandAlpha(10)
-	newChallengeResult.Guesses = make([]domain.Guess, 0)
 	return newChallengeResult, nil
 }

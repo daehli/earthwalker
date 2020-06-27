@@ -27,6 +27,8 @@ import (
 	"syscall"
 	"time"
 
+	"gitlab.com/glatteis/earthwalker/handlers"
+
 	"gitlab.com/glatteis/earthwalker/badgerdb"
 	"gitlab.com/glatteis/earthwalker/config"
 	"gitlab.com/glatteis/earthwalker/handlers/api"
@@ -98,6 +100,12 @@ func main() {
 	}))
 	// Public static files
 	http.Handle("/public/", http.StripPrefix("/public/", http.FileServer(http.Dir(conf.StaticPath+"/public"))))
+	// SV sorcery
+	http.Handle("/play/", handlers.Play{
+		ChallengeStore:       challengeStore,
+		ChallengeResultStore: challengeResultStore,
+	})
+	http.HandleFunc("/maps/", handlers.ServeMaps)
 	// Otherwise, just serve index.html and let the frontend deal with the consequences
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) { http.ServeFile(w, r, "public/index.html") })
 

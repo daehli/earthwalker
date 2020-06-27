@@ -56,8 +56,8 @@ func challengeFromRequest(r *http.Request) (domain.Challenge, error) {
 		return newChallenge, fmt.Errorf("failed to decode newChallenge from request: %v", err)
 	}
 	newChallenge.ChallengeID = domain.RandAlpha(10)
-	for _, place := range newChallenge.Places {
-		place.ChallengeID = newChallenge.ChallengeID
+	for i := range newChallenge.Places {
+		newChallenge.Places[i].ChallengeID = newChallenge.ChallengeID
 	}
 	return newChallenge, nil
 }
