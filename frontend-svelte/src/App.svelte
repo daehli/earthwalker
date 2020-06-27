@@ -1,7 +1,8 @@
 <script>
 	import CreateMap from './CreateMap.svelte'
 	import CreateChallenge from './CreateChallenge.svelte'
-	$: console.log(window.location.pathname)
+	import Resume from './Resume.svelte'
+	import Join from './Join.svelte'
 </script>
 
 <main>
@@ -19,11 +20,13 @@
 		</ul>
 	</nav>
 	{#if window.location.pathname === "/"}
-		<p>Landing page.</p>
+		<Resume/>
 	{:else if window.location.pathname === "/createmap"}
 		<CreateMap/>
 	{:else if window.location.pathname === "/createchallenge"}
 		<CreateChallenge/>
+	{:else if window.location.pathname === "/join"}
+		<Join/>
 	{:else}
 		<h3>404.  That's an error.</h3>
 	{/if}

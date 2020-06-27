@@ -32,11 +32,11 @@
     const SV_PREF = google.maps.StreetViewPreference.BEST;
     // discard polar panos, they're usually garbage
     const LAT_LIMIT = 85;
-    const mapURL = "/api/maps/"
-    const popTIFLoc = "/static/nasa_pop_data.tif"
+    const mapURL = "/api/maps/";
+    const popTIFLoc = "/static/nasa_pop_data.tif";
 
-    const challengeCookieName = "earthwalker_lastChallenge"
-    const resultCookiePrefix = "earthwalker_lastResult_"
+    const challengeCookieName = "earthwalker_lastChallenge";
+    const resultCookiePrefix = "earthwalker_lastResult_";
 
     let statusReadout;
 
@@ -77,11 +77,11 @@
         console.log("Form submitted!");
         let challengeResultID = await submitNewChallengeResult();
         // set the generated challenge as the current challenge
-        document.cookie = challengeCookieName + ":" + challengeID + ";path=/;max-age=172800";
+        document.cookie = challengeCookieName + "=" + challengeID + ";path=/;max-age=172800";
         // set the generated ChallengeResult as the current ChallengeResult
         // for the Challenge with challengeID
-        document.cookie = resultCookiePrefix + challengeID + ":" + challengeResultID + ";path=/;max-age=172800";
-        //window.location.replace("/play");
+        document.cookie = resultCookiePrefix + challengeID + "=" + challengeResultID + ";path=/;max-age=172800";
+        window.location.replace("/play");
     }
 
     // TODO: remove debug
