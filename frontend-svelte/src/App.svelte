@@ -3,6 +3,7 @@
 	import CreateChallenge from './CreateChallenge.svelte'
 	import Resume from './Resume.svelte'
 	import Join from './Join.svelte'
+	import Scores from './Scores.svelte'
 </script>
 
 <main>
@@ -27,6 +28,8 @@
 		<CreateChallenge/>
 	{:else if window.location.pathname === "/join"}
 		<Join/>
+	{:else if window.location.pathname === "/scores"}
+		<Scores/>
 	{:else}
 		<h3>404.  That's an error.</h3>
 	{/if}

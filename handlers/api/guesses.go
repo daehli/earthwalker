@@ -16,6 +16,7 @@ type Guesses struct {
 func (handler Guesses) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodPost:
+		log.Println("handling guess POST!")
 		newGuess, err := guessFromRequest(r)
 		if err != nil {
 			sendError(w, "failed to create guess from request", http.StatusInternalServerError)
@@ -46,6 +47,8 @@ func (handler Guesses) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// TODO: FIXME: currently taking latlng in degrees from the client and storing that number as "radians"
+//              doesn't matter at the moment because the server doesn't do anything with guesses
 func guessFromRequest(r *http.Request) (domain.Guess, error) {
 	newGuess := domain.Guess{}
 	err := json.NewDecoder(r.Body).Decode(&newGuess)

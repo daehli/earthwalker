@@ -165,27 +165,31 @@ function createMinimap() {
 	guessButton.innerHTML = "Guess!";
 	floatingContainer.appendChild(guessButton);
 	function makeGuess(latlng) {
+        console.log(latlng);
 		if (hasGuessed) {
 			return;
 		}
 		hasGuessed = true;
-		latlng = latlng.wrap();
-		let location = window.location.href;
-		let topLevel = location.substring(0, location.indexOf("/", 3));
-		let xhr = new XMLHttpRequest();
-		xhr.open("POST", topLevel + "/guess?round=" + challengeResult.Guesses.length, true);
-		xhr.setRequestHeader('Content-Type', 'application/json');
-		xhr.send(JSON.stringify(latlng));
-		xhr.onreadystatechange = function() {
-			if(xhr.readyState === XMLHttpRequest.DONE) {
-				if (xhr.status === 200) {
-					window.location.replace(topLevel + "/scores");
-				} else {
-					alert("Something went wrong when guessing: Status " + xhr.status);
-					hasGuessed = false;
-				}
-			}
-		};
+        latlng = latlng.wrap();
+        let guess = {
+            ChallengeResultID: challengeResultID,
+            RoundNum: challengeResult.Guesses.length,
+            Location: {Lat: latlng.lat, Lng: latlng.lng},
+        };
+        console.log(guess);
+        fetch("/api/guesses", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(guess),
+        }).then((response) => {
+            if (response.ok) {
+                window.location.replace("/scores");
+            } else {
+                alert("Failed to submit guess?!");
+            }
+        });
 	}
 	guessButton.addEventListener("click", function() {
 		if (marker == null) {
@@ -324,7 +328,7 @@ function createMinimap() {
 }
 
 function getRoundInfo() {
-	return "Round: " + challengeResult.Guesses.length + "/" + map.NumRounds;
+	return "Round: " + (challengeResult.Guesses.length + 1) + "/" + map.NumRounds;
 }
 
 function getScoreInfo() {

@@ -58,6 +58,7 @@ func (handler Play) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		MaxAge: 172800,
 		Path:   "/",
 	})
+	log.Println(challenge.Places[len(result.Guesses)].Location)
 	ServeLocation(challenge.Places[len(result.Guesses)].Location, w, r)
 }
 
