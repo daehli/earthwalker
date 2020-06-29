@@ -1,5 +1,8 @@
 // == common functions ========
 
+const challengeCookieName = "earthwalker_lastChallenge";
+const resultCookiePrefix = "earthwalker_lastResult_";
+
 // return value of url param with key, else null
 function getURLParam(key) {
     let params = new URLSearchParams(window.location.search)
@@ -9,17 +12,30 @@ function getURLParam(key) {
     return params.get(key);
 }
 
+// getCookieValue with specified name, else null
+function getCookieValue(name) {
+    let cookies = document.cookie.split("; ");
+    let cookie = cookies.find(row => row.startsWith(name));
+    if (cookie) {
+        return cookie.split('=')[1];
+    }
+    return null;
+}
+
 // == JS API layer ========
 
 // helpers
 
-// gets object from the given URL
+// gets object from the given URL, else null
 async function getObject(url) {
     let response = await fetch(url);
-    return response.json();
+    if (response.ok) {
+        return response.json();
+    }
+    return null
 }
 
-// posts object to the given URL, returns response object
+// posts object to the given URL, returns response object else null
 async function postObject(url, object) {
     let response = await fetch(url, {
         method: "POST",
@@ -28,7 +44,10 @@ async function postObject(url, object) {
         },
         body: JSON.stringify(object),
     });
-    return response.json();
+    if (response.ok) {
+        return response.json();
+    }
+    return null
 }
 
 // methods return promises
@@ -43,7 +62,7 @@ class EarthwalkerAPI {
 
     // get tile server url (as object) from server, nolabel if specified
     getTileServer(labeled=true) {
-        return getObject(this.configURL + (labeled ? "/tileserver" : "nolabeltileserver"))
+        return getObject(this.configURL + (labeled ? "/tileserver" : "/nolabeltileserver"))
     }
 
     // get map object from server by id
@@ -74,5 +93,22 @@ class EarthwalkerAPI {
 
     postGuess(guess) {
         return postObject(this.guessesURL, guess);
+    }
+
+    // I shoved some extra stuff in here because I don't understand javascript imports
+
+    // getChallengeID from the URL (key: "id"), else get the value of cookie
+    // lastChallenge, else null
+    getChallengeID() {
+        let id = getURLParam("id");
+        if (id) {
+            return id;
+        }
+        return getCookieValue(challengeCookieName);
+    }
+
+    // getChallengeResultID from cookie resultCookiePrefix+challengeID, else null
+    getChallengeResultID(challengeID) {
+        return getCookieValue(resultCookiePrefix+challengeID);
     }
 }

@@ -1,65 +1,78 @@
 <script>
-    // Be warned, traveller. You are entering the domain of some very dodgy javascript
-    // hacks. Maybe that is what you like. If so, please look around.
+    import { onMount } from 'svelte';
 
+    let ewapi = new EarthwalkerAPI();
+    // data fetched from server
     let challengeID;
     let challenge;
     let map;
     let challengeResultID;
     let challengeResult;
     let tileServerURL;
+    // timer
+    let timeRemaining = 0;
+    // map sizing
+    const mapSizes = [
+        [150, 150],
+        [300, 300],
+        [500, 500],
+        [800, 800],
+    ];
+    let curMapSize = 1;
+    // sets title to "earthwalker"
+    let titleInterval;
+    // decrements timeRemaining once per second
+    let timerInterval;
 
-    const challengeCookieName = "earthwalker_lastChallenge";
-    const resultCookiePrefix = "earthwalker_lastResult_";
+    // DOM elements
+    let floatingContainer;
+    let guessButton;
 
-    async function injectStylesheet() {
-        parseCookies();
-        challengeResult = await fetchChallengeResult();
-        if (!challengeResult.Guesses) {
-            challengeResult.Guesses = [];
+    onMount(async () => {
+        challengeID = ewapi.getChallengeID();
+        if (!challengeID) {
+            alert("Could not determine challenge ID!");
         }
-        console.log("Challenge result: "); // TODO: remove debug
-        console.log(challengeResult); // TODO: remove debug
-        challenge = await fetchChallenge();
-        console.log("Challenge: "); // TODO: remove debug
-        console.log(challenge); // TODO: remove debug
-        map = await fetchMap(challenge.MapID);
-        console.log("Map: "); // TODO: remove debug
-        console.log(map); // TODO: remove debug
-        tileServerURL = await fetchTileServerURL(map.ShowLabels);
-        console.log("Tile server: "); // TODO: remove debug
-        console.log(tileServerURL); // TODO: remove debug
-
-        // This MutationObserver always resets the title to earthwalker.
-        let interval = setInterval(function() {
-            try {
-                new MutationObserver(function(mutations) {
-                    if (document.title != "earthwalker") {
-                        document.title = "earthwalker";
-                    }
-                }).observe(
-                    document.querySelector('title'),
-                    { childList: true }
-                );
-                clearInterval(interval);
-            } catch (e) {
-                // Title element is not there yet.
-                // Wait for the next poll...
+        challengeResultID = ewapi.getChallengeResultID(challengeID);
+        if (challengeResultID) {
+            challengeResult = await ewapi.getResult(challengeResultID);
+            if (!challengeResult.Guesses) {
+                challengeResult.Guesses = [];
             }
-        }, 50);
+        } else {
+            alert("Could not determine result ID! (How'd you get here?)");
+        }
+        
+        challenge = await ewapi.getChallenge(challengeID);
+        map = await ewapi.getMap(challenge.MapID);
+        tileServerURL = (await ewapi.getTileServer(map.ShowLabels)).tileserver;
+        
+        titleInterval = setInterval(setTitle, 100);
 
         createMinimap();
-    }
+    });
 
-    async function fetchTileServerURL(showLabels) {
-        if (showLabels) {
-            let response = await fetch("/api/config/tileserver");
-            let data = await response.json();
-            return data.tileserver;
-        } else  {
-            let response = await fetch("/api/config/nolabeltileserver");
-            let data = await response.json();
-            return data.nolabeltileserver;
+    // Sometimes, the google scripts crash on startup. Just reload the page if that happens.
+    window.onerror = function(e) {
+        if (e.includes("Timer")) {
+            location.reload(false);
+        }
+    };
+
+    function setTitle() {
+        try {
+            new MutationObserver(function(mutations) {
+                if (document.title != "Earthwalker") {
+                    document.title = "Earthwalker";
+                }
+            }).observe(
+                document.querySelector('title'),
+                { childList: true }
+            );
+            clearInterval(interval);
+        } catch (e) {
+            // Title element is not there yet.
+            // Wait for the next poll...
         }
     }
 
@@ -79,40 +92,6 @@
         let response = await fetch("/api/results/"+challengeResultID);
         return response.json();
     }
-
-    function parseCookies() {
-        let params = new URLSearchParams(window.location.search);
-        let cookies = document.cookie.split("; ");
-        if (params.has("id")) {
-            challengeID = params.get("id");
-        } else {
-            let lastChallengeCookie = cookies.find(row => row.startsWith(challengeCookieName));
-            if (lastChallengeCookie) {
-                challengeID = lastChallengeCookie.split('=')[1];
-            } else {
-                alert("Could not determine challenge ID!");
-            }
-        }
-        if (challengeID) {
-            let lastResultCookie = cookies.find(row => row.startsWith(resultCookiePrefix + challengeID));
-            if (lastResultCookie) {
-                challengeResultID = lastResultCookie.split('=')[1];
-            } else {
-                challengeResultID = "";
-            }
-        } else {
-            challengeID = "";
-            challengeResultID = "";
-        }
-    }
-
-    window.onload = injectStylesheet;
-    // Sometimes, the google scripts crash on startup. Just reload the page if that happens.
-    window.onerror = function(e) {
-        if (e.includes("Timer")) {
-            location.reload(false);
-        }
-    };
 
     let replaceStateLocal = history.replaceState;
     history.replaceState = function() {
@@ -156,14 +135,11 @@
 
     // The leaflet minimap!
     function createMinimap() {
-        let floatingContainer = document.getElementById("leaflet-container");
-
         leafletMap = L.map("leaflet-map");
 
         // Load marker if it was previously stored (see reload button)
         let oldMarker = null;
         try {
-            console.log(sessionStorage.getItem("lastMarker"));
             oldMarker = JSON.parse(sessionStorage.getItem("lastMarker"));
         } finally {
             if (oldMarker != null && oldMarker.gameID == challengeResultID && oldMarker.roundNumber == challengeResult.Guesses.length) {
@@ -212,84 +188,50 @@
         compassContainer.appendChild(compass);
         
         // score, round number, and timer
-        // TODO: implement this
         if (map.TimeLimit > 0) {
-            let remainingTime = map.TimeLimit;
-            setTimer = function() {
-                minutes = Math.floor(remainingTime / 60);
-                seconds = Math.floor(remainingTime % 60).toString();
-                while (seconds.length < 2) seconds = "0" + seconds;
-                let remainingTimeInfo = "Time: " + minutes + ":" + seconds;
-                roundInfoSpan.innerHTML = getScoreInfo() + "<br/>" + getRoundInfo() + "<br/>" + remainingTimeInfo + "<br/>";
-            }
-            let interval = setInterval(function() {
-                remainingTime -= 1;
-                if (remainingTime <= 0) {
+            timeRemaining = map.TimeLimit;
+            timerInterval = setInterval(function() {
+                timeRemaining -= 1;
+                if (timeRemaining <= 0) {
                     if (marker == null) {
                         makeGuess(L.latLng(0, 0));
                     } else {
                         makeGuess(marker.getLatLng());
                     }
-                    clearInterval(interval);
+                    clearInterval(timeRemaining);
                 }
-                setTimer();
             }, 1000);
         }
     }
 
-    let sizes = [
-        [150, 150],
-        [300, 300],
-        [500, 500],
-        [800, 800],
-    ];
-
     function scaleMap(bigger) {
-        let map = document.getElementById("leaflet-container");
-
-        let size = [map.scrollWidth, map.scrollHeight];
-        let nextSize = null;
-
-        let index = -1;
-        for (el in sizes) {
-            index++;
-            if (sizes[el][0] == size[0]) {
-                break;
+        if (bigger) {
+            if (curMapSize < mapSizes.length - 1) {
+                curMapSize++;
+            }
+        } else {
+            if (curMapSize > 0) {
+                curMapSize--;
             }
         }
 
-        if (bigger) {
-            index++;
-        } else {
-            index--;
-        }
-
-        if (index < 0) {
-            index = 0;
-        }
-        if (index > sizes.length) {
-            index = sizes.length;
-        }
-
-        map.style.width = sizes[index][0] + "px";
-        map.style.height = sizes[index][1] + "px";
+        floatingContainer.style.width = mapSizes[curMapSize][0] + "px";
+        floatingContainer.style.height = mapSizes[curMapSize][1] + "px";
 
         leafletMap.invalidateSize();
     }
 </script>
 
 <style>
-    #leaflet-map {
-    }
 </style>
 
-
-<div id="leaflet-container">
+<div bind:this={floatingContainer} id="leaflet-container">
     <div id="navigation-bar" class="btn-group btn-group-sm">
         <button class="btn btn-light" on:click={() => {scaleMap(true)}}>⬉</button>
         <button class="btn btn-light" on:click={() => {scaleMap(false)}}>⬊</button>
     </div>
     <button 
+        bind:this={guessButton}
         class="btn btn-primary btn-sm float-right disabled" 
         on:click={() => {
             if (marker == null) {
@@ -310,6 +252,10 @@
         <br/>
         {"Total points: not implemented"}
         <br/>
+        {#if timeRemaining > 0}
+            Time: {Math.floor(timeRemaining / 60).toString()}:{Math.floor(timeRemaining % 60).toString().padStart(2, '0')}
+            <br/>
+        {/if}
     </span>
     <button 
         class="btn btn-light mx-sm-2 align-middle"
