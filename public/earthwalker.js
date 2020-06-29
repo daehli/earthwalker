@@ -3,6 +3,22 @@
 const challengeCookieName = "earthwalker_lastChallenge";
 const resultCookiePrefix = "earthwalker_lastResult_";
 
+
+// getChallengeID from the URL (key: "id"), else get the value of cookie
+// lastChallenge, else null
+function getChallengeID() {
+    let id = getURLParam("id");
+    if (id) {
+        return id;
+    }
+    return getCookieValue(challengeCookieName);
+}
+
+// getChallengeResultID from cookie resultCookiePrefix+challengeID, else null
+function getChallengeResultID(challengeID) {
+    return getCookieValue(resultCookiePrefix+challengeID);
+}
+
 // return value of url param with key, else null
 function getURLParam(key) {
     let params = new URLSearchParams(window.location.search)
@@ -93,22 +109,5 @@ class EarthwalkerAPI {
 
     postGuess(guess) {
         return postObject(this.guessesURL, guess);
-    }
-
-    // I shoved some extra stuff in here because I don't understand javascript imports
-
-    // getChallengeID from the URL (key: "id"), else get the value of cookie
-    // lastChallenge, else null
-    getChallengeID() {
-        let id = getURLParam("id");
-        if (id) {
-            return id;
-        }
-        return getCookieValue(challengeCookieName);
-    }
-
-    // getChallengeResultID from cookie resultCookiePrefix+challengeID, else null
-    getChallengeResultID(challengeID) {
-        return getCookieValue(resultCookiePrefix+challengeID);
     }
 }

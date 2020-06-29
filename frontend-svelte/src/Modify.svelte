@@ -28,12 +28,25 @@
     let floatingContainer;
     let guessButton;
 
+    let leafletMap = null;
+    let hasGuessed = false;
+    let marker = null;
+
+    // I assume these are part of the streetview sorcery, I'm not messing with them
+    let replaceStateLocal = history.replaceState;
+    history.replaceState = function() {
+    }
+
+    let pushStateLocal = history.pushState;
+    history.pushState = function() {
+    }
+
     onMount(async () => {
-        challengeID = ewapi.getChallengeID();
+        challengeID = getChallengeID();
         if (!challengeID) {
             alert("Could not determine challenge ID!");
         }
-        challengeResultID = ewapi.getChallengeResultID(challengeID);
+        challengeResultID = getChallengeResultID(challengeID);
         if (challengeResultID) {
             challengeResult = await ewapi.getResult(challengeResultID);
             if (!challengeResult.Guesses) {
@@ -76,35 +89,6 @@
         }
     }
 
-    // TODO: duplicates function in CreateChallenge
-    //       consolidate to API lib
-    async function fetchMap(mapID) {
-        let response = await fetch("/api/maps/"+mapID);
-        return response.json();
-    }
-
-    async function fetchChallenge() {
-        let response = await fetch("/api/challenges/"+challengeID);
-        return response.json();
-    }
-
-    async function fetchChallengeResult() {
-        let response = await fetch("/api/results/"+challengeResultID);
-        return response.json();
-    }
-
-    let replaceStateLocal = history.replaceState;
-    history.replaceState = function() {
-    }
-
-    let pushStateLocal = history.pushState;
-    history.pushState = function() {
-    }
-
-    let leafletMap = null;
-    let hasGuessed = false;
-
-    let marker = null;
     function makeGuess(latlng) {
         console.log(latlng);
         if (hasGuessed) {
@@ -118,14 +102,8 @@
             Location: {Lat: latlng.lat, Lng: latlng.lng},
         };
         console.log(guess);
-        fetch("/api/guesses", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(guess),
-        }).then((response) => {
-            if (response.ok) {
+        ewapi.postGuess(guess).then((response) => {
+            if (response) {
                 window.location.replace("/scores");
             } else {
                 alert("Failed to submit guess?!");
@@ -145,6 +123,7 @@
             if (oldMarker != null && oldMarker.gameID == challengeResultID && oldMarker.roundNumber == challengeResult.Guesses.length) {
                 marker = L.marker(L.latLng(oldMarker.lat, oldMarker.lng));
                 marker.addTo(leafletMap);
+                guessButton.className = guessButton.className.replace("disabled", "");
             }
             sessionStorage.removeItem("lastMarker");
         }
@@ -159,8 +138,6 @@
         }, 100);
 
         // only show text labels on minimap if the user wishes so
-        let labelsEnabled = false; // TODO: FIXME: set from config
-        // TODO: FIXME: set from config
         L.tileLayer(tileServerURL, {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> contributors, <a href="https://wikitech.wikimedia.org/wiki/Wikitech:Cloud_Services_Terms_of_use">Wikimedia Cloud Services</a>'
         }).addTo(leafletMap);
@@ -238,7 +215,6 @@
                 alert("You have to add a marker first! Do this by clicking the map.");
                 return;
             }
-            // Post data back to earthwalker.
             makeGuess(marker.getLatLng());
         }}>
         Guess!
