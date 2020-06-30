@@ -72,8 +72,9 @@ const (
 // Map is a collection of user provided settings from which a Challenge
 // is generated.  Formerly challenge/Settings
 type Map struct {
-	MapID         string
-	Name          string
+	MapID string
+	Name  string
+	// TODO: consider adding description field
 	Polygon       map[string]interface{} // geoJSON bounding the game area(s)
 	Area          float32                // area bounded by Polygon, in square meters
 	NumRounds     int
@@ -85,6 +86,7 @@ type Map struct {
 	Copyright     PanoCopyright
 	Source        PanoSource
 	ShowLabels    bool // whether to display place labels on the in-game minimap
+	// TODO: consider adding CreatedAt (datetime) field
 }
 
 // MapStore is implemented by structs which provide access to a database

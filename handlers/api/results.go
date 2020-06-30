@@ -41,6 +41,7 @@ func (handler Results) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			log.Printf("Failed to insert result into store: %v\n", err)
 			return
 		}
+		// TODO: results don't seem to be echoing as expected?
 		json.NewEncoder(w).Encode(newChallengeResult)
 	default:
 		sendError(w, "api/results endpoint does not exist.", http.StatusNotFound)

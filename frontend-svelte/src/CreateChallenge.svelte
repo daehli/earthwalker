@@ -1,5 +1,4 @@
 <script>
-    // TODO: svelteify this file
     // TODO: Better organization of this file + additional documentation
     //       The flow is pretty confusing right now.
     // In the meantime, here's what happens in this script:
@@ -32,13 +31,14 @@
     const SV_PREF = google.maps.StreetViewPreference.BEST;
     // discard polar panos, they're usually garbage
     const LAT_LIMIT = 85;
-    const mapURL = "/api/maps/";
     const popTIFLoc = "/static/nasa_pop_data.tif";
 
     const challengeCookieName = "earthwalker_lastChallenge";
     const resultCookiePrefix = "earthwalker_lastResult_";
 
-    let statusReadout;
+    let ewapi = new EarthwalkerAPI();
+
+    let statusText = "Twiddling thumbs...";
 
     let streetViewService = new google.maps.StreetViewService();
 
@@ -49,27 +49,32 @@
     let challengeID;
     let foundCoords = [];
 
+    // DOM elements
+    let loadingBar;
+    let submitButton;
+    // bindings
+    let nickname = "";
+
     document.addEventListener('DOMContentLoaded', async (event) => {
-        statusReadout = document.getElementById("status");
-        statusReadout.textContent = "Looking up population density data...";
+        statusText = "Looking up population density data...";
         popTIF = await loadGeoTIF(popTIFLoc);
-        statusReadout.textContent = "Getting Map settings...";
-        mapSettings = await fetchMapSettings(mapURL);
-        statusReadout.textContent = "Fetching panoramas...";
+        statusText = "Getting Map settings...";
+        mapID = getURLParam("mapid");
+        mapSettings = await ewapi.getMap(mapID);
+        statusText = "Fetching panoramas...";
         console.log(mapSettings);
         fetchPanos(streetViewService, mapSettings);
     });
 
     async function updateUI(numFound, numRounds) {
-        let bar = document.getElementById("loading-progress")
-        bar.setAttribute("style", "width: " + ((100 * numFound) / numRounds) + "%;");
-        bar.textContent = numFound.toString() + "/" + numRounds.toString();
+        loadingBar.setAttribute("style", "width: " + ((100 * numFound) / numRounds) + "%;");
+        loadingBar.textContent = numFound.toString() + "/" + numRounds.toString();
         if (numFound == numRounds) {
             challengeID = await submitNewChallenge();
             let challengeLink = window.location.origin + "/challenge?id=" + challengeID
             // TODO: nicer challenge link readout
-            document.getElementById("status").textContent = "Done! Challenge Link: " + challengeLink;
-            document.getElementById("submit-button").disabled = false;
+            statusText = "Done! Challenge Link: " + challengeLink;
+            submitButton.disabled = false;
         }
     }
 
@@ -91,48 +96,21 @@
 
     async function submitNewChallenge() {
         let convertedCoords = foundCoords.map((coord, i) => ({RoundNum: i, Location: {Lat: coord.lat(), Lng: coord.lng()}}));
-        let challenge = JSON.stringify({
+        let challenge = {
             MapID: mapID,
             Places: convertedCoords
-        });
-        let response = await fetch("api/challenges", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: challenge,
-        });
-        let data = await response.json();
+        };
+        let data = await ewapi.postChallenge(challenge);
         return data.ChallengeID;
     }
 
     async function submitNewChallengeResult() {
         let challengeResult = JSON.stringify({
             ChallengeID: challengeID,
-            Nickname: document.getElementById("Nickname").value,
+            Nickname: nickname,
         });
-        let response = await fetch("api/results", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: challengeResult,
-        });
-        let data = await response.json();
+        let data = await ewapi.postResult(challengeResult);
         return data.ChallengeResultID;
-    }
-
-    // == MAP SETTINGS ========
-    async function fetchMapSettings(url) {
-        let params = new URLSearchParams(window.location.search)
-        // TODO: consider having default map settings if there's no ID
-        if (!params.has("mapid")) {
-            alert("URL has no map ID!");
-            return;
-        }
-        mapID = params.get("mapid");
-        let response = await fetch(url+mapID);
-        return response.json();
     }
 
     // == POPULATION DENSITY ========
@@ -176,6 +154,8 @@
                 updateUI(foundCoords.length, settings.NumRounds);
             } else {
                 console.log("Failed to get location; api request: " + status.toString() + "\n");
+                // TODO: enforce recursion depth limit (better yet, convert to
+                //       iterative and limit that)
                 fetchPano(svService, settings);
             }
         }
@@ -267,18 +247,13 @@
 
 <main>
     <form on:submit|preventDefault={handleFormSubmit} class="container">
-
         <br>
-
         <h2>New Challenge</h2>
-
         <br>
-
-        <h4 class="text-center" id="status">Twiddling thumbs...</h4>
-
+        <h4 class="text-center" id="status">{statusText}</h4>
         <div action="" method="post">
             <div class="progress">
-                <div class="progress-bar" id="loading-progress" role="progressbar"></div>
+                <div bind:this={loadingBar} class="progress-bar" id="loading-progress" role="progressbar"></div>
             </div>
             <small class="text-muted">
                 Earthwalker is getting random locations from Google Street View.
@@ -290,18 +265,15 @@
 
             <br/>
             <br/>
-
             <div class="form-group">
                 <div class="input-group">
                     <div class="input-group-prepend">
                         <div class="input-group-text">Your Nickname</div>
                     </div>
-                    <input required type="text" class="form-control" id="Nickname"/>
+                    <input required type="text" class="form-control" id="Nickname" bind:value={nickname}/>
                 </div>
             </div>
-
-            <button id="submit-button" class="btn btn-primary" style="margin-bottom: 2em; color: #fff;" disabled>Start Challenge</button>
-
+            <button bind:this={submitButton} id="submit-button" class="btn btn-primary" style="margin-bottom: 2em; color: #fff;" disabled>Start Challenge</button>
         </div>
     </form>
 </main>
