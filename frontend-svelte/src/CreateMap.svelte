@@ -1,31 +1,39 @@
 <script>
     // TODO: svelteify this file
     import {onMount} from 'svelte';
+
     const NOMINATIM_URL = (locStringEncoded) => `https://nominatim.openstreetmap.org/search?q=${locStringEncoded}&polygon_geojson=1&limit=5&polygon_threshold=0.005&format=json`;
+
+    let ewapi = new EarthwalkerAPI();
 
     let mapSettings = {
         Name: "",
         Polygon: null,
         Area: 0,
-        NumRounds: 0,
+        NumRounds: 5,
         TimeLimit: 0,
         GraceDistance: 10,
-        MinDensity: 0,
+        MinDensity: 15,
         MaxDensity: 100,
-        Connectedness: 0,
+        Connectedness: 1,
         Copyright: 0,
-        Source: 0,
+        Source: 1,
         ShowLabels: true
     };
+    // extra bindings (handleFormSubmit converts these to mapSettings fields)
+    let timeLimitMinutes = 0;
+    let timeLimitSeconds = 0;
+
+    $: window.globalMap = mapSettings; // TODO: remove debug
     let locString = "";
+    let oldLocString = "";
     let previewMap;
     let previewPolyGroup;
     let advancedHidden = true;
-    $: window.globalMap = previewMap;
 
     onMount(async () => {
         previewMap = L.map("bounds-map", {center: [0, 0], zoom: 1});
-        let tileServer = await getTileServer();
+        let tileServer = (await ewapi.getTileServer()).tileserver;
         L.tileLayer(tileServer, {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> contributors, <a href="https://wikitech.wikimedia.org/wiki/Wikitech:Cloud_Services_Terms_of_use">Wikimedia Cloud Services</a>'
         }).addTo(previewMap);
@@ -35,24 +43,8 @@
     // collates createmap form data into a JSON object, 
     // then sends a newmap request to the server
     function handleFormSubmit() {
-        mapSettings.Name          = strById("Name");
-        mapSettings.NumRounds     = intById("NumRounds");
-        mapSettings.GraceDistance = intById("GraceDistance");
-        mapSettings.MinDensity    = intById("MinDensity");
-        mapSettings.MaxDensity    = intById("MaxDensity");
-        mapSettings.Connectedness = intById("Connectedness");
-        mapSettings.Copyright     = intById("Copyright");
-        mapSettings.Source        = intById("Source");
-        
-        let showLabelsInput = document.getElementById("ShowLabels");
-        if (showLabelsInput) {
-            mapSettings.ShowLabels = showLabelsInput.checked;
-        }
-
-        // read total TimeLimit
-        mapSettings.TimeLimit = 0;
-        mapSettings.TimeLimit += 60 * intById("TimeLimit_minutes");
-        mapSettings.TimeLimit += intById("TimeLimit_seconds");
+        // calculate total TimeLimit
+        mapSettings.TimeLimit = 60 * timeLimitMinutes + timeLimitSeconds;
 
         // sanity check density fields
         // TODO: nicer error messages than alerts
@@ -67,54 +59,20 @@
         //       specific that it takes a huge number of API requests to find good
         //       panos)
         // send new map to server
-        fetch("/api/maps", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(mapSettings),
-        }).then(console.log("mapSettings sent to server"));
-        // TODO: redirect to createchallenge
+        ewapi.postMap(mapSettings)
+            .then( (response) => {
+                if (response && response.MapID) {
+                    console.log("mapSettings sent to server");
+                    window.location.replace("/createchallenge?mapid="+response.MapID);
+                } else {
+                    alert("Failed to submit map?!");
+                }
+            });
     }
 
-    function intById(id, fallback=0) {
-        let input = document.getElementById(id);
-        if (input) {
-            if (!input.value) {
-                return fallback;
-            }
-            return parseInt(input.value, 10);
-        } else {
-            console.log("Couldn't find input '" + id + "', using fallback.")
-            return fallback;
-        }
-    }
-
-    function strById(id, fallback="") {
-        let input = document.getElementById(id);
-        if (input) {
-            return input.value;
-        } else {
-            console.log("Couldn't find input '" + id + "', using fallback.")
-            return fallback;
-        }
-    }
-
-    async function getTileServer() {
-        let response = await fetch("/api/config/tileserver", {
-            method: "GET",
-        });
-        let data = await response.json();
-        return data.tileserver;
-    }
-
-    function locStringUpdated() {
-        let old = locString;
-        let locStringInput = document.getElementById("locString");
-        if (locStringInput) {
-            locString = document.getElementById("locString").value;
-        }
-        if (old !== locString) {
+    function handleLocStringUpdate() {
+        if (locString != oldLocString) {
+            oldLocString = locString;
             updatePolygonFromLocString();
         }
     }
@@ -143,7 +101,6 @@
     // given Nominatim results, takes the most significant one with a polygon or
     // multipolygon and returns it as a turf.multiPolygon
     function geojsonFromNominatim(data) {
-        console.log("getting geojson...");
         for (let i = 0; i < data.length; i++) {
             let type = data[i].geojson.type.toLowerCase();
             if (type === "multipolygon") {
@@ -173,7 +130,7 @@
                 <div class="input-group-prepend">
                     <div class="input-group-text">Map Name</div>
                 </div>
-                <input type="text" class="form-control" id="Name"/>
+                <input type="text" class="form-control" id="Name" required bind:value={mapSettings.Name}/>
             </div>
         </div>
 
@@ -182,7 +139,7 @@
                 <div class="input-group-prepend">
                     <div class="input-group-text">Number of Rounds</div>
                 </div>
-                <input type="number" class="form-control" id="NumRounds" value="5" min="1" max="100"/>
+                <input type="number" class="form-control" id="NumRounds" bind:value={mapSettings.NumRounds} min="1" max="100"/>
             </div>
         </div>
 
@@ -192,7 +149,7 @@
                     <div class="input-group-prepend">
                         <div class="input-group-text">Round Time, Minutes</div>
                     </div>
-                    <input type="number" min="0" class="form-control mr-sm-3" id="TimeLimit_minutes"/>
+                    <input type="number" min="0" class="form-control mr-sm-3" id="TimeLimit_minutes" bind:value={timeLimitMinutes}/>
                 </div>
             </div>
             <div class="col">
@@ -200,12 +157,12 @@
                     <div class="input-group-prepend">
                         <div class="input-group-text">Seconds</div>
                     </div>
-                    <input type="number" min="0" class="form-control" id="TimeLimit_seconds"/>
+                    <input type="number" min="0" class="form-control" id="TimeLimit_seconds" bind:value={timeLimitSeconds}/>
                 </div>
             </div>
         </div>
         <small class="form-text text-muted">
-            Leave empty or zero for no time limit.
+            Leave zero for no time limit.
         </small>
 
         <br/>
@@ -223,7 +180,7 @@
                         <div class="input-group-prepend">
                             <div class="input-group-text">Grace Distance (m)</div>
                         </div>
-                        <input type="number" class="form-control" id="GraceDistance" value="10" min="0"/>
+                        <input type="number" class="form-control" id="GraceDistance" bind:value={mapSettings.GraceDistance} min="0"/>
                     </div>
                 </div>
                 <small class="form-text text-muted">
@@ -237,7 +194,7 @@
                             <div class="input-group-prepend">
                                 <div class="input-group-text">Population Density %, Minimum</div>
                             </div>
-                            <input type="number" class="form-control mr-sm-3" id="MinDensity" value="15" min="0" max="100"/>
+                            <input type="number" class="form-control mr-sm-3" id="MinDensity" bind:value={mapSettings.MinDensity} min="0" max="100"/>
                         </div>
                     </div>
                     <div class="col">
@@ -245,7 +202,7 @@
                             <div class="input-group-prepend">
                                 <div class="input-group-text">Maximum</div>
                             </div>
-                            <input type="number" class="form-control mr-sm-3" id="MaxDensity" value="100" min="0" max="100"/>
+                            <input type="number" class="form-control mr-sm-3" id="MaxDensity" bind:value={mapSettings.MaxDensity} min="0" max="100"/>
                         </div>
                     </div>
                 </div>
@@ -260,10 +217,16 @@
                         <div class="input-group-prepend">
                             <div class="input-group-text">Panorama connectedness</div>
                         </div>
-                        <select class="form-control" id="Connectedness">
-                            <option value=1 selected="selected">always</option>
-                            <option value=2 >never</option>
-                            <option value=0 >any</option>
+                        <!-- note: select values are Object.  Wrapping them in
+                                   brackets takes advantage of object init
+                                   shorthand to give us ints instead of strings.
+                                   However! The resulting binding is not 
+                                   bidirectional, so make sure your mapSettings
+                                   defaults match the select defaults. -->
+                        <select class="form-control" id="Connectedness" bind:value={mapSettings.Connectedness}>
+                            <option value={1} selected="selected">always</option>
+                            <option value={2} >never</option>
+                            <option value={0} >any</option>
                         </select>
                     </div>
                 </div>
@@ -278,10 +241,10 @@
                         <div class="input-group-prepend">
                             <div class="input-group-text">Copyright</div>
                         </div>
-                        <select class="form-control" id="Copyright">
-                            <option value=0 selected="selected">any</option>
-                            <option value=1>Google only</option>
-                            <option value=2>third party only</option>
+                        <select class="form-control" id="Copyright" bind:value={mapSettings.Copyright}>
+                            <option value={0} selected="selected">any</option>
+                            <option value={1}>Google only</option>
+                            <option value={2}>third party only</option>
                         </select>
                     </div>
                 </div>
@@ -296,9 +259,9 @@
                         <div class="input-group-prepend">
                             <div class="input-group-text">Source</div>
                         </div>
-                        <select class="form-control" id="Source">
-                            <option value=1 selected="selected">outdoors only</option>
-                            <option value=0 >any</option>
+                        <select class="form-control" id="Source" bind:value={mapSettings.Source}>
+                            <option value={1} selected="selected">outdoors only</option>
+                            <option value={0}>any</option>
                         </select>
                     </div>
                 </div>
@@ -310,7 +273,7 @@
 
                 <div class="form-group">
                     <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="checkbox" id="ShowLabels" checked>
+                        <input class="form-check-input" type="checkbox" id="ShowLabels" bind:checked={mapSettings.ShowLabels}>
                         <label class="form-check-label" for="label">Show labels on map</label>
                     </div>
                 </div>
@@ -325,7 +288,7 @@
                         <div class="input-group-prepend">
                             <div class="input-group-text">Location string </div>
                         </div>
-                        <input type="text" class="form-control mr-sm-3" id="locString" placeholder="Location" on:change={locStringUpdated}/>
+                        <input type="text" class="form-control mr-sm-3" id="locString" placeholder="Location" bind:value={locString} on:change={handleLocStringUpdate}/>
                     </div>
                     <small class="form-text text-muted">
                         Constrain the game to a specified area - enter a country, state, city, neighborhood, lake, or any other bounded area.  Does not yet affect scoring.
