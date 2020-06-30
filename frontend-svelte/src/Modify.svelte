@@ -165,6 +165,7 @@
         compassContainer.appendChild(compass);
         
         // score, round number, and timer
+        // TODO: can we use an absolute timer instead of this interval?
         if (map.TimeLimit > 0) {
             timeRemaining = map.TimeLimit;
             timerInterval = setInterval(function() {

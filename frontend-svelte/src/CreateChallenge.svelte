@@ -31,7 +31,9 @@
     const SV_PREF = google.maps.StreetViewPreference.BEST;
     // discard polar panos, they're usually garbage
     const LAT_LIMIT = 85;
-    const popTIFLoc = "/static/nasa_pop_data.tif";
+    const popTIFLoc = "/public/nasa_pop_data.tif";
+    // fetchPano will query the streetview API this many times before giving up
+    const MAX_REQS = 10;
 
     const challengeCookieName = "earthwalker_lastChallenge";
     const resultCookiePrefix = "earthwalker_lastResult_";
@@ -58,9 +60,12 @@
     document.addEventListener('DOMContentLoaded', async (event) => {
         statusText = "Looking up population density data...";
         popTIF = await loadGeoTIF(popTIFLoc);
+        console.log("TIF loaded"); // TODO: remove debug
         statusText = "Getting Map settings...";
         mapID = getURLParam("mapid");
+        console.log("map id parsed from url params"); // TODO: remove debug
         mapSettings = await ewapi.getMap(mapID);
+        console.log("map settings fetched from server"); // TODO: remove debug
         statusText = "Fetching panoramas...";
         console.log(mapSettings);
         fetchPanos(streetViewService, mapSettings);
@@ -105,15 +110,17 @@
     }
 
     async function submitNewChallengeResult() {
-        let challengeResult = JSON.stringify({
+        let challengeResult = {
             ChallengeID: challengeID,
             Nickname: nickname,
-        });
+        };
         let data = await ewapi.postResult(challengeResult);
         return data.ChallengeResultID;
     }
 
     // == POPULATION DENSITY ========
+    // TODO: can we find another way to do population density?
+    //       This TIF requires a 6.5mb binary load.
     async function loadGeoTIF(loc) {
         const response = await fetch("/public/nasa_pop_data.tif");
         const arrayBuffer = await response.arrayBuffer();
@@ -146,27 +153,37 @@
     }
 
     async function fetchPano(svService, settings) {
-        let randomLatLng = await getRandomConstrainedLatLng(settings.Polygon, settings.MinDensity, settings.MaxDensity);
-        
-        async function handlePanoResponse(result, status) {
-            if (status == google.maps.StreetViewStatus.OK && resultPanoIsGood(result, settings)) {
-                foundCoords.push(result.location.latLng);
+        let source = settings.Source == 1 ? google.maps.StreetViewSource.OUTDOOR : google.maps.StreetViewSource.DEFAULT;
+        let randomLatLng;
+        let foundLatLng = null;
+        for (let iters = 0; iters < MAX_REQS; iters++) {
+            randomLatLng = await getRandomConstrainedLatLng(settings.Polygon, settings.MinDensity, settings.MaxDensity);
+            foundLatLng = await new Promise((resolve, reject) => {
+                streetViewService.getPanorama({
+                    location: randomLatLng,
+                    preference: SV_PREF,
+                    radius: PANO_SEARCH_RADIUS,
+                    source: source,
+                }, (result, status) => {resolve(handlePanoResponse(result, status));});
+            });
+            if (foundLatLng) {
+                foundCoords.push(foundLatLng);
                 updateUI(foundCoords.length, settings.NumRounds);
-            } else {
-                console.log("Failed to get location; api request: " + status.toString() + "\n");
-                // TODO: enforce recursion depth limit (better yet, convert to
-                //       iterative and limit that)
-                fetchPano(svService, settings);
+                return foundLatLng
             }
         }
-
-        let source = settings.Source == 1 ? google.maps.StreetViewSource.OUTDOOR : google.maps.StreetViewSource.DEFAULT;
-        streetViewService.getPanorama({
-            location: randomLatLng,
-            preference: SV_PREF,
-            radius: PANO_SEARCH_RADIUS,
-            source: source,
-        }, handlePanoResponse);
+        
+        function handlePanoResponse(result, status, foundLatLng) {
+            if (status == google.maps.StreetViewStatus.OK && resultPanoIsGood(result, settings)) {
+                return result.location.latLng;
+            } else {
+                console.log("Failed to get location; api request: " + status.toString() + "\n");
+            }
+        }
+        // TODO: FIXME: display message to user when this happens
+        //       maybe suggest creating a less specific map or allow
+        //       them to try to fetch panos again.
+        console.log("Too many requests without a good streetview pano!");
     }
 
     // returns whether result (pano) meets the requirements of mapInfo
