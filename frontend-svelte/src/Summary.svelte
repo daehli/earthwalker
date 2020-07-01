@@ -46,7 +46,9 @@
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> contributors, <a href="https://wikitech.wikimedia.org/wiki/Wikitech:Cloud_Services_Terms_of_use">Wikimedia Cloud Servides</a>'
         }).addTo(scoreMap);
         scoreMapPolyGroup = L.layerGroup().addTo(scoreMap);
-        showPolygonOnMap();
+        if (map.Polygon) {
+            showPolygonOnMap();
+        }
         showGuessesOnMap();
     }
 
@@ -64,6 +66,7 @@
 
     // TODO: show results from other users 
     //       (kv db not really suited to this, maybe switch to relational)
+    // TODO: duplicates function in Scores.svelte.  Consolidate.
     function showGuessOnMap(guessLoc, actualLoc) {
         let polyline = L.polyline([[guessLoc.Lat, guessLoc.Lng], [actualLoc.Lat, actualLoc.Lng]], {color: '#007bff'}).addTo(scoreMap);
         L.marker([guessLoc.Lat, guessLoc.Lng], {
@@ -120,7 +123,7 @@
                 <tr scope="row">
                     <td>{i + 1}</td>
                     <td>{scoreDist[0]}</td>
-                    <td>{scoreDist[1]}</td>
+                    <td>{distString(scoreDist[1])}</td>
                 </tr>
             {/each}
         {/if}

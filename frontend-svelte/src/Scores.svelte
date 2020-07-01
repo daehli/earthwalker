@@ -21,6 +21,7 @@
         challenge = await ewapi.getChallenge(challengeID);
         result = await ewapi.getResult(challengeResultID);
         map = await ewapi.getMap(challenge.MapID);
+        console.log(map);
         // TODO: FIXME: this code assumes Guesses and challenge.Places are 
         //              ordered, which the API does not guarantee
         lastGuess = result.Guesses[result.Guesses.length - 1].Location;
@@ -31,15 +32,15 @@
 
     async function setupScoreMap() {
         let tileServer = (await ewapi.getTileServer()).tileserver;
-        console.log(tileServer);
         scoreMap = L.map("score-map");
-        console.log(scoreMap);
         scoreMap.setView([0.0, 0.0], 1);
         L.tileLayer(tileServer, {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> contributors, <a href="https://wikitech.wikimedia.org/wiki/Wikitech:Cloud_Services_Terms_of_use">Wikimedia Cloud Servides</a>'
         }).addTo(scoreMap);
         scoreMapPolyGroup = L.layerGroup().addTo(scoreMap);
-        showPolygonOnMap();
+        if (map.Polygon) {
+            showPolygonOnMap();
+        }
         showLastGuessOnMap();
     }
 
@@ -75,14 +76,6 @@
         shadowAnchor: [12, 41]
         });
     };
-
-    // returns a prettified distance given float meters
-    function distString(meters) {
-        if (meters < 1000) {
-            return (meters).toFixed(1) + " m";
-        }
-        return (meters / 1000).toFixed(1) + " km";
-    }
 </script>
 
 <style>

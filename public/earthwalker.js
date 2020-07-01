@@ -60,6 +60,10 @@ const halfDistance = 1000000;
 
 // [score, distance] given location of guess and pano, graceDistance, and Polygon area
 function calcScoreDistance(guessLat, guessLng, actualLat, actualLng, graceDistance=0, area=earthArea) {
+    // TODO: cleaner handling of maps with no Polygon (maybe give maps area earthArea on creation?)
+    if (area == 0) {
+        area = earthArea;
+    }
     // consider the guess invalid and return a score of zero
     if (Math.abs(guessLat > 90)) {
         return 0
@@ -85,6 +89,14 @@ function calcTotalScore(guessLocs, actualLocs, graceDistance=0, area=earthArea) 
         totalScore += currentScore;
     });
     return totalScore;
+}
+
+// returns a prettified distance given float meters
+function distString(meters) {
+    if (meters < 1000) {
+        return (meters).toFixed(1) + " m";
+    }
+    return (meters / 1000).toFixed(1) + " km";
 }
 
 // == JS API layer ========

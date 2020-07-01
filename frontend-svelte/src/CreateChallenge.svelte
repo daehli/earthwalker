@@ -33,7 +33,7 @@
     const LAT_LIMIT = 85;
     const popTIFLoc = "/public/nasa_pop_data.tif";
     // fetchPano will query the streetview API this many times before giving up
-    const MAX_REQS = 10;
+    const MAX_REQS = 30;
 
     const challengeCookieName = "earthwalker_lastChallenge";
     const resultCookiePrefix = "earthwalker_lastResult_";
