@@ -10,6 +10,9 @@
 </script>
 
 <style>
+	#content {
+		margin: 2em;
+	}
 </style>
 
 <main>
@@ -30,18 +33,20 @@
 				</div>
 			</ul>
 		</nav>
-		{#if window.location.pathname === "/"}
-			<Resume/>
-		{:else if window.location.pathname === "/createmap"}
-			<CreateMap/>
-		{:else if window.location.pathname === "/createchallenge"}
-			<CreateChallenge/>
-		{:else if window.location.pathname === "/join"}
-			<Join/>
-		{:else if window.location.pathname === "/scores"}
-			<Scores/>
-		{:else}
-			<h3>404.  That's an error.</h3>
-		{/if}
+		<div id="content">
+			{#if window.location.pathname === "/"}
+				<Resume/>
+			{:else if window.location.pathname === "/createmap"}
+				<CreateMap/>
+			{:else if window.location.pathname === "/createchallenge"}
+				<CreateChallenge/>
+			{:else if window.location.pathname === "/join"}
+				<Join/>
+			{:else if window.location.pathname === "/scores"}
+				<Scores/>
+			{:else}
+				<h3>404.  That's an error.</h3>
+			{/if}
+		</div>
 	{/if}
 </main>

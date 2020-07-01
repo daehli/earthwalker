@@ -49,10 +49,10 @@
 
     let mapID;
     let challengeID;
+    let numFound = 0;
     let foundCoords = [];
 
     // DOM elements
-    let loadingBar;
     let submitButton;
     // bindings
     let nickname = "";
@@ -68,23 +68,15 @@
         console.log("map settings fetched from server"); // TODO: remove debug
         statusText = "Fetching panoramas...";
         console.log(mapSettings);
-        fetchPanos(streetViewService, mapSettings);
+        foundCoords = await fetchPanos(streetViewService, mapSettings);
+        challengeID = await submitNewChallenge();
+        let challengeLink = window.location.origin + "/challenge?id=" + challengeID
+        // TODO: nicer challenge link readout
+        statusText = "Done! Challenge Link: " + challengeLink;
+        submitButton.disabled = false;
     });
 
-    async function updateUI(numFound, numRounds) {
-        loadingBar.setAttribute("style", "width: " + ((100 * numFound) / numRounds) + "%;");
-        loadingBar.textContent = numFound.toString() + "/" + numRounds.toString();
-        if (numFound == numRounds) {
-            challengeID = await submitNewChallenge();
-            let challengeLink = window.location.origin + "/challenge?id=" + challengeID
-            // TODO: nicer challenge link readout
-            statusText = "Done! Challenge Link: " + challengeLink;
-            submitButton.disabled = false;
-        }
-    }
-
     async function handleFormSubmit() {
-        console.log("Form submitted!");
         let challengeResultID = await submitNewChallengeResult();
         // set the generated challenge as the current challenge
         document.cookie = challengeCookieName + "=" + challengeID + ";path=/;max-age=172800";
@@ -149,7 +141,8 @@
         for (let i = 0; i < settings.NumRounds; i++) {
             promises.push(fetchPano(svService, settings));
         }
-        return Promise.all(promises);
+        let foundLatLngs = await Promise.all(promises);
+        return foundLatLngs;
     }
 
     async function fetchPano(svService, settings) {
@@ -167,8 +160,7 @@
                 }, (result, status) => {resolve(handlePanoResponse(result, status));});
             });
             if (foundLatLng) {
-                foundCoords.push(foundLatLng);
-                updateUI(foundCoords.length, settings.NumRounds);
+                numFound++;
                 return foundLatLng
             }
         }
@@ -270,7 +262,11 @@
         <h4 class="text-center" id="status">{statusText}</h4>
         <div action="" method="post">
             <div class="progress">
-                <div bind:this={loadingBar} class="progress-bar" id="loading-progress" role="progressbar"></div>
+                <div 
+                    style={"width: " + (mapSettings && mapSettings.NumRounds ? ((100 * numFound) / mapSettings.NumRounds) : 0) + "%;"} 
+                    class="progress-bar" id="loading-progress" role="progressbar">
+                    {numFound + "/" + (mapSettings && mapSettings.NumRounds ? mapSettings.NumRounds : 0)}
+                </div>
             </div>
             <small class="text-muted">
                 Earthwalker is getting random locations from Google Street View.
