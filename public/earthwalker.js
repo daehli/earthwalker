@@ -75,7 +75,17 @@ function calcScoreDistance(guessLat, guessLng, actualLat, actualLng, graceDistan
     return [Math.round(factor * maxScore), distance];
 }
 
-
+// totalScore given _ordered_ arrays of {Lat, Lng}.
+// actualLocs must be at least as long as guessLocs
+function calcTotalScore(guessLocs, actualLocs, graceDistance=0, area=earthArea) {
+    let totalScore = 0; // redundant atm, but I don't want to forget
+    guessLocs.forEach((guessLoc, i) => {
+        let currentScore;
+        [currentScore, _] = calcScoreDistance(guessLoc.Lat, guessLoc.Lng, actualLocs[i].Lat, actualLocs[i].Lng, graceDistance, area);
+        totalScore += currentScore;
+    });
+    return totalScore;
+}
 
 // == JS API layer ========
 

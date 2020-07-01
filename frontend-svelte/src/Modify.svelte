@@ -9,8 +9,9 @@
     let challengeResultID;
     let challengeResult;
     let tileServerURL;
-    // timer
+    // timer and score
     let timeRemaining = 0;
+    let totalScore = 0;
     // map sizing
     const mapSizes = [
         [150, 150],
@@ -54,11 +55,20 @@
             }
         } else {
             alert("Could not determine result ID! (How'd you get here?)");
+            return;
         }
         
         challenge = await ewapi.getChallenge(challengeID);
         map = await ewapi.getMap(challenge.MapID);
         tileServerURL = (await ewapi.getTileServer(map.ShowLabels)).tileserver;
+
+        // TODO: FIXME: this code assumes Guesses and challenge.Places are 
+        //              ordered, which the API does not guarantee
+        totalScore = calcTotalScore(
+            challengeResult.Guesses.map((guess) => guess.Location), 
+            challenge.Places.map((place) => place.Location), 
+            map.GraceDistance, 
+            map.Area);
         
         titleInterval = setInterval(setTitle, 100);
 
@@ -90,7 +100,6 @@
     }
 
     function makeGuess(latlng) {
-        console.log(latlng);
         if (hasGuessed) {
             return;
         }
@@ -101,7 +110,6 @@
             RoundNum: challengeResult.Guesses.length,
             Location: {Lat: latlng.lat, Lng: latlng.lng},
         };
-        console.log(guess);
         ewapi.postGuess(guess).then((response) => {
             if (response) {
                 window.location.replace("/scores");
@@ -204,6 +212,9 @@
 </script>
 
 <style>
+    #round-info-container {
+        user-select: none;
+    }
 </style>
 
 <div bind:this={floatingContainer} id="leaflet-container">
@@ -230,7 +241,7 @@
     <span class="round-info-span align-middle">
         {"Round: " + (challengeResult && map ? (challengeResult.Guesses.length + 1) + "/" + map.NumRounds : "loading...")}
         <br/>
-        {"Total points: not implemented"}
+        {"Total points: " + totalScore}
         <br/>
         {#if timeRemaining > 0}
             Time: {Math.floor(timeRemaining / 60).toString()}:{Math.floor(timeRemaining % 60).toString().padStart(2, '0')}

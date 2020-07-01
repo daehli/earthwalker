@@ -21,14 +21,11 @@
         challenge = await ewapi.getChallenge(challengeID);
         result = await ewapi.getResult(challengeResultID);
         map = await ewapi.getMap(challenge.MapID);
+        // TODO: FIXME: this code assumes Guesses and challenge.Places are 
+        //              ordered, which the API does not guarantee
         lastGuess = result.Guesses[result.Guesses.length - 1].Location;
         lastActual = challenge.Places[result.Guesses.length - 1].Location;
         [score, distance] = calcScoreDistance(lastGuess.Lat, lastGuess.Lng, lastActual.Lat, lastActual.Lng, map.GraceDistance, map.Area);
-        // TODO: remove debug
-        console.log(score);
-        console.log(map);
-        console.log(challenge);
-        console.log(result);
         setupScoreMap();
     });
 

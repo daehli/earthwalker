@@ -4,6 +4,7 @@
 	import Resume from './Resume.svelte'
 	import Join from './Join.svelte'
 	import Scores from './Scores.svelte'
+	import Summary from './Summary.svelte'
 
 	// TODO: code split this out into a separate bundle
 	import Modify from './Modify.svelte'
@@ -44,6 +45,8 @@
 				<Join/>
 			{:else if window.location.pathname === "/scores"}
 				<Scores/>
+			{:else if window.location.pathname === "/summary"}
+				<Summary/>
 			{:else}
 				<h3>404.  That's an error.</h3>
 			{/if}
