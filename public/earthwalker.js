@@ -3,7 +3,6 @@
 const challengeCookieName = "earthwalker_lastChallenge";
 const resultCookiePrefix = "earthwalker_lastResult_";
 
-
 // getChallengeID from the URL (key: "id"), else get the value of cookie
 // lastChallenge, else null
 function getChallengeID() {
@@ -37,6 +36,40 @@ function getCookieValue(name) {
     }
     return null;
 }
+
+
+// == Scoring ========
+// TODO: tweak scoring consts
+
+// distances in meters
+const earthRadius = 6371009;
+const earthArea = 510066000000000
+const earthSqrt = 22584640;
+const maxScore = 5000;
+// score is divided by decayBase every halfDistance meters (if area=earthArea)
+const decayBase = 2;
+const halfDistance = 1000000;
+
+// score given location of guess and pano, graceDistance, and Polygon area
+function calcScore(guessLat, guessLng, actualLat, actualLng, graceDistance=0, area=earthArea) {
+    // consider the guess invalid and return a score of zero
+    if (Math.abs(guessLat > 90)) {
+        return 0
+    }
+    let guess = turf.point([guessLng, guessLat]);
+    let actual =  turf.point([actualLng, actualLat]);
+    let distance = turf.distance(guess, actual, {units: "kilometers"}) * 1000.0;
+    if (distance < graceDistance) {
+        return maxScore;
+    }
+    console.log("distance: " + distance);
+    let relativeArea = Math.sqrt(area) / earthSqrt;
+    console.log(halfDistance * relativeArea);
+    let factor = Math.pow(decayBase, -1 * distance / (halfDistance * relativeArea));
+    return Math.round(factor * maxScore);
+}
+
+
 
 // == JS API layer ========
 

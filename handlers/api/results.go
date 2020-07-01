@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
 
 	"gitlab.com/glatteis/earthwalker/domain"
@@ -57,5 +58,6 @@ func challengeResultFromRequest(r *http.Request) (domain.ChallengeResult, error)
 		return newChallengeResult, fmt.Errorf("failed to decode newChallengeResult from request: %v", err)
 	}
 	newChallengeResult.ChallengeResultID = domain.RandAlpha(10)
+	newChallengeResult.Icon = rand.Intn(199) + 1
 	return newChallengeResult, nil
 }
