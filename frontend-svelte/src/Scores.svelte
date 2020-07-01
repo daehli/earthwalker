@@ -11,6 +11,7 @@
     let lastGuess;
     let lastActual;
     let score = 0;
+    let distance = 0;
 
     // leaflet
     let scoreMap;
@@ -22,7 +23,7 @@
         map = await ewapi.getMap(challenge.MapID);
         lastGuess = result.Guesses[result.Guesses.length - 1].Location;
         lastActual = challenge.Places[result.Guesses.length - 1].Location;
-        score = calcScore(lastGuess.Lat, lastGuess.Lng, lastActual.Lat, lastActual.Lng, map.GraceDistance, map.Area);
+        [score, distance] = calcScoreDistance(lastGuess.Lat, lastGuess.Lng, lastActual.Lat, lastActual.Lng, map.GraceDistance, map.Area);
         // TODO: remove debug
         console.log(score);
         console.log(map);
@@ -77,6 +78,14 @@
         shadowAnchor: [12, 41]
         });
     };
+
+    // returns a prettified distance given float meters
+    function distString(meters) {
+        if (meters < 1000) {
+            return (meters).toFixed(1) + " m";
+        }
+        return (meters / 1000).toFixed(1) + " km";
+    }
 </script>
 
 <style>
@@ -92,7 +101,7 @@
     <div class="container">
         <div style="margin-top: 10%; text-align: center;">
             <p class="text-center">
-                You were km from the correct position. Your marker is 
+                You were {distString(distance)} from the correct position. Your marker is 
                 <img 
                     style="height: 40px;" 
                     alt={result && result.Nickname ? result.Nickname : "Your Icon"}

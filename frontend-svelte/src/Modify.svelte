@@ -128,15 +128,6 @@
             sessionStorage.removeItem("lastMarker");
         }
 
-        // Zoom out map
-        setTimeout(function() {
-            if (oldMarker == null) {
-                leafletMap.setView([0.0, 0.0], .1);
-            } else {
-                leafletMap.setView([oldMarker.lat, oldMarker.lng], 1);
-            }
-        }, 100);
-
         // only show text labels on minimap if the user wishes so
         L.tileLayer(tileServerURL, {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> contributors, <a href="https://wikitech.wikimedia.org/wiki/Wikitech:Cloud_Services_Terms_of_use">Wikimedia Cloud Services</a>'
@@ -153,8 +144,20 @@
 
         leafletMap.on("click", onMapClick);
 
+        let leafletMapPolyGroup = L.layerGroup().addTo(leafletMap);
+        leafletMapPolyGroup.clearLayers();
+        let map_poly = L.geoJSON(map.Polygon).addTo(leafletMapPolyGroup);
+
+        // Zoom out map
         setTimeout(function() {
             leafletMap.invalidateSize();
+            if (oldMarker) {
+                leafletMap.setView([oldMarker.lat, oldMarker.lng], 1);
+            } else if (map.Polygon) {
+                leafletMap.fitBounds(map_poly.getBounds());
+            } else {
+                leafletMap.setView([0.0, 0.0], .1);
+            }
         }, 100);
 
         // TODO: can we move the compass without doing this?

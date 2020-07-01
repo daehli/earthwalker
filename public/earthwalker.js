@@ -1,3 +1,7 @@
+// This file contains code useful across the application, including wrappers
+// for the database API.
+// TODO: consider dividing this into multiple files.
+
 // == common functions ========
 
 const challengeCookieName = "earthwalker_lastChallenge";
@@ -38,6 +42,10 @@ function getCookieValue(name) {
 }
 
 
+// == Leaflet Map ========
+// TODO: this
+
+
 // == Scoring ========
 // TODO: tweak scoring consts
 
@@ -50,8 +58,8 @@ const maxScore = 5000;
 const decayBase = 2;
 const halfDistance = 1000000;
 
-// score given location of guess and pano, graceDistance, and Polygon area
-function calcScore(guessLat, guessLng, actualLat, actualLng, graceDistance=0, area=earthArea) {
+// [score, distance] given location of guess and pano, graceDistance, and Polygon area
+function calcScoreDistance(guessLat, guessLng, actualLat, actualLng, graceDistance=0, area=earthArea) {
     // consider the guess invalid and return a score of zero
     if (Math.abs(guessLat > 90)) {
         return 0
@@ -60,13 +68,11 @@ function calcScore(guessLat, guessLng, actualLat, actualLng, graceDistance=0, ar
     let actual =  turf.point([actualLng, actualLat]);
     let distance = turf.distance(guess, actual, {units: "kilometers"}) * 1000.0;
     if (distance < graceDistance) {
-        return maxScore;
+        return [maxScore, distance];
     }
-    console.log("distance: " + distance);
     let relativeArea = Math.sqrt(area) / earthSqrt;
-    console.log(halfDistance * relativeArea);
-    let factor = Math.pow(decayBase, -1 * distance / (halfDistance * relativeArea));
-    return Math.round(factor * maxScore);
+    let factor = Math.pow(decayBase, -1 * (distance - graceDistance) / (halfDistance * relativeArea));
+    return [Math.round(factor * maxScore), distance];
 }
 
 
