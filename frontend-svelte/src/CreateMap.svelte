@@ -24,7 +24,6 @@
     let timeLimitMinutes = 0;
     let timeLimitSeconds = 0;
 
-    $: window.globalMap = mapSettings; // TODO: remove debug
     let locString = "";
     let oldLocString = "";
     let previewMap;

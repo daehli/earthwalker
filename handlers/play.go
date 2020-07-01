@@ -10,7 +10,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/golang/geo/s2"
 	"gitlab.com/glatteis/earthwalker/domain"
 )
 
@@ -154,7 +153,7 @@ func floatToString(number float64) string {
 }
 
 // BuildURL builds google street view urls from coordinates
-func BuildURL(location s2.LatLng) string {
+func BuildURL(location domain.Coords) string {
 	baseURL, err := url.Parse("https://www.google.com/maps")
 	if err != nil {
 		log.Fatal("Failed while parsing static gmaps url", err)
@@ -166,7 +165,7 @@ func BuildURL(location s2.LatLng) string {
 	// the layer must be set to c (the street view layer)
 	query.Set("layer", "c")
 	// latitude and longitude go into parameter cbll
-	query.Set("cbll", floatToString(location.Lat.Degrees())+","+floatToString(location.Lng.Degrees()))
+	query.Set("cbll", floatToString(location.Lat)+","+floatToString(location.Lng))
 
 	baseURL.RawQuery = query.Encode()
 
@@ -174,7 +173,7 @@ func BuildURL(location s2.LatLng) string {
 }
 
 // ServeLocation serves a specific location to the user.
-func ServeLocation(l s2.LatLng, w http.ResponseWriter, r *http.Request) {
+func ServeLocation(l domain.Coords, w http.ResponseWriter, r *http.Request) {
 	mapsURL := BuildURL(l)
 	modifyMainPage(mapsURL, w, r)
 }

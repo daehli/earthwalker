@@ -6,10 +6,6 @@
 //       the default executable filename.
 package domain
 
-import (
-	"github.com/golang/geo/s2"
-)
-
 // == Shared Internal Structs ========
 
 // Config holds server-wide settings
@@ -115,7 +111,7 @@ type ChallengeStore interface {
 type ChallengePlace struct {
 	ChallengeID string
 	RoundNum    int
-	Location    s2.LatLng
+	Location    Coords
 }
 
 // ChallengeResult is a player's Guesses in a challenge.
@@ -145,5 +141,11 @@ type ChallengeResultStore interface {
 type Guess struct {
 	ChallengeResultID string
 	RoundNum          int
-	Location          s2.LatLng
+	Location          Coords
+}
+
+// Coords in degrees
+type Coords struct {
+	Lat float64
+	Lng float64
 }

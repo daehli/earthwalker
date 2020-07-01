@@ -6,8 +6,6 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/golang/geo/s2"
-
 	"gitlab.com/glatteis/earthwalker/domain"
 )
 
@@ -60,9 +58,6 @@ func challengeFromRequest(r *http.Request) (domain.Challenge, error) {
 	newChallenge.ChallengeID = domain.RandAlpha(10)
 	for i := range newChallenge.Places {
 		newChallenge.Places[i].ChallengeID = newChallenge.ChallengeID
-		// ffs
-		// TODO: this is not okay, find a better solution
-		newChallenge.Places[i].Location = s2.LatLngFromDegrees(newChallenge.Places[i].Location.Lat.Radians(), newChallenge.Places[i].Location.Lng.Radians())
 	}
 	return newChallenge, nil
 }
