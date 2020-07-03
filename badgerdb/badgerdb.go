@@ -139,7 +139,11 @@ const challengeResultPrefix = "result-"
 
 // Insert a domain.ChallengeResult into store's badger db
 func (store ChallengeResultStore) Insert(r domain.ChallengeResult) error {
-	err := storeStruct(store.DB, challengeResultPrefix+r.ChallengeResultID, r)
+	err := store.appendToResultsIndex(r.ChallengeID, r.ChallengeResultID)
+	if err != nil {
+		return fmt.Errorf("failed to add challenge result to index: %v", err)
+	}
+	err = storeStruct(store.DB, challengeResultPrefix+r.ChallengeResultID, r)
 	if err != nil {
 		return fmt.Errorf("failed to write challenge result to badger DB: %v", err)
 	}
@@ -161,11 +165,70 @@ func (store ChallengeResultStore) Get(challengeResultID string) (domain.Challeng
 	return foundResult, nil
 }
 
-// GetAll is not implemented
-// TODO: implement this if necessary, otherwise consider removing it from the interface
-func (store ChallengeResultStore) GetAll(challengeID string) ([]domain.ChallengeResult, error) {
-	return make([]domain.ChallengeResult, 0), fmt.Errorf("ChallengeResultStore.GetAll is not implemented")
+// resultsIndex allows this package to retrieve all ChallengeResult for a given
+// ChallengeID
+// TODO: I don't have a lot of K/V experience, is this the best solution?
+const resultsIndexKey = "challenge-%s-resultIDs"
+
+type resultsIndex struct {
+	ChallengeID        string
+	ChallengeResultIDs map[string]bool
 }
 
-// note: as above, no GuessStore implementation,
-// because we just store the entire ChallengeResult as a blob
+func (store ChallengeResultStore) insertResultsIndex(ind resultsIndex) error {
+	err := storeStruct(store.DB, fmt.Sprintf(resultsIndexKey, ind.ChallengeID), ind)
+	if err != nil {
+		return fmt.Errorf("failed to write results index to badger DB: %v", err)
+	}
+	return nil
+}
+
+func (store ChallengeResultStore) getResultsIndex(challengeID string) (resultsIndex, error) {
+	var foundInd resultsIndex
+	indBytes, err := getBytes(store.DB, fmt.Sprintf(resultsIndexKey, challengeID))
+	if err != nil {
+		return foundInd, fmt.Errorf("failed to retrieve existing results index from badger DB: %v", err)
+	}
+	err = gob.NewDecoder(bytes.NewBuffer(indBytes)).Decode(&foundInd)
+	if err != nil {
+		return foundInd, fmt.Errorf("failed to decode existing results index from bytes: %v", err)
+	}
+	return foundInd, nil
+}
+
+func (store ChallengeResultStore) appendToResultsIndex(challengeID string, challengeResultID string) error {
+	ind, err := store.getResultsIndex(challengeID)
+	if err != nil {
+		if err == badger.ErrKeyNotFound {
+			// create new index
+			ind = resultsIndex{ChallengeID: challengeID, ChallengeResultIDs: make(map[string]bool)}
+		} else {
+			return fmt.Errorf("failed to get results index: %v", err)
+		}
+	}
+
+	ind.ChallengeResultIDs[challengeResultID] = true
+
+	err = store.insertResultsIndex(ind)
+	if err != nil {
+		return fmt.Errorf("failed to insert modified results index: %v", err)
+	}
+	return nil
+}
+
+// GetAll ChallengeResult for a given challengeID
+func (store ChallengeResultStore) GetAll(challengeID string) ([]domain.ChallengeResult, error) {
+	results := make([]domain.ChallengeResult, 0)
+	ind, err := store.getResultsIndex(challengeID)
+	if err != nil {
+		return results, fmt.Errorf("failed to get results index: %v", err)
+	}
+	for challengeResultID := range ind.ChallengeResultIDs {
+		challengeResult, err := store.Get(challengeResultID)
+		if err != nil {
+			return results, fmt.Errorf("failed to get a challenge result listed in the index: %v", err)
+		}
+		results = append(results, challengeResult)
+	}
+	return results, nil
+}
