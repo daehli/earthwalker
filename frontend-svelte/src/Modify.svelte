@@ -209,22 +209,53 @@
 
         leafletMap.invalidateSize();
     }
+
+    function setMapSize(width, height) {
+        floatingContainer.style.width = width + "px";
+        floatingContainer.style.height = height + "px";
+        leafletMap.invalidateSize();
+    }
+
+    let mapFocused = false;
+    let unfocusMapInterval;
+
+    function focusMap() {
+        mapFocused = true;
+        setMapSize(mapSizes[curMapSize][0], mapSizes[curMapSize][1]);
+        clearInterval(unfocusMapInterval);
+    }
+
+    function releaseMap() {
+        unfocusMapInterval = setInterval(() => {
+            setMapSize(mapSizes[1][0], mapSizes[1][1]);
+            mapFocused = false;
+        }, 1000);
+    }
 </script>
 
 <style>
     #round-info-container {
         user-select: none;
     }
+
+    #leaflet-container {
+        opacity: 50%;
+    }
+
+    :global(#leaflet-container.focused) {
+        opacity: 100%;
+    }
 </style>
 
-<div bind:this={floatingContainer} id="leaflet-container">
-    <div id="navigation-bar" class="btn-group btn-group-sm">
+<div bind:this={floatingContainer} id="leaflet-container" on:mouseenter={focusMap} on:mouseleave={releaseMap} class={mapFocused ? "focused" : ""}>
+    <div id="leaflet-map"></div>
+    <div id="navigation-bar" class="btn-group btn-group-sm float-right">
         <button class="btn btn-light" on:click={() => {scaleMap(true)}}>⬉</button>
         <button class="btn btn-light" on:click={() => {scaleMap(false)}}>⬊</button>
     </div>
     <button 
         bind:this={guessButton}
-        class="btn btn-primary btn-sm float-right disabled" 
+        class="btn btn-primary btn-sm float-left disabled" 
         on:click={() => {
             if (marker == null) {
                 alert("You have to add a marker first! Do this by clicking the map.");
@@ -234,7 +265,6 @@
         }}>
         Guess!
     </button>
-    <div id="leaflet-map"></div>
 </div>
 <div id="compass-container"></div>
 <div id="round-info-container">
