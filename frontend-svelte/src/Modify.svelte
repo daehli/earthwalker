@@ -1,4 +1,6 @@
 <script>
+    // TODO: this file is getting out of hand
+    
     import { onMount } from 'svelte';
 
     let ewapi = new EarthwalkerAPI();
@@ -14,10 +16,10 @@
     let totalScore = 0;
     // map sizing
     const mapSizes = [
-        [150, 150],
-        [300, 300],
-        [500, 500],
-        [800, 800],
+        [180, 135],
+        [300, 225],
+        [500, 375],
+        [800, 600],
     ];
     let curMapSize = 1;
     // sets title to "earthwalker"
@@ -30,8 +32,17 @@
     let guessButton;
 
     let leafletMap = null;
+    let leafletMapPolyGroup;
     let hasGuessed = false;
     let marker = null;
+
+    let mapFocused = false;
+    let unfocusMapInterval;
+    let showSettings = false;
+    // settings
+    let showPolygon = true;
+    $: setPolygonVisibility(showPolygon);
+    let shrinkMap = true;
 
     // I assume these are part of the streetview sorcery, I'm not messing with them
     let replaceStateLocal = history.replaceState;
@@ -152,7 +163,7 @@
 
         leafletMap.on("click", onMapClick);
 
-        let leafletMapPolyGroup = L.layerGroup().addTo(leafletMap);
+        leafletMapPolyGroup = L.layerGroup().addTo(leafletMap);
         leafletMapPolyGroup.clearLayers();
         let map_poly = L.geoJSON(map.Polygon).addTo(leafletMapPolyGroup);
 
@@ -216,9 +227,6 @@
         leafletMap.invalidateSize();
     }
 
-    let mapFocused = false;
-    let unfocusMapInterval;
-
     function focusMap() {
         mapFocused = true;
         setMapSize(mapSizes[curMapSize][0], mapSizes[curMapSize][1]);
@@ -227,71 +235,218 @@
 
     function releaseMap() {
         unfocusMapInterval = setInterval(() => {
-            setMapSize(mapSizes[1][0], mapSizes[1][1]);
-            mapFocused = false;
-        }, 1000);
+            if (shrinkMap) {
+                setMapSize(mapSizes[1][0], mapSizes[1][1]);
+                mapFocused = false;
+            }
+        }, 800);
+    }
+
+    function setPolygonVisibility(show) {
+        if (leafletMap && leafletMapPolyGroup) {
+            if (show) {
+                leafletMap.addLayer(leafletMapPolyGroup);
+            } else {
+                leafletMap.removeLayer(leafletMapPolyGroup);
+            }
+        }
     }
 </script>
 
 <style>
-    #round-info-container {
-        user-select: none;
+    #leaflet-map {
+        border-radius: 0.25rem;
+        width: 100%;
+        height: 100%;
     }
 
     #leaflet-container {
         opacity: 50%;
+        width: 300px;
+        height: 225px;
+        align-self: flex-end;
+        margin-left: auto;
+        margin-bottom: 0.5rem;
     }
 
-    :global(#leaflet-container.focused) {
+    #leaflet-container * {
+        pointer-events: all;
+    }
+
+    #navigation-bar {
+        height: 30px;
+    }
+
+    #leaflet-container.focused {
         opacity: 100%;
+    }
+
+    #settings-button {
+        margin-left: 0.5rem;
+        height: 30px;
+    }
+
+    #compass-container {
+        width: 200px;
+        height: 100px;
+        position: absolute;
+        left: 30px;
+        top: 30px;
+        text-align: left;
+    }
+
+    .round-info-span {
+        color: white;
+        font-size: 25px;
+        text-shadow: 2px 2px black;
+        font-weight: bold;
+    }
+
+    #right-bar {
+        position: absolute;
+        height: calc(100% - 60px);
+        min-width: 300px;
+        margin: 30px;
+        right: 0;
+        pointer-events: none;
+        display: flex;
+        flex-direction: column;
+    }
+
+    #right-bar > * {
+        pointer-events: all;
+    }
+
+    #top {
+        user-select: none;
+        width: 300px;
+        margin-left: auto;
+        text-align: right;
+        float: right;
+    }
+
+    #middle {
+        position: relative;
+        flex: 1 1;
+        width: 300px;
+        margin-top: .5rem;
+        margin-bottom: .5rem;
+        margin-left: auto;
+        margin-right: 0;
+        border-radius: 0.25rem;
+        padding: 0.5rem;
+        float: right;
+        clear: both;
+        background-color: white;
+    }
+
+    #middle h3 {
+        text-align: center;
+    }
+
+    #close-button {
+        position: absolute;
+        top: 0.5rem;
+        right: 1rem;
+    }
+
+    .hidden {
+        visibility: hidden;
+    }
+
+    #bottom {
+        flex: 0 0;
+        float: right;
+        clear: both;
+    }
+
+    #controls {
+        width: 300px;
+        margin-left: auto;
+        float: right;
     }
 </style>
 
-<div bind:this={floatingContainer} id="leaflet-container" on:mouseenter={focusMap} on:mouseleave={releaseMap} class={mapFocused ? "focused" : ""}>
-    <div id="leaflet-map"></div>
-    <div id="navigation-bar" class="btn-group btn-group-sm float-right">
-        <button class="btn btn-light" on:click={() => {scaleMap(true)}}>⬉</button>
-        <button class="btn btn-light" on:click={() => {scaleMap(false)}}>⬊</button>
-    </div>
-    <button 
-        bind:this={guessButton}
-        class="btn btn-primary btn-sm float-left disabled" 
-        on:click={() => {
-            if (marker == null) {
-                alert("You have to add a marker first! Do this by clicking the map.");
-                return;
-            }
-            makeGuess(marker.getLatLng());
-        }}>
-        Guess!
-    </button>
-</div>
-<div id="compass-container"></div>
-<div id="round-info-container">
-    <span class="round-info-span align-middle">
-        {"Round: " + (challengeResult && map ? (challengeResult.Guesses.length + 1) + "/" + map.NumRounds : "loading...")}
-        <br/>
-        {"Total points: " + totalScore}
-        <br/>
-        {#if timeRemaining > 0}
-            Time: {Math.floor(timeRemaining / 60).toString()}:{Math.floor(timeRemaining % 60).toString().padStart(2, '0')}
+<div id="right-bar">
+    <div id="top">
+        <span class="round-info-span align-middle">
+            {"Round: " + (challengeResult && map ? (challengeResult.Guesses.length + 1) + "/" + map.NumRounds : "loading...")}
             <br/>
-        {/if}
-    </span>
-    <button 
-        class="btn btn-light mx-sm-2 align-middle"
-        on:click={() => {
-            if (marker != null) {
-                // Put marker into session storage
-                console.log(marker.getLatLng());
-                sessionStorage.setItem("lastMarker", JSON.stringify({
-                    "lat": marker.getLatLng().lat,
-                    "lng": marker.getLatLng().lng,
-                    "roundNumber": challengeResult.Guesses.length,
-                    "gameID": challengeResultID,
-                }));
-            }
-            // https://www.phpied.com/files/location-location/location-location.html
-            location = location;
-        }}>go to start</button>
+            {"Total points: " + totalScore}
+            <br/>
+            {#if timeRemaining > 0}
+                Time: {Math.floor(timeRemaining / 60).toString()}:{Math.floor(timeRemaining % 60).toString().padStart(2, '0')}
+                <br/>
+            {/if}
+        </span>
+        <button 
+            class="btn btn-light mx-sm-2 align-middle"
+            on:click={() => {
+                if (marker != null) {
+                    // Put marker into session storage
+                    console.log(marker.getLatLng());
+                    sessionStorage.setItem("lastMarker", JSON.stringify({
+                        "lat": marker.getLatLng().lat,
+                        "lng": marker.getLatLng().lng,
+                        "roundNumber": challengeResult.Guesses.length,
+                        "gameID": challengeResultID,
+                    }));
+                }
+                // https://www.phpied.com/files/location-location/location-location.html
+                location = location;
+            }}>go to start</button>
+    </div>
+    <div id="middle" class={showSettings ? "" : "hidden"}>
+        <h3>Settings</h3>
+        <a on:click={() => {showSettings = false;}} id="close-button" title="Close">×</a>
+        <hr/>
+        <div class="form-group">
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="show-polygon" bind:checked={showPolygon}>
+                <label class="form-check-label" for="show-polygon">Show polygon on map</label>
+            </div>
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="shrink-map" bind:checked={shrinkMap}>
+                <label class="form-check-label" for="shrink-polygon">Shrink map when not in use</label>
+            </div>
+        </div>
+    </div>
+    <div 
+        id="bottom"
+        on:mouseenter={focusMap} 
+        on:mouseleave={releaseMap}
+    >
+        <div 
+            bind:this={floatingContainer} 
+            id="leaflet-container"  
+            class={mapFocused ? "focused" : ""}
+        >
+            <div id="leaflet-map"></div>
+        </div>
+        <div id="controls">
+            <div id="settings-button" class="btn-group btn-group-sm float-right">
+                <button class="btn btn-light" on:click={() => {showSettings = !showSettings;}}>
+                    <img alt="Map Settings" src="/public/icons/settings.svg" style="width: auto; height: 1rem;"/>
+                </button>
+            </div>
+            <div id="navigation-bar" class="btn-group btn-group-sm float-right">
+                <button class="btn btn-light" on:click={() => {scaleMap(true)}}>⬉</button>
+                <button class="btn btn-light" on:click={() => {scaleMap(false)}}>⬊</button>
+            </div>
+            <button 
+                bind:this={guessButton}
+                class="btn btn-primary btn-sm float-left disabled" 
+                on:click={() => {
+                    if (marker == null) {
+                        alert("You have to add a marker first! Do this by clicking the map.");
+                        return;
+                    }
+                    makeGuess(marker.getLatLng());
+                }}>
+                Guess!
+            </button>
+        </div>
+    </div>
 </div>
+
+<div id="compass-container"></div>
