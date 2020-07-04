@@ -58,37 +58,12 @@
         scoreMap.fitBounds(map_poly.getBounds());
     }
 
+    // TODO: show results from other users
     function showGuessesOnMap() {
         guessLocs.forEach((loc, i) => {
-            showGuessOnMap(loc, actualLocs[i]);
+            showGuessOnMap(scoreMap, loc, actualLocs[i], i, result.Nickname, result.Icon);
         });
     }
-
-    // TODO: show results from other users 
-    //       (kv db not really suited to this, maybe switch to relational)
-    // TODO: duplicates function in Scores.svelte.  Consolidate.
-    function showGuessOnMap(guessLoc, actualLoc) {
-        let polyline = L.polyline([[guessLoc.Lat, guessLoc.Lng], [actualLoc.Lat, actualLoc.Lng]], {color: '#007bff'}).addTo(scoreMap);
-        L.marker([guessLoc.Lat, guessLoc.Lng], {
-            title: result.Nickname,
-            icon: makeIcon("question" + result.Icon + ".png"),
-        }).addTo(scoreMap).openPopup();
-        L.marker([actualLoc.Lat, actualLoc.Lng], {
-            title: "Actual Position",
-            icon: makeIcon("answer.png"),
-        }).addTo(scoreMap).openPopup();
-    }
-
-    let makeIcon = function(name) {
-        return L.icon({
-        iconUrl: "public/icons/" + name,
-        iconSize: [50/2, 82/2],
-        iconAnchor: [25/2, 82/2],
-        shadowUrl: "public/leaflet/images/marker-shadow.png",
-        shadowSize: [41, 41],
-        shadowAnchor: [12, 41]
-        });
-    };
 
     function showChallengeLinkPrompt() {
         let link = window.location.origin + "/play?id=" + challengeID;

@@ -18,7 +18,8 @@ POST /api/guesses : appends Guess from JSON to ChallengeResult.Guesses (if valid
 
 ### Responses
 
-All request and response bodies contain either nothing, a JSON object containing only error: message, or a JSON object encoded directly from the corresponding type in `domain`.
+All request and response bodies contain either nothing, a JSON object containing only error: message, or a JSON object encoded directly from the corresponding type in `domain`.  
+**The API does not guarantee that arrays arrive in order!**
 
 ```
 Successful request responses:  

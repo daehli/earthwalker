@@ -41,6 +41,7 @@
         if (map.Polygon) {
             showPolygonOnMap();
         }
+        showGuessOnMap(scoreMap, lastGuess, lastActual, result.Guesses.length - 1, result.Nickname, result.Icon, true);
         showLastGuessOnMap();
     }
 
@@ -48,34 +49,7 @@
     function showPolygonOnMap() {
         scoreMapPolyGroup.clearLayers();
         let map_poly = L.geoJSON(map.Polygon).addTo(scoreMapPolyGroup);
-        scoreMap.fitBounds(map_poly.getBounds());
     }
-
-    // TODO: show results from other users 
-    //       (kv db not really suited to this, maybe switch to relational)
-    function showLastGuessOnMap() {
-        let polyline = L.polyline([[lastGuess.Lat, lastGuess.Lng], [lastActual.Lat, lastActual.Lng]], {color: '#007bff'}).addTo(scoreMap);
-        L.marker([lastGuess.Lat, lastGuess.Lng], {
-            title: result.Nickname,
-            icon: makeIcon("question" + result.Icon + ".png"),
-        }).addTo(scoreMap).openPopup();
-        L.marker([lastActual.Lat, lastActual.Lng], {
-            title: "Actual Position",
-            icon: makeIcon("answer.png"),
-        }).addTo(scoreMap).openPopup();
-        scoreMap.fitBounds(polyline.getBounds());
-    }
-
-    let makeIcon = function(name) {
-        return L.icon({
-        iconUrl: "public/icons/" + name,
-        iconSize: [50/2, 82/2],
-        iconAnchor: [25/2, 82/2],
-        shadowUrl: "public/leaflet/images/marker-shadow.png",
-        shadowSize: [41, 41],
-        shadowAnchor: [12, 41]
-        });
-    };
 </script>
 
 <style>
@@ -95,7 +69,7 @@
                 <img 
                     style="height: 40px;" 
                     alt={result && result.Nickname ? result.Nickname : "Your Icon"}
-                    src={"/public/icons/question" + (result && result.Icon ? result.Icon : "") + ".png"}/>
+                    src={svgIcon("?", result && result.Icon ? result.Icon : 0)}/>
             </p>
         <div class="progress" style="height: 40px;">
             <div 

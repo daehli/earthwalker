@@ -3,6 +3,7 @@ package badgerdb
 import (
 	"bytes"
 	"encoding/gob"
+	"errors"
 	"fmt"
 
 	"github.com/dgraph-io/badger"
@@ -187,6 +188,10 @@ func (store ChallengeResultStore) getResultsIndex(challengeID string) (resultsIn
 	var foundInd resultsIndex
 	indBytes, err := getBytes(store.DB, fmt.Sprintf(resultsIndexKey, challengeID))
 	if err != nil {
+		if errors.Is(err, badger.ErrKeyNotFound) {
+			// assume index hasn't been created for challengeID and return a new one
+			return resultsIndex{ChallengeID: challengeID, ChallengeResultIDs: make(map[string]bool)}, nil
+		}
 		return foundInd, fmt.Errorf("failed to retrieve existing results index from badger DB: %v", err)
 	}
 	err = gob.NewDecoder(bytes.NewBuffer(indBytes)).Decode(&foundInd)
@@ -199,12 +204,7 @@ func (store ChallengeResultStore) getResultsIndex(challengeID string) (resultsIn
 func (store ChallengeResultStore) appendToResultsIndex(challengeID string, challengeResultID string) error {
 	ind, err := store.getResultsIndex(challengeID)
 	if err != nil {
-		if err == badger.ErrKeyNotFound {
-			// create new index
-			ind = resultsIndex{ChallengeID: challengeID, ChallengeResultIDs: make(map[string]bool)}
-		} else {
-			return fmt.Errorf("failed to get results index: %v", err)
-		}
+		return fmt.Errorf("failed to get results index: %v", err)
 	}
 
 	ind.ChallengeResultIDs[challengeResultID] = true
