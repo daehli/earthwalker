@@ -163,6 +163,10 @@ async function postObject(url, object) {
     return null
 }
 
+function orderRounds(arrWithRoundNums) {
+    return arrWithRoundNums.sort((a, b) => a.RoundNum - b.RoundNum);
+}
+
 // methods return promises
 class EarthwalkerAPI {
     constructor(baseURL="") {
@@ -170,6 +174,7 @@ class EarthwalkerAPI {
         this.mapsURL = baseURL + "/api/maps";
         this.challengesURL = baseURL + "/api/challenges";
         this.resultsURL = baseURL + "/api/results";
+        this.allResultsURL = baseURL + "/api/results/all";
         this.guessesURL = baseURL + "/api/guesses";
     }
 
@@ -188,16 +193,40 @@ class EarthwalkerAPI {
         return postObject(this.mapsURL, map);
     }
 
-    getChallenge(challengeID) {
-        return getObject(this.challengesURL+"/"+challengeID);
+    async getChallenge(challengeID) {
+        let challenge = await getObject(this.challengesURL+"/"+challengeID);
+        if (challenge.Places) {
+            challenge.Places = orderRounds(challenge.Places);
+        } else {
+            challenge.Places = [];
+        }
+        return challenge;
     }
 
     postChallenge(challenge) {
         return postObject(this.challengesURL, challenge);
     }
 
-    getResult(resultID) {
-        return getObject(this.resultsURL+"/"+resultID);
+    async getResult(resultID) {
+        let result = await getObject(this.resultsURL+"/"+resultID);
+        if (result.Guesses) {
+            result.Guesses = orderRounds(result.Guesses);
+        } else {
+            result.Guesses = [];
+        }
+        return result;
+    }
+
+    async getAllResults(challengeID) {
+        let results = await getObject(this.allResultsURL+"/"+challengeID);
+        results.forEach(result => {
+            if (result.Guesses) {
+                result.Guesses = orderRounds(result.Guesses);
+            } else {
+                result.Guesses = [];
+            }
+        });
+        return results;
     }
 
     postResult(result) {

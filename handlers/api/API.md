@@ -12,6 +12,7 @@ POST /api/challenges : new Challenge from JSON (also inserts ChallengePlaces)
 GET /api/challenges/{id} : get Challenge by ChallengeID (also retrieves ChallengePlaces)  
 
 POST /api/results : new ChallengeResult from JSON (Guesses will be empty)  
+GET /api/results/all/{challengeid} : get []ChallengeResult by ChallengeID (also retrieves Guesses), TODO: This is not okay, but the only alternative I see is to put everything in a hierarchy (/maps/{id}/challenges/{id}/results)
 GET /api/results/{id} : get ChallengeResult by ChallengeResultID (also retrieves Guesses)  
 
 POST /api/guesses : appends Guess from JSON to ChallengeResult.Guesses (if valid)  

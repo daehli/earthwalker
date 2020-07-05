@@ -75,8 +75,6 @@
         map = await ewapi.getMap(challenge.MapID);
         tileServerURL = (await ewapi.getTileServer(map.ShowLabels)).tileserver;
 
-        // TODO: FIXME: this code assumes Guesses and challenge.Places are 
-        //              ordered, which the API does not guarantee
         totalScore = calcTotalScore(
             challengeResult.Guesses.map((guess) => guess.Location), 
             challenge.Places.map((place) => place.Location), 

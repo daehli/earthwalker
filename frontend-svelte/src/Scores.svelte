@@ -22,8 +22,6 @@
         result = await ewapi.getResult(challengeResultID);
         map = await ewapi.getMap(challenge.MapID);
         console.log(map);
-        // TODO: FIXME: this code assumes Guesses and challenge.Places are 
-        //              ordered, which the API does not guarantee
         lastGuess = result.Guesses[result.Guesses.length - 1].Location;
         lastActual = challenge.Places[result.Guesses.length - 1].Location;
         [score, distance] = calcScoreDistance(lastGuess.Lat, lastGuess.Lng, lastActual.Lat, lastActual.Lng, map.GraceDistance, map.Area);
@@ -66,10 +64,12 @@
         <div style="margin-top: 10%; text-align: center;">
             <p class="text-center">
                 You were {distString(distance)} from the correct position. Your marker is 
+                {#if result && result.Guesses && result.Icon}
                 <img 
                     style="height: 40px;" 
                     alt={result && result.Nickname ? result.Nickname : "Your Icon"}
-                    src={svgIcon("?", result && result.Icon ? result.Icon : 0)}/>
+                    src={svgIcon(result.Guesses.length.toString(), result.Icon)}/>
+                {/if}
             </p>
         <div class="progress" style="height: 40px;">
             <div 

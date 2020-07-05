@@ -9,6 +9,7 @@
     let challengeResultID = getChallengeResultID(challengeID);
     let challenge;
     let result;
+    let allResults = [];
     let map;
 
     let guessLocs;
@@ -18,22 +19,22 @@
     // leaflet
     let scoreMap;
     let scoreMapPolyGroup;
+    let scoreMapGuessGroup;
 
     onMount(async () => {
         challenge = await ewapi.getChallenge(challengeID);
-        result = await ewapi.getResult(challengeResultID);
+        allResults = await ewapi.getAllResults(challengeID);
         map = await ewapi.getMap(challenge.MapID);
-        // TODO: FIXME: this code assumes Guesses and challenge.Places are 
-        //              ordered, which the API does not guarantee
-        guessLocs = result.Guesses.map((guess) => guess.Location);
+
         actualLocs = challenge.Places.map((place) => place.Location);
-        
+        allResults.forEach(r => {
+            r.scoreDists = r.Guesses.map((guess, i) => calcScoreDistance(guess.Location.Lat, guess.Location.Lng, actualLocs[i].Lat, actualLocs[i].Lng, map.GraceDistance, map.Area));
+        });
+        result = allResults.find(r => r.ChallengeResultID === challengeResultID);
+        allResults = allResults;
+        console.log(allResults); // TODO: remove debug
+
         setupScoreMap();
-        // TODO: FIXME: this code assumes Guesses and challenge.Places are 
-        //              ordered, which the API does not guarantee
-        scoreDists = guessLocs.map((guessLoc, i) => 
-            calcScoreDistance(guessLoc.Lat, guessLoc.Lng, actualLocs[i].Lat, actualLocs[i].Lng, map.GraceDistance, map.Area));
-        console.log(scoreDists);
     });
 
     async function setupScoreMap() {
@@ -49,6 +50,7 @@
         if (map.Polygon) {
             showPolygonOnMap();
         }
+        scoreMapGuessGroup = L.layerGroup().addTo(scoreMap);
         showGuessesOnMap();
     }
 
@@ -60,8 +62,9 @@
 
     // TODO: show results from other users
     function showGuessesOnMap() {
-        guessLocs.forEach((loc, i) => {
-            showGuessOnMap(scoreMap, loc, actualLocs[i], i, result.Nickname, result.Icon);
+        scoreMapGuessGroup.clearLayers();
+        result.Guesses.forEach((guess, i) => {
+            showGuessOnMap(scoreMapGuessGroup, guess.Location, actualLocs[i], i, result.Nickname, result.Icon);
         });
     }
 
@@ -70,6 +73,12 @@
 	    window.prompt("Copy to clipboard: Ctrl+C, Enter", link);
     }
 </script>
+
+<style>
+    #leaderboard tr {
+        cursor: pointer;
+    }
+</style>
 
 
 <div id="score-map" style="width: 100%; height: 50vh;"></div>
@@ -84,8 +93,8 @@
         </div>
     </div>
 
-    <div style="margin-top: 10%; text-align: center;">
-	<h3>Your scores:</h3>
+    <div style="margin-top: 2em; text-align: center;">
+	<h3>{result && result.Nickname ? result.Nickname + "\'s" : "Your"} scores:</h3>
 	<table class="table table-striped">
 		<thead>
 		<th scope="col">Round</th>
@@ -93,8 +102,8 @@
 		<th scope="col">Distance Off</th>
 		</thead>
 		<tbody>
-        {#if result && result.Guesses}
-            {#each scoreDists as scoreDist, i}
+        {#if result && result.scoreDists}
+            {#each result.scoreDists as scoreDist, i}
                 <tr scope="row">
                     <td>{i + 1}</td>
                     <td>{scoreDist[0]}</td>
@@ -106,19 +115,25 @@
 	</table>
     </div>
 
-    <!-- TODO: implement challengeResult rankings
-    <div style="margin-top: 10%; text-align: center;">
+    <div id="leaderboard" style="margin-top: 2em; text-align: center;">
 		<h3>Leaderboard</h3>
-	<table class="table table-striped">
-	    <thead>
-		<th scope="col">Icon</th>
-		<th scope="col">Nickname</th>
-		<th scope="col">Number of Points</th>
-		<th scope="col">Total Distance Off</th>
-	    </thead>
-	    <tbody>
-	      
-	    </tbody>
-	</table>
-    </div>-->
+        <table class="table table-striped">
+            <thead>
+            <th scope="col">Icon</th>
+            <th scope="col">Nickname</th>
+            <th scope="col">Number of Points</th>
+            <th scope="col">Total Distance Off</th>
+            </thead>
+            <tbody>
+                {#each allResults as curResult, i}
+                    <tr scope="row" on:click={() => {result = allResults[i]; showGuessesOnMap();}}>
+                        <td><img style="height: 20px;" src={svgIcon("?", curResult && curResult.Icon ? curResult.Icon : 0)}/></td>
+                        <td>{curResult.Nickname}</td>
+                        <td>{curResult.scoreDists ? curResult.scoreDists.reduce((acc, val) => acc + val[0], 0) : 0}</td>
+                        <td>{distString(curResult.scoreDists ? curResult.scoreDists.reduce((acc, val) => acc + val[1], 0) : 0)}</td>
+                    </tr>
+                {/each}
+            </tbody>
+        </table>
+    </div>
 </div>
