@@ -100,12 +100,14 @@
                     </thead>
                     <tbody>
                         {#each allResults as curResult, i}
-                            <tr scope="row">
-                                <td><img style="height: 20px;" src={svgIcon("?", curResult && curResult.Icon ? curResult.Icon : 0)}/></td>
-                                <td>{curResult.Nickname}</td>
-                                <td>{curResult.scoreDists ? curResult.scoreDists[curRound][0] : 0}</td>
-                                <td>{distString(curResult.scoreDists ?curResult.scoreDists[curRound][1] : 0)}</td>
-                            </tr>
+                            {#if curResult.Guesses.length > curRound}
+                                <tr scope="row">
+                                    <td><img style="height: 20px;" src={svgIcon("?", curResult && curResult.Icon ? curResult.Icon : 0)}/></td>
+                                    <td>{curResult.Nickname}</td>
+                                    <td>{curResult.scoreDists ? curResult.scoreDists[curRound][0] : 0}</td>
+                                    <td>{distString(curResult.scoreDists ?curResult.scoreDists[curRound][1] : 0)}</td>
+                                </tr>
+                            {/if}
                         {/each}
                     </tbody>
                 </table>

@@ -70,14 +70,8 @@
     }
 
     function switchToResult(index) {
-        if (allResults[index].Guesses.length == map.NumRounds) {
-            result = allResults[index];
-            showGuessesOnMap();
-        } else {
-            // TODO: go ahead and show guesses, once we have another way of preventing 
-            //       people who haven't finished the challenge from viewing the summary
-            alert("This player has not yet completed the map.  Cannot view guesses.");
-        }
+        result = allResults[index];
+        showGuessesOnMap();
     }
 </script>
 
@@ -135,13 +129,14 @@
             </thead>
             <tbody>
                 {#each allResults as curResult, i}
-                    <tr scope="row" on:click={() => {switchToResult(i);}}>
-                        <td><img style="height: 20px;" src={svgIcon("?", curResult && curResult.Icon ? curResult.Icon : 0)}/></td>
-                        <td>{curResult.Nickname}</td>
-                        <td>{curResult.totalScore}</td>
-                        <!-- TODO: indicate user has not completed round, rather than showing 0.0m -->
-                        <td>{distString(curResult.totalDist)}</td>
-                    </tr>
+                    {#if curResult.Guesses.length == map.NumRounds}
+                        <tr scope="row" on:click={() => {switchToResult(i);}}>
+                            <td><img style="height: 20px;" src={svgIcon("?", curResult && curResult.Icon ? curResult.Icon : 0)}/></td>
+                            <td>{curResult.Nickname}</td>
+                            <td>{curResult.totalScore}</td>
+                            <td>{distString(curResult.totalDist)}</td>
+                        </tr>
+                    {/if}
                 {/each}
             </tbody>
         </table>
