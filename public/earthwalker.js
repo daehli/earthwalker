@@ -41,6 +41,11 @@ function getCookieValue(name) {
     return null;
 }
 
+function showChallengeLinkPrompt(challengeID) {
+    let link = window.location.origin + "/play?id=" + challengeID;
+    window.prompt("Copy to clipboard: Ctrl+C, Enter", link);
+}
+
 
 // == Leaflet Map ========
 

@@ -51,6 +51,7 @@
     let challengeID;
     let numFound = 0;
     let foundCoords = [];
+    let done = false;
 
     // DOM elements
     let submitButton;
@@ -70,10 +71,8 @@
         console.log(mapSettings);
         foundCoords = await fetchPanos(streetViewService, mapSettings);
         challengeID = await submitNewChallenge();
-        let challengeLink = window.location.origin + "/challenge?id=" + challengeID
-        // TODO: nicer challenge link readout
-        statusText = "Done! Challenge Link: " + challengeLink;
-        submitButton.disabled = false;
+        statusText = "Done!";
+        done = true;
     });
 
     async function handleFormSubmit() {
@@ -286,7 +285,14 @@
                     <input required type="text" class="form-control" id="Nickname" bind:value={nickname}/>
                 </div>
             </div>
-            <button bind:this={submitButton} id="submit-button" class="btn btn-primary" style="margin-bottom: 2em; color: #fff;" disabled>Start Challenge</button>
+            <div>
+                <button bind:this={submitButton} id="submit-button" class="btn btn-primary" style="color: #fff;" disabled={!done || !nickname}>Start Challenge</button>
+                {#if {done}}
+                    <button id="copy-game-link" class="btn btn-primary" on:click={() => showChallengeLinkPrompt(challengeID)}>
+                        Copy link to this game
+                    </button>
+                {/if}
+            </div>
         </div>
     </form>
 </main>

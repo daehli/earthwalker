@@ -64,11 +64,6 @@
         });
     }
 
-    function showChallengeLinkPrompt() {
-        let link = window.location.origin + "/play?id=" + challengeID;
-	    window.prompt("Copy to clipboard: Ctrl+C, Enter", link);
-    }
-
     function switchToResult(index) {
         result = allResults[index];
         showGuessesOnMap();
@@ -90,7 +85,7 @@
     <br>
     <div class="row">
         <div class="col text-center">
-            <button id="copy-game-link" class="btn btn-primary" on:click={showChallengeLinkPrompt}>
+            <button id="copy-game-link" class="btn btn-primary" on:click={() => showChallengeLinkPrompt(challengeID)}>
                 Copy link to this game
             </button>
         </div>

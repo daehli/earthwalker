@@ -290,7 +290,7 @@
                         <input type="text" class="form-control mr-sm-3" id="locString" placeholder="Location" bind:value={locString} on:change={handleLocStringUpdate}/>
                     </div>
                     <small class="form-text text-muted">
-                        Constrain the game to a specified area - enter a country, state, city, neighborhood, lake, or any other bounded area.  Does not yet affect scoring.
+                        Constrain the game to a specified area - enter a country, state, city, neighborhood, lake, or any other bounded area.
                     </small>
                     <div class="card bg-danger text-white mt-1" id="error-dialog" hidden>
                         <p class="card-text">Sorry, that does not seem like a valid bounding box on OSM Nominatim.</p>
