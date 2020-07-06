@@ -58,6 +58,8 @@ func (handler Play) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Path:   "/",
 	})
 	log.Println(challenge.Places[len(result.Guesses)].Location)
+	// TODO: FIXME: this fails catastrophically if the player has already
+	//              completed the challenge and tries to navigate back to /play
 	ServeLocation(challenge.Places[len(result.Guesses)].Location, w, r)
 }
 

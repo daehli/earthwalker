@@ -29,10 +29,13 @@
         actualLocs = challenge.Places.map((place) => place.Location);
         allResults.forEach(r => {
             r.scoreDists = r.Guesses.map((guess, i) => calcScoreDistance(guess.Location.Lat, guess.Location.Lng, actualLocs[i].Lat, actualLocs[i].Lng, map.GraceDistance, map.Area));
+            r.scoreDists = r.scoreDists.concat(Array(map.NumRounds - r.scoreDists.length).fill([0, 0]));
+            r.totalScore = r.scoreDists.reduce((acc, val) => acc + val[0], 0);
+            r.totalDist = r.scoreDists.reduce((acc, val) => acc + val[1], 0)
         });
         result = allResults.find(r => r.ChallengeResultID === challengeResultID);
+        allResults.sort((a, b) => b.totalScore - a.totalScore);
         allResults = allResults;
-        console.log(allResults); // TODO: remove debug
 
         setupScoreMap();
     });
@@ -48,19 +51,12 @@
         }).addTo(scoreMap);
         scoreMapPolyGroup = L.layerGroup().addTo(scoreMap);
         if (map.Polygon) {
-            showPolygonOnMap();
+            showPolygonOnMap(scoreMapPolyGroup, map.Polygon);
         }
         scoreMapGuessGroup = L.layerGroup().addTo(scoreMap);
         showGuessesOnMap();
     }
 
-    function showPolygonOnMap() {
-        scoreMapPolyGroup.clearLayers();
-        let map_poly = L.geoJSON(map.Polygon).addTo(scoreMapPolyGroup);
-        scoreMap.fitBounds(map_poly.getBounds());
-    }
-
-    // TODO: show results from other users
     function showGuessesOnMap() {
         scoreMapGuessGroup.clearLayers();
         result.Guesses.forEach((guess, i) => {
@@ -72,6 +68,17 @@
         let link = window.location.origin + "/play?id=" + challengeID;
 	    window.prompt("Copy to clipboard: Ctrl+C, Enter", link);
     }
+
+    function switchToResult(index) {
+        if (allResults[index].Guesses.length == map.NumRounds) {
+            result = allResults[index];
+            showGuessesOnMap();
+        } else {
+            // TODO: go ahead and show guesses, once we have another way of preventing 
+            //       people who haven't finished the challenge from viewing the summary
+            alert("This player has not yet completed the map.  Cannot view guesses.");
+        }
+    }
 </script>
 
 <style>
@@ -80,7 +87,9 @@
     }
 </style>
 
-
+<!-- This prevents users who haven't finished the challenge from viewing
+     TODO: cleaner protection for this page -->
+{#if result && map && result.Guesses.length == map.NumRounds}
 <div id="score-map" style="width: 100%; height: 50vh;"></div>
 
 <div class="container">
@@ -126,14 +135,21 @@
             </thead>
             <tbody>
                 {#each allResults as curResult, i}
-                    <tr scope="row" on:click={() => {result = allResults[i]; showGuessesOnMap();}}>
+                    <tr scope="row" on:click={() => {switchToResult(i);}}>
                         <td><img style="height: 20px;" src={svgIcon("?", curResult && curResult.Icon ? curResult.Icon : 0)}/></td>
                         <td>{curResult.Nickname}</td>
-                        <td>{curResult.scoreDists ? curResult.scoreDists.reduce((acc, val) => acc + val[0], 0) : 0}</td>
-                        <td>{distString(curResult.scoreDists ? curResult.scoreDists.reduce((acc, val) => acc + val[1], 0) : 0)}</td>
+                        <td>{curResult.totalScore}</td>
+                        <!-- TODO: indicate user has not completed round, rather than showing 0.0m -->
+                        <td>{distString(curResult.totalDist)}</td>
                     </tr>
                 {/each}
             </tbody>
         </table>
     </div>
 </div>
+{:else}
+    <div class="text-center">
+        <h3>Loading...</h3>
+        <h3>You must finish the game to view this page.</h3>
+    </div>
+{/if}

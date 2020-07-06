@@ -81,6 +81,11 @@ function svgIcon(text, hue) {
     </svg>`
 }
 
+function showPolygonOnMap(layer, polygon) {
+    layer.clearLayers();
+    return L.geoJSON(polygon).addTo(layer);
+}
+
 
 // == Scoring ========
 // TODO: tweak scoring consts

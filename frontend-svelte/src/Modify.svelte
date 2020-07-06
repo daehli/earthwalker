@@ -164,8 +164,7 @@
         leafletMap.on("click", onMapClick);
 
         leafletMapPolyGroup = L.layerGroup().addTo(leafletMap);
-        leafletMapPolyGroup.clearLayers();
-        let map_poly = L.geoJSON(map.Polygon).addTo(leafletMapPolyGroup);
+        let map_poly = showPolygonOnMap(leafletMapPolyGroup, map.Polygon);
 
         // Zoom out map
         setTimeout(function() {

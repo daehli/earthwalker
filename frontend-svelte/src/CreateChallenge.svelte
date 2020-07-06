@@ -175,7 +175,7 @@
         // TODO: FIXME: display message to user when this happens
         //       maybe suggest creating a less specific map or allow
         //       them to try to fetch panos again.
-        console.log("Too many requests without a good streetview pano!");
+        alert("Too many requests without a good streetview pano!  Reload the page to try again or create a map with fewer restrictions.");
     }
 
     // returns whether result (pano) meets the requirements of mapInfo
