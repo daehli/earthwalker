@@ -1,4 +1,6 @@
 <script>
+	import { writable } from 'svelte/store';
+	import { loc } from './stores.js';
 	import CreateMap from './CreateMap.svelte'
 	import CreateChallenge from './CreateChallenge.svelte'
 	import Resume from './Resume.svelte'
@@ -8,7 +10,12 @@
 
 	// TODO: code split this out into a separate bundle
 	import Modify from './Modify.svelte'
+
+	// write sets loc without side effects (unlike set/assignment)
+	loc.write(window.location.pathname);
 </script>
+
+<svelte:window on:popstate={(e) => $loc = e.target.location.pathname} />
 
 <style>
 	#content {
@@ -17,7 +24,7 @@
 </style>
 
 <main>
-	{#if window.location.pathname.startsWith("/play")}
+	{#if $loc.startsWith("/play")}
 		<!-- TODO: code split this out into a separate bundle -->
 		<Modify/>
 	{:else}
@@ -35,17 +42,17 @@
 			</ul>
 		</nav>
 		<div id="content">
-			{#if window.location.pathname === "/"}
+			{#if $loc === "/"}
 				<Resume/>
-			{:else if window.location.pathname === "/createmap"}
+			{:else if $loc.startsWith("/createmap")}
 				<CreateMap/>
-			{:else if window.location.pathname === "/createchallenge"}
+			{:else if $loc.startsWith("/createchallenge")}
 				<CreateChallenge/>
-			{:else if window.location.pathname === "/join"}
+			{:else if $loc.startsWith("/join")}
 				<Join/>
-			{:else if window.location.pathname === "/scores"}
+			{:else if $loc.startsWith("/scores")}
 				<Scores/>
-			{:else if window.location.pathname === "/summary"}
+			{:else if $loc.startsWith("/summary")}
 				<Summary/>
 			{:else}
 				<h3>404.  That's an error.</h3>

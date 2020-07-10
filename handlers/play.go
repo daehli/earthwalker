@@ -31,7 +31,6 @@ func (handler Play) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		// no result ID, redirect to /join?id=<challengeID>
 		http.Redirect(w, r, "/join?id="+challengeID, http.StatusTemporaryRedirect)
-		log.Printf("No resultID in request, redirecting: %v", err) // TODO: remove debug
 		return
 	}
 	result, err := handler.ChallengeResultStore.Get(resultID)
@@ -43,6 +42,11 @@ func (handler Play) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, "failed to retrieve challenge", http.StatusInternalServerError)
 		log.Printf("Failed to retrieve challenge with ID '%s' from store: %v", result.ChallengeID, err)
+	}
+	// user has already finished this challenge, redirect to /summary
+	if len(result.Guesses) >= len(challenge.Places) {
+		http.Redirect(w, r, "/summary", http.StatusTemporaryRedirect)
+		return
 	}
 	// (re)set cookies
 	http.SetCookie(w, &http.Cookie{

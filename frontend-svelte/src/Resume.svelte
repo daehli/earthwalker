@@ -1,33 +1,16 @@
 <script>
-    // TODO: consolidate cookie management to separate script
-    const challengeCookieName = "earthwalker_lastChallenge"
-    const resultCookiePrefix = "earthwalker_lastResult_"
+    import {onMount} from 'svelte';
+    import { loc } from './stores.js';
 
     // ID of most recently created or played challenge
     let lastChallengeID;
     // ID of most recent result for challenge with ID lastChallengeID (from cookie)
     let lastResultID;
 
-    // TODO: this reactive statement doesn't actually react
-    $: parseCookies(document.cookie)
-
-    function parseCookies(cookieStr) {
-        console.log("re-parsing cookies");
-        let cookies = cookieStr.split("; ");
-        let lastChallengeCookie = cookies.find(row => row.startsWith(challengeCookieName));
-        if (lastChallengeCookie) {
-            lastChallengeID = lastChallengeCookie.split('=')[1];
-            let lastResultCookie = cookies.find(row => row.startsWith(resultCookiePrefix + lastChallengeID));
-            if (lastResultCookie) {
-                lastResultID = lastResultCookie.split('=')[1];
-            } else {
-                lastResultID = "";
-            }
-        } else {
-            lastChallengeID = "";
-            lastResultID = "";
-        }
-    }
+    onMount(async () => {
+        lastChallengeID = getChallengeID();
+        lastResultID = getChallengeResultID(lastChallengeID);
+    });
 </script>
 
 <style>
@@ -44,5 +27,5 @@
     {:else}
         <p>No game in progress.</p>
     {/if}
-    <a href="/createmap" class="btn btn-primary">New Map</a>
+    <p on:click={() => {$loc = "/createmap";}} class="btn btn-primary">New Map</p>
 </main>

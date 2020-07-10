@@ -1,20 +1,17 @@
 <script>
     import {onMount} from 'svelte';
+    import { loc } from './stores.js';
 
     const challengeCookieName = "earthwalker_lastChallenge";
     const resultCookiePrefix = "earthwalker_lastResult_";
 
-    onMount(async () => {
-        let params = new URLSearchParams(window.location.search)
-        // TODO: consider having default map settings if there's no ID
-        if (!params.has("id")) {
-            alert("URL has no challenge ID!");
-            return;
-        }
-        challengeID = params.get("id");
-    });
-
+    let ewapi = new EarthwalkerAPI();
     let challengeID;
+    let nickname = "";
+
+    onMount(async () => {
+        challengeID = getChallengeID();
+    });
 
     // TODO: this duplicates a function in CreateChallenge.
     //       consider consolidating.
@@ -31,18 +28,11 @@
     // TODO: this duplicates a function in CreateChallenge.
     //       consolidate to api lib
     async function submitNewChallengeResult() {
-        let challengeResult = JSON.stringify({
+        let challengeResult = {
             ChallengeID: challengeID,
-            Nickname: document.getElementById("Nickname").value,
-        });
-        let response = await fetch("api/results", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: challengeResult,
-        });
-        let data = await response.json();
+            Nickname: nickname,
+        };
+        let data = await ewapi.postResult(challengeResult);
         return data.ChallengeResultID;
     }
 
@@ -60,7 +50,7 @@
                     <div class="input-group-prepend">
                         <div class="input-group-text">Your Nickname</div>
                     </div>
-                    <input required type="text" class="form-control" id="Nickname"/>
+                    <input bind:value={nickname} required type="text" class="form-control" id="Nickname"/>
                 </div>
             </div>
 

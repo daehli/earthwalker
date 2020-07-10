@@ -1,5 +1,6 @@
 <script>
     import {onMount} from 'svelte';
+    import { loc } from './stores.js';
 
     // data
     let ewapi = new EarthwalkerAPI();
@@ -114,9 +115,9 @@
             </div>
             <p class="text-muted">Reload the page to see other player's scores once they finish this round.</p>
             {#if map && map.NumRounds && result && result.Guesses && result.Guesses.length == map.NumRounds}
-                <button type="button" class="btn btn-primary" onclick="window.location.href = '/summary'">Go to summary</button>
+                <button type="button" class="btn btn-primary" on:click={() => {$loc = "/summary";}}>Go to summary</button>
             {:else}
-                <button type="button" class="btn btn-primary" onclick="window.location.href = '/play'">Continue to next round</button>
+                <button type="button" class="btn btn-primary" on:click={() => {window.location.replace("/play");}}>Continue to next round</button>
             {/if}
         </div>
     </div>

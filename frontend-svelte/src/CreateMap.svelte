@@ -1,6 +1,7 @@
 <script>
     // TODO: svelteify this file
     import {onMount} from 'svelte';
+    import { loc } from './stores.js';
 
     const NOMINATIM_URL = (locStringEncoded) => `https://nominatim.openstreetmap.org/search?q=${locStringEncoded}&polygon_geojson=1&limit=5&polygon_threshold=0.005&format=json`;
 
@@ -62,7 +63,7 @@
             .then( (response) => {
                 if (response && response.MapID) {
                     console.log("mapSettings sent to server");
-                    window.location.replace("/createchallenge?mapid="+response.MapID);
+                    $loc = "/createchallenge?mapid="+response.MapID;
                 } else {
                     alert("Failed to submit map?!");
                 }

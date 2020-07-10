@@ -2,6 +2,7 @@
     // TODO: this file is getting out of hand
 
     import { onMount } from 'svelte';
+    import { loc } from './stores.js';
 
     let ewapi = new EarthwalkerAPI();
     // data fetched from server

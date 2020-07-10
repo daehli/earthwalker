@@ -1,4 +1,6 @@
 <script>
+    import {onMount} from 'svelte';
+    import { loc } from './stores.js';
     // TODO: Better organization of this file + additional documentation
     //       The flow is pretty confusing right now.
     // In the meantime, here's what happens in this script:
@@ -58,7 +60,7 @@
     // bindings
     let nickname = "";
 
-    document.addEventListener('DOMContentLoaded', async (event) => {
+    onMount(async () => {
         statusText = "Looking up population density data...";
         popTIF = await loadGeoTIF(popTIFLoc);
         console.log("TIF loaded"); // TODO: remove debug
