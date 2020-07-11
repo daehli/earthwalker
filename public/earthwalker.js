@@ -50,13 +50,13 @@ function showChallengeLinkPrompt(challengeID) {
 // == Leaflet Map ========
 
 // 0 <= hue int < 360
-function showGuessOnMap(map, guessLoc, actualLoc, roundNum, nickname, hue, focus=false) {
-    let polyline = L.polyline([[guessLoc.Lat, guessLoc.Lng], [actualLoc.Lat, actualLoc.Lng]], {color: '#007bff'}).addTo(map);
-    L.marker([guessLoc.Lat, guessLoc.Lng], {
+function showGuessOnMap(map, guess, actual, roundNum, nickname, hue, focus=false) {
+    let polyline = L.polyline([[guess.Location.Lat, guess.Location.Lng], [actual.Location.Lat, actual.Location.Lng]], {color: '#007bff'}).addTo(map);
+    L.marker([guess.Location.Lat, guess.Location.Lng], {
         title: nickname,
         icon: makeIcon(roundNum + 1, hue),
     }).addTo(map).openPopup();
-    L.marker([actualLoc.Lat, actualLoc.Lng], {
+    L.marker([actual.Location.Lat, actual.Location.Lng], {
         title: "Actual Position",
         icon: makeIcon("!", hue),
     }).addTo(map).openPopup();
@@ -105,18 +105,18 @@ const decayBase = 2;
 const halfDistance = 1000000;
 
 // [score, distance] given location of guess and pano, graceDistance, and Polygon area
-function calcScoreDistance(guessLat, guessLng, actualLat, actualLng, graceDistance=0, area=earthArea) {
+function calcScoreDistance(guess, actual, graceDistance=0, area=earthArea) {
     // TODO: cleaner handling of maps with no Polygon (maybe give maps area earthArea on creation?)
     if (area == 0) {
         area = earthArea;
     }
     // consider the guess invalid and return a score of zero
-    if (Math.abs(guessLat > 90)) {
+    if (Math.abs(guess.Location.Lat > 90)) {
         return 0
     }
-    let guess = turf.point([guessLng, guessLat]);
-    let actual =  turf.point([actualLng, actualLat]);
-    let distance = turf.distance(guess, actual, {units: "kilometers"}) * 1000.0;
+    let guessPoint = turf.point([guess.Location.Lng, guess.Location.Lat]);
+    let actualPoint =  turf.point([actual.Location.Lng, actual.Location.Lat]);
+    let distance = turf.distance(guessPoint, actualPoint, {units: "kilometers"}) * 1000.0;
     if (distance < graceDistance) {
         return [maxScore, distance];
     }
@@ -126,12 +126,12 @@ function calcScoreDistance(guessLat, guessLng, actualLat, actualLng, graceDistan
 }
 
 // totalScore given _ordered_ arrays of {Lat, Lng}.
-// actualLocs must be at least as long as guessLocs
-function calcTotalScore(guessLocs, actualLocs, graceDistance=0, area=earthArea) {
-    let totalScore = 0; // redundant atm, but I don't want to forget
-    guessLocs.forEach((guessLoc, i) => {
-        let currentScore;
-        [currentScore, _] = calcScoreDistance(guessLoc.Lat, guessLoc.Lng, actualLocs[i].Lat, actualLocs[i].Lng, graceDistance, area);
+// actuals must be at least as long as guesses
+function calcTotalScore(guesses, actuals, graceDistance=0, area=earthArea) {
+    let totalScore = 0;
+    let currentScore;
+    guesses.forEach((guess, i) => {
+        [currentScore, _] = calcScoreDistance(guess, actuals[i], graceDistance, area);
         totalScore += currentScore;
     });
     return totalScore;

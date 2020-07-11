@@ -1,6 +1,8 @@
 <script>
     import {onMount} from 'svelte';
     import { loc } from './stores.js';
+
+    export let ewapi, curMap, curChallenge;
     // TODO: Better organization of this file + additional documentation
     //       The flow is pretty confusing right now.
     // In the meantime, here's what happens in this script:
@@ -40,16 +42,12 @@
     const challengeCookieName = "earthwalker_lastChallenge";
     const resultCookiePrefix = "earthwalker_lastResult_";
 
-    let ewapi = new EarthwalkerAPI();
-
     let statusText = "Twiddling thumbs...";
 
     let streetViewService = new google.maps.StreetViewService();
 
-    let mapSettings = undefined;
     let popTIF = undefined;
 
-    let mapID;
     let challengeID;
     let numFound = 0;
     let foundCoords = [];
@@ -63,21 +61,17 @@
     onMount(async () => {
         statusText = "Looking up population density data...";
         popTIF = await loadGeoTIF(popTIFLoc);
-        console.log("TIF loaded"); // TODO: remove debug
-        statusText = "Getting Map settings...";
-        mapID = getURLParam("mapid");
-        console.log("map id parsed from url params"); // TODO: remove debug
-        mapSettings = await ewapi.getMap(mapID);
-        console.log("map settings fetched from server"); // TODO: remove debug
         statusText = "Fetching panoramas...";
-        console.log(mapSettings);
-        foundCoords = await fetchPanos(streetViewService, mapSettings);
+        foundCoords = await fetchPanos(streetViewService, curMap);
         challengeID = await submitNewChallenge();
+        // this currently does nothing, because /play reloads everything anyways
+        curChallenge = await ewapi.getChallenge(challengeID);
         statusText = "Done!";
         done = true;
     });
 
     async function handleFormSubmit() {
+        // TODO: duplicates code in Join
         let challengeResultID = await submitNewChallengeResult();
         // set the generated challenge as the current challenge
         document.cookie = challengeCookieName + "=" + challengeID + ";path=/;max-age=172800";
@@ -95,7 +89,7 @@
     async function submitNewChallenge() {
         let convertedCoords = foundCoords.map((coord, i) => ({RoundNum: i, Location: {Lat: coord.lat(), Lng: coord.lng()}}));
         let challenge = {
-            MapID: mapID,
+            MapID: curMap.MapID,
             Places: convertedCoords
         };
         let data = await ewapi.postChallenge(challenge);
@@ -264,9 +258,9 @@
         <div action="" method="post">
             <div class="progress">
                 <div 
-                    style={"width: " + (mapSettings && mapSettings.NumRounds ? ((100 * numFound) / mapSettings.NumRounds) : 0) + "%;"} 
+                    style={"width: " + ((100 * numFound) / curMap.NumRounds) + "%;"} 
                     class="progress-bar" id="loading-progress" role="progressbar">
-                    {numFound + "/" + (mapSettings && mapSettings.NumRounds ? mapSettings.NumRounds : 0)}
+                    {numFound + "/" + curMap.NumRounds}
                 </div>
             </div>
             <small class="text-muted">
@@ -290,7 +284,7 @@
             <div>
                 <button bind:this={submitButton} id="submit-button" class="btn btn-primary" style="color: #fff;" disabled={!done || !nickname}>Start Challenge</button>
                 {#if {done}}
-                    <button id="copy-game-link" class="btn btn-primary" on:click={() => showChallengeLinkPrompt(challengeID)}>
+                    <button type="button" id="copy-game-link" class="btn btn-primary" on:click={(e) => {showChallengeLinkPrompt(challengeID);}}>
                         Copy link to this game
                     </button>
                 {/if}

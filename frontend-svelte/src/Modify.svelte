@@ -4,13 +4,10 @@
     import { onMount } from 'svelte';
     import { loc } from './stores.js';
 
+    export let curMap, curChallenge, curResult;
+
     let ewapi = new EarthwalkerAPI();
     // data fetched from server
-    let challengeID;
-    let challenge;
-    let map;
-    let challengeResultID;
-    let challengeResult;
     let tileServerURL;
     // timer and score
     let timeRemaining = 0;
@@ -57,33 +54,9 @@
     }
 
     onMount(async () => {
-        challengeID = getChallengeID();
-        if (!challengeID) {
-            alert("Could not determine challenge ID!");
-        }
-        challengeResultID = getChallengeResultID(challengeID);
-        if (challengeResultID) {
-            challengeResult = await ewapi.getResult(challengeResultID);
-            if (!challengeResult.Guesses) {
-                challengeResult.Guesses = [];
-            }
-        } else {
-            alert("Could not determine result ID! (How'd you get here?)");
-            return;
-        }
-        
-        challenge = await ewapi.getChallenge(challengeID);
-        map = await ewapi.getMap(challenge.MapID);
-        tileServerURL = (await ewapi.getTileServer(map.ShowLabels)).tileserver;
-
-        totalScore = calcTotalScore(
-            challengeResult.Guesses.map((guess) => guess.Location), 
-            challenge.Places.map((place) => place.Location), 
-            map.GraceDistance, 
-            map.Area);
-        
+        tileServerURL = (await ewapi.getTileServer(curMap.ShowLabels)).tileserver;
+        totalScore = calcTotalScore(curResult.Guesses, curChallenge.Places, curMap.GraceDistance, curMap.Area);
         titleInterval = setInterval(setTitle, 100);
-
         createMinimap();
     });
 
@@ -118,8 +91,8 @@
         hasGuessed = true;
         latlng = latlng.wrap();
         let guess = {
-            ChallengeResultID: challengeResultID,
-            RoundNum: challengeResult.Guesses.length,
+            ChallengeResultID: curResult.ChallengeResultID,
+            RoundNum: curResult.Guesses.length,
             Location: {Lat: latlng.lat, Lng: latlng.lng},
         };
         ewapi.postGuess(guess).then((response) => {
@@ -140,7 +113,7 @@
         try {
             oldMarker = JSON.parse(sessionStorage.getItem("lastMarker"));
         } finally {
-            if (oldMarker != null && oldMarker.gameID == challengeResultID && oldMarker.roundNumber == challengeResult.Guesses.length) {
+            if (oldMarker != null && oldMarker.gameID == challengeResultID && oldMarker.roundNumber == curResult.Guesses.length) {
                 marker = L.marker(L.latLng(oldMarker.lat, oldMarker.lng));
                 marker.addTo(leafletMap);
                 guessButton.className = guessButton.className.replace("disabled", "");
@@ -165,14 +138,14 @@
         leafletMap.on("click", onMapClick);
 
         leafletMapPolyGroup = L.layerGroup().addTo(leafletMap);
-        let map_poly = showPolygonOnMap(leafletMapPolyGroup, map.Polygon);
+        let map_poly = showPolygonOnMap(leafletMapPolyGroup, curMap.Polygon);
 
         // Zoom out map
         setTimeout(function() {
             leafletMap.invalidateSize();
             if (oldMarker) {
                 leafletMap.setView([oldMarker.lat, oldMarker.lng], 1);
-            } else if (map.Polygon) {
+            } else if (curMap.Polygon) {
                 leafletMap.fitBounds(map_poly.getBounds());
             } else {
                 leafletMap.setView([0.0, 0.0], .1);
@@ -188,8 +161,8 @@
         
         // score, round number, and timer
         // TODO: can we use an absolute timer instead of this interval?
-        if (map.TimeLimit > 0) {
-            timeRemaining = map.TimeLimit;
+        if (curMap.TimeLimit > 0) {
+            timeRemaining = curMap.TimeLimit;
             timerInterval = setInterval(function() {
                 timeRemaining -= 1;
                 if (timeRemaining <= 0) {
@@ -387,7 +360,7 @@
                     Round
                 </div>
                 <div class="col">
-                    {challengeResult && map ? (challengeResult.Guesses.length + 1) + " of " + map.NumRounds : "loading..."}
+                    {curResult && curMap ? (curResult.Guesses.length + 1) + " of " + curMap.NumRounds : "loading..."}
                 </div>
             </div>
             <div class="row">
@@ -418,8 +391,8 @@
                             sessionStorage.setItem("lastMarker", JSON.stringify({
                                 "lat": marker.getLatLng().lat,
                                 "lng": marker.getLatLng().lng,
-                                "roundNumber": challengeResult.Guesses.length,
-                                "gameID": challengeResultID,
+                                "roundNumber": Result.Guesses.length,
+                                "gameID": curResult.ChallengeResultID,
                             }));
                         }
                         // https://www.phpied.com/files/location-location/location-location.html

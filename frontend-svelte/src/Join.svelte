@@ -2,26 +2,22 @@
     import {onMount} from 'svelte';
     import { loc } from './stores.js';
 
+    export let ewapi, curChallenge, curResult;
+
     const challengeCookieName = "earthwalker_lastChallenge";
     const resultCookiePrefix = "earthwalker_lastResult_";
 
-    let ewapi = new EarthwalkerAPI();
-    let challengeID;
     let nickname = "";
-
-    onMount(async () => {
-        challengeID = getChallengeID();
-    });
 
     // TODO: this duplicates a function in CreateChallenge.
     //       consider consolidating.
     async function handleFormSubmit() {
-        let challengeResultID = await submitNewChallengeResult();
+        curResult = await ewapi.getResult(await submitNewChallengeResult());
         // set the generated challenge as the current challenge
-        document.cookie = challengeCookieName + "=" + challengeID + ";path=/;max-age=172800";
+        document.cookie = challengeCookieName + "=" + curChallenge.ChallengeID + ";path=/;max-age=172800";
         // set the generated ChallengeResult as the current ChallengeResult
         // for the Challenge with challengeID
-        document.cookie = resultCookiePrefix + challengeID + "=" + challengeResultID + ";path=/;max-age=172800";
+        document.cookie = resultCookiePrefix + curChallenge.ChallengeID + "=" + curResult.ChallengeResultID + ";path=/;max-age=172800";
         window.location.replace("/play");
     }
 
@@ -29,7 +25,7 @@
     //       consolidate to api lib
     async function submitNewChallengeResult() {
         let challengeResult = {
-            ChallengeID: challengeID,
+            ChallengeID: curChallenge.ChallengeID,
             Nickname: nickname,
         };
         let data = await ewapi.postResult(challengeResult);
@@ -42,7 +38,7 @@
     <form on:submit|preventDefault={handleFormSubmit} class="container">
         <br>
         <h2>Join Challenge</h2>
-        <p>Challenge ID: <code>{challengeID}</code></p>
+        <p>Challenge ID: <code>{curChallenge.ChallengeID}</code></p>
         <div action="">
             <!-- TODO: show map settings -->
             <div class="form-group">

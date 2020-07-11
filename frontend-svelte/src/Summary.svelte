@@ -2,15 +2,13 @@
     // TODO: most of this script is duplicated in Scores.svelte.
     //       (also a bit in Modify.svelte)
     //       consolidate.
-        import {onMount} from 'svelte';
+    import {onMount} from 'svelte';
+    import { loc } from './stores.js';
 
-    let ewapi = new EarthwalkerAPI();
-    let challengeID = getChallengeID();
-    let challengeResultID = getChallengeResultID(challengeID);
-    let challenge;
-    let result;
+    export let ewapi, curMap, curChallenge, curResult;
+
+    let displayedResult;
     let allResults = [];
-    let map;
 
     let guessLocs;
     let actualLocs;
@@ -22,18 +20,16 @@
     let scoreMapGuessGroup;
 
     onMount(async () => {
-        challenge = await ewapi.getChallenge(challengeID);
         allResults = await ewapi.getAllResults(challengeID);
-        map = await ewapi.getMap(challenge.MapID);
 
-        actualLocs = challenge.Places.map((place) => place.Location);
+        actualLocs = $curChallenge.Places.map((place) => place.Location);
         allResults.forEach(r => {
             r.scoreDists = r.Guesses.map((guess, i) => calcScoreDistance(guess.Location.Lat, guess.Location.Lng, actualLocs[i].Lat, actualLocs[i].Lng, map.GraceDistance, map.Area));
             r.scoreDists = r.scoreDists.concat(Array(map.NumRounds - r.scoreDists.length).fill([0, 0]));
             r.totalScore = r.scoreDists.reduce((acc, val) => acc + val[0], 0);
             r.totalDist = r.scoreDists.reduce((acc, val) => acc + val[1], 0)
         });
-        result = allResults.find(r => r.ChallengeResultID === challengeResultID);
+        displayedResult = allResults.find(r => r.ChallengeResultID === $curResult.ChallengeResultID);
         allResults.sort((a, b) => b.totalScore - a.totalScore);
         allResults = allResults;
 
@@ -59,13 +55,13 @@
 
     function showGuessesOnMap() {
         scoreMapGuessGroup.clearLayers();
-        result.Guesses.forEach((guess, i) => {
-            showGuessOnMap(scoreMapGuessGroup, guess.Location, actualLocs[i], i, result.Nickname, result.Icon);
+        displayedResult.Guesses.forEach((guess, i) => {
+            showGuessOnMap(scoreMapGuessGroup, guess.Location, actualLocs[i], i, displayedResult.Nickname, displayedResult.Icon);
         });
     }
 
     function switchToResult(index) {
-        result = allResults[index];
+        displayedResult = allResults[index];
         showGuessesOnMap();
     }
 </script>
@@ -78,21 +74,21 @@
 
 <!-- This prevents users who haven't finished the challenge from viewing
      TODO: cleaner protection for this page -->
-{#if result && map && result.Guesses.length == map.NumRounds}
+{#if $curResult && $curMap && $curResult.Guesses.length == $curMap.NumRounds}
 <div id="score-map" style="width: 100%; height: 50vh;"></div>
 
 <div class="container">
     <br>
     <div class="row">
         <div class="col text-center">
-            <button id="copy-game-link" class="btn btn-primary" on:click={() => showChallengeLinkPrompt(challengeID)}>
+            <button type="button" id="copy-game-link" class="btn btn-primary" on:click={() => showChallengeLinkPrompt(challengeID)}>
                 Copy link to this game
             </button>
         </div>
     </div>
 
     <div style="margin-top: 2em; text-align: center;">
-	<h3>{result && result.Nickname ? result.Nickname + "\'s" : "Your"} scores:</h3>
+	<h3>{displayedResult && displayedResult.Nickname ? displayedResult.Nickname + "\'s" : "Your"} scores:</h3>
 	<table class="table table-striped">
 		<thead>
 		<th scope="col">Round</th>
@@ -100,8 +96,8 @@
 		<th scope="col">Distance Off</th>
 		</thead>
 		<tbody>
-        {#if result && result.scoreDists}
-            {#each result.scoreDists as scoreDist, i}
+        {#if displayedResult && displayedResult.scoreDists}
+            {#each displayedResult.scoreDists as scoreDist, i}
                 <tr scope="row">
                     <td>{i + 1}</td>
                     <td>{scoreDist[0]}</td>
@@ -123,13 +119,13 @@
             <th scope="col">Total Distance Off</th>
             </thead>
             <tbody>
-                {#each allResults as curResult, i}
-                    {#if curResult.Guesses.length == map.NumRounds}
+                {#each allResults as result, i}
+                    {#if result.Guesses.length == map.NumRounds}
                         <tr scope="row" on:click={() => {switchToResult(i);}}>
-                            <td><img style="height: 20px;" src={svgIcon("?", curResult && curResult.Icon ? curResult.Icon : 0)}/></td>
-                            <td>{curResult.Nickname}</td>
-                            <td>{curResult.totalScore}</td>
-                            <td>{distString(curResult.totalDist)}</td>
+                            <td><img style="height: 20px;" src={svgIcon("?", result && result.Icon ? result.Icon : 0)}/></td>
+                            <td>{result.Nickname}</td>
+                            <td>{result.totalScore}</td>
+                            <td>{distString(result.totalDist)}</td>
                         </tr>
                     {/if}
                 {/each}

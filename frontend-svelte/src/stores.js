@@ -14,7 +14,3 @@ function createLoc() {
     }
 }
 export const loc = createLoc();
-
-export const curMap = writable({});
-export const curChallenge = writable({});
-export const curResult = writable({});

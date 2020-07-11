@@ -2,15 +2,7 @@
     import {onMount} from 'svelte';
     import { loc } from './stores.js';
 
-    // ID of most recently created or played challenge
-    let lastChallengeID;
-    // ID of most recent result for challenge with ID lastChallengeID (from cookie)
-    let lastResultID;
-
-    onMount(async () => {
-        lastChallengeID = getChallengeID();
-        lastResultID = getChallengeResultID(lastChallengeID);
-    });
+    export let curChallenge, curResult;
 </script>
 
 <style>
@@ -20,9 +12,9 @@
 </style>
 
 <main>
-    {#if lastResultID}
-        <a href={"/play?id=" + lastResultID} class="btn btn-primary">Resume Game</a>
-        <p>Challenge ID: <code>{lastChallengeID}</code>, Result ID: <code>{lastResultID}</code></p>
+    {#if curChallenge && curResult}
+        <a href={"/play?id=" + curChallenge.ChallengeID} class="btn btn-primary">Resume Game</a>
+        <p>Challenge ID: <code>{curChallenge.ChallengeID}</code>, Result ID: <code>{curResult.ChallengeResultID}</code></p>
         <hr/>
     {:else}
         <p>No game in progress.</p>
