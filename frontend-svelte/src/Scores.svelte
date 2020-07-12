@@ -2,22 +2,18 @@
     import { onMount } from 'svelte';
     import { loc } from './stores.js';
 
+    import LeafletGuessesMap from './LeafletGuessesMap.svelte';
+
     export let ewapi, curMap, curChallenge, curResult;
 
     // data
     let allResults = [];
     let result;
 
-    // leaflet
-    let scoreMap;
-    let scoreMapPolyGroup;
-
     // reactive
     let dataLoaded = false;
-    let scoreMapLoaded = false;
     let curRound = 0;
     $: [score, distance] = dataLoaded ? calcScoreDistance(result.Guesses[curRound], curChallenge.Places[curRound], curMap.GraceDistance, curMap.Area) : [0, 0];
-    $: if (scoreMapLoaded) {showGuessOnMap(scoreMap, result.Guesses[curRound], curChallenge.Places[curRound], curRound, result.Nickname, result.Icon, true);}
 
     onMount(async () => {
         if (!curMap || !curChallenge || !curResult) {
@@ -33,22 +29,8 @@
         allResults.sort((a, b) => b.scoreDists[curRound][0] - a.scoreDists[curRound][0]);
         allResults = allResults;
         dataLoaded = true;
-        setupScoreMap();
     });
 
-    async function setupScoreMap() {
-        let tileServer = (await ewapi.getTileServer()).tileserver;
-        scoreMap = L.map("score-map");
-        scoreMap.setView([0.0, 0.0], 1);
-        L.tileLayer(tileServer, {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> contributors, <a href="https://wikitech.wikimedia.org/wiki/Wikitech:Cloud_Services_Terms_of_use">Wikimedia Cloud Servides</a>'
-        }).addTo(scoreMap);
-        scoreMapPolyGroup = L.layerGroup().addTo(scoreMap);
-        if (curMap.Polygon) {
-            showPolygonOnMap(scoreMapPolyGroup, curMap.Polygon);
-        }
-        scoreMapLoaded = true;
-    }
 </script>
 
 <style>
@@ -60,7 +42,7 @@
 </style>
 
 <main>
-    <div id="score-map" style="width: 100%; height: 50vh;"></div>
+    <LeafletGuessesMap {ewapi} {curMap} {curChallenge} displayedResult={curResult} showAll={false}/>
     <div class="container">
         <div style="margin-top: 2em; text-align: center;">
             <p class="text-center">

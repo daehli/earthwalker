@@ -17,17 +17,17 @@
 	let challengeID = getChallengeID();
 	let resultID = getChallengeResultID(challengeID);
 	let curChallenge;
-	$: 	if (challengeID) {
-			   ewapi.getChallenge(challengeID).then(challenge => curChallenge = challenge || null);
-	   	};
+	$: if (challengeID) {
+		ewapi.getChallenge(challengeID).then(challenge => curChallenge = challenge || null);
+	};
 	let curMap;
-	$: 	if (curChallenge && curChallenge.MapID) {
-			ewapi.getMap(curChallenge.MapID).then(map => curMap = map || null);
-		};
+	$: if (curChallenge && curChallenge.MapID) {
+		ewapi.getMap(curChallenge.MapID).then(map => curMap = map || null);
+	};
 	let curResult;
-	$: 	if (resultID) {
-			ewapi.getResult(resultID).then(result => curResult = result || null);
-		};
+	$: if (resultID) {
+		ewapi.getResult(resultID).then(result => curResult = result || null);
+	};
 
 	// TODO: remove debug
 	$: console.log(curMap);
@@ -47,7 +47,7 @@
 </style>
 
 <main>
-	{#if $loc.startsWith("/play")}
+	{#if $loc.startsWith("/play") && ewapi && curMap && curChallenge && curResult}
 		<!-- TODO: code split this out into a separate bundle -->
 		<Modify {ewapi} {curMap} {curChallenge} {curResult}/>
 	{:else}

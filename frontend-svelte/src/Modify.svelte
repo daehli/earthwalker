@@ -4,9 +4,8 @@
     import { onMount } from 'svelte';
     import { loc } from './stores.js';
 
-    export let curMap, curChallenge, curResult;
+    export let ewapi, curMap, curChallenge, curResult;
 
-    let ewapi = new EarthwalkerAPI();
     // data fetched from server
     let tileServerURL;
     // timer and score
