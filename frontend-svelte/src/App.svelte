@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { writable } from 'svelte/store';
 
-	import { loc } from './stores.js';
+	import { loc, globalMap, globalChallenge, globalResult } from './stores.js';
 
 	import CreateMap from './CreateMap.svelte'
 	import CreateChallenge from './CreateChallenge.svelte'
@@ -14,25 +14,43 @@
 	import Modify from './Modify.svelte'
 
 	let ewapi = new EarthwalkerAPI();
-	let challengeID = getChallengeID();
-	let resultID = getChallengeResultID(challengeID);
-	let curChallenge;
-	$: if (challengeID) {
-		ewapi.getChallenge(challengeID).then(challenge => curChallenge = challenge || null);
-	};
-	let curMap;
-	$: if (curChallenge && curChallenge.MapID) {
-		ewapi.getMap(curChallenge.MapID).then(map => curMap = map || null);
-	};
-	let curResult;
-	$: if (resultID) {
-		ewapi.getResult(resultID).then(result => curResult = result || null);
-	};
+
+	// these reactive statements keep globalMap in sync with globalChallenge,
+	// and globalChallenge in sync with globalResult 
+	// (updates bubble up but of course not down)
+	// TODO: FIXME: this strategy is super prone to race conditions.
+	//              Maybe provide some kind of async set function instead.
+	//              I'd like to integrate that as a custom store, but that
+	//              would make API access kind of awkward.
+	$: if (
+		$globalResult && (
+			!$globalChallenge ||
+			$globalChallenge.ChallengeID !== $globalResult.ChallengeID
+		)
+	) { updateGlobalChallenge($globalResult.ChallengeID); };
+
+	async function updateGlobalChallenge(challengeID) {
+		console.log("globalResult has changed, updating globalChallenge:"); // TODO: remove debug
+		$globalChallenge = await ewapi.getChallenge(challengeID);
+	}
+
+	$: if (
+		$globalChallenge && (
+			!$globalMap ||
+			$globalMap.MapID !== $globalChallenge.MapID
+		)
+	) { updateGlobalMap($globalChallenge.MapID); };
+
+	async function updateGlobalMap(mapID) {
+		console.log("globalChallenge has changed, updating globalMap:"); // TODO: remove debug
+		$globalMap = await ewapi.getMap(mapID);
+	}
 
 	// TODO: remove debug
-	$: console.log(curMap);
-	$: console.log(curResult);
-	$: console.log(curChallenge);
+	$: console.log($loc);
+	$: console.log($globalMap);
+	$: console.log($globalChallenge);
+	$: console.log($globalResult);
 
 	// write sets loc without side effects (unlike set/assignment)
 	loc.write(window.location.pathname);
@@ -47,9 +65,9 @@
 </style>
 
 <main>
-	{#if $loc.startsWith("/play") && ewapi && curMap && curChallenge && curResult}
+	{#if $loc.startsWith("/play")}
 		<!-- TODO: code split this out into a separate bundle -->
-		<Modify {ewapi} {curMap} {curChallenge} {curResult}/>
+		<Modify {ewapi}/>
 	{:else}
 		<nav class="navbar navbar-expand-sm navbar-light bg-light">
 			<span class="navbar-brand">Earthwalker</span>
@@ -65,18 +83,18 @@
 			</ul>
 		</nav>
 		<div id="content">
-			{#if $loc === "/" && curChallenge && curResult}
-				<Resume {curChallenge} {curResult}/>
+			{#if $loc === "/"}
+				<Resume {ewapi}/>
 			{:else if $loc.startsWith("/createmap")}
 				<CreateMap/>
-			{:else if $loc.startsWith("/createchallenge") && ewapi && curMap && curChallenge}
-				<CreateChallenge {ewapi} {curMap} {curChallenge}/>
-			{:else if $loc.startsWith("/join") && ewapi && curChallenge && curResult}
-				<Join {ewapi} {curChallenge} {curResult}/>
-			{:else if $loc.startsWith("/scores") && ewapi && curMap && curChallenge && curResult}
-				<Scores {ewapi} {curMap} {curChallenge} {curResult}/>
-			{:else if $loc.startsWith("/summary") && ewapi && curMap && curChallenge && curResult}
-				<Summary {ewapi} {curMap} {curChallenge} {curResult}/>
+			{:else if $loc.startsWith("/createchallenge")}
+				<CreateChallenge {ewapi}/>
+			{:else if $loc.startsWith("/join")}
+				<Join {ewapi}/>
+			{:else if $loc.startsWith("/scores")}
+				<Scores {ewapi}/>
+			{:else if $loc.startsWith("/summary")}
+				<Summary {ewapi}/>
 			{:else}
 				<h3>404.  That's an error.</h3>
 			{/if}

@@ -1,8 +1,8 @@
 <script>
-    import {onMount} from 'svelte';
-    import { loc } from './stores.js';
+    import { onMount } from 'svelte';
+    import { loc, globalMap, globalResult } from './stores.js';
 
-    export let ewapi, curMap, curChallenge;
+    export let ewapi;
     // TODO: Better organization of this file + additional documentation
     //       The flow is pretty confusing right now.
     // In the meantime, here's what happens in this script:
@@ -59,13 +59,21 @@
     let nickname = "";
 
     onMount(async () => {
+        statusText = "Getting Map settings...";
+        let mapid = getURLParam("mapid");
+        if (mapid && (!$globalMap || $globalMap.MapID !== mapid)) {
+            $globalMap = await ewapi.getMap(mapid);
+        } else if (!mapid) {
+            alert("No Map ID in URL!");
+        }
+
         statusText = "Looking up population density data...";
         popTIF = await loadGeoTIF(popTIFLoc);
+
         statusText = "Fetching panoramas...";
-        foundCoords = await fetchPanos(streetViewService, curMap);
+        foundCoords = await fetchPanos(streetViewService, $globalMap);
         challengeID = await submitNewChallenge();
-        // this currently does nothing, because /play reloads everything anyways
-        curChallenge = await ewapi.getChallenge(challengeID);
+
         statusText = "Done!";
         done = true;
     });
@@ -73,6 +81,7 @@
     async function handleFormSubmit() {
         // TODO: duplicates code in Join
         let challengeResultID = await submitNewChallengeResult();
+        $globalResult = await ewapi.getResult(challengeResultID);
         // set the generated challenge as the current challenge
         document.cookie = challengeCookieName + "=" + challengeID + ";path=/;max-age=172800";
         // set the generated ChallengeResult as the current ChallengeResult
@@ -89,7 +98,7 @@
     async function submitNewChallenge() {
         let convertedCoords = foundCoords.map((coord, i) => ({RoundNum: i, Location: {Lat: coord.lat(), Lng: coord.lng()}}));
         let challenge = {
-            MapID: curMap.MapID,
+            MapID: $globalMap.MapID,
             Places: convertedCoords
         };
         let data = await ewapi.postChallenge(challenge);
@@ -258,9 +267,9 @@
         <div action="" method="post">
             <div class="progress">
                 <div 
-                    style={"width: " + ((100 * numFound) / curMap.NumRounds) + "%;"} 
+                    style={"width: " + ($globalMap ? (100 * numFound) / $globalMap.NumRounds : 0) + "%;"} 
                     class="progress-bar" id="loading-progress" role="progressbar">
-                    {numFound + "/" + curMap.NumRounds}
+                    {numFound + "/" + ($globalMap ? $globalMap.NumRounds : 0)}
                 </div>
             </div>
             <small class="text-muted">

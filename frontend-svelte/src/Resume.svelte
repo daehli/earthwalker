@@ -1,20 +1,23 @@
 <script>
-    import {onMount} from 'svelte';
-    import { loc } from './stores.js';
+    import { onMount } from 'svelte';
+    import { loc, globalMap, globalChallenge, globalResult } from './stores.js';
 
-    export let curChallenge, curResult;
+    export let ewapi;
+
+    onMount(async () => {
+        if (!$globalResult) {
+            let challengeID = getChallengeID();
+            if (challengeID) {
+                $globalResult = await ewapi.getResult(getChallengeResultID(challengeID));
+            }
+        }
+    });
 </script>
 
-<style>
-    main {
-        margin: 2em;
-    }
-</style>
-
 <main>
-    {#if curChallenge && curResult}
-        <a href={"/play?id=" + curChallenge.ChallengeID} class="btn btn-primary">Resume Game</a>
-        <p>Challenge ID: <code>{curChallenge.ChallengeID}</code>, Result ID: <code>{curResult.ChallengeResultID}</code></p>
+    {#if $globalChallenge && $globalResult}
+        <a href={"/play?id=" + $globalChallenge.ChallengeID} class="btn btn-primary">Resume Game</a>
+        <p>Challenge ID: <code>{$globalChallenge.ChallengeID}</code>, Result ID: <code>{$globalResult.ChallengeResultID}</code></p>
         <hr/>
     {:else}
         <p>No game in progress.</p>

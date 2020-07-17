@@ -1,7 +1,7 @@
 <script>
     // TODO: svelteify this file
-    import {onMount} from 'svelte';
-    import { loc } from './stores.js';
+    import { onMount } from 'svelte';
+    import { loc, globalMap } from './stores.js';
 
     const NOMINATIM_URL = (locStringEncoded) => `https://nominatim.openstreetmap.org/search?q=${locStringEncoded}&polygon_geojson=1&limit=5&polygon_threshold=0.005&format=json`;
 
@@ -30,6 +30,7 @@
     let previewMap;
     let previewPolyGroup;
     let advancedHidden = true;
+    let submitDisabled = false;
 
     onMount(async () => {
         previewMap = L.map("bounds-map", {center: [0, 0], zoom: 1});
@@ -43,6 +44,10 @@
     // collates createmap form data into a JSON object, 
     // then sends a newmap request to the server
     function handleFormSubmit() {
+        if (submitDisabled) {
+            return;
+        }
+
         // calculate total TimeLimit
         mapSettings.TimeLimit = 60 * timeLimitMinutes + timeLimitSeconds;
 
@@ -62,7 +67,7 @@
         ewapi.postMap(mapSettings)
             .then( (response) => {
                 if (response && response.MapID) {
-                    console.log("mapSettings sent to server");
+                    $globalMap = response;
                     $loc = "/createchallenge?mapid="+response.MapID;
                 } else {
                     alert("Failed to submit map?!");
@@ -72,6 +77,7 @@
 
     function handleLocStringUpdate() {
         if (locString != oldLocString) {
+            submitDisabled = true;
             oldLocString = locString;
             updatePolygonFromLocString();
         }
@@ -95,6 +101,7 @@
                 mapSettings.Polygon = geojsonFromNominatim(data);
                 mapSettings.Area = turf.area(mapSettings.Polygon);
                 showPolygonOnMap();
+                submitDisabled = false;
             });
     }
 
@@ -305,7 +312,7 @@
 
         <input id="hidden-input" type="hidden" name="result" value=""/>
 
-        <button id="submit-button" type="submit" class="btn btn-primary" style="margin-bottom: 2em;">Create Map</button>
+        <button id="submit-button" type="submit" class="btn btn-primary" style="margin-bottom: 2em;" disabled={submitDisabled}>Create Map</button>
 
     </form>
     <link rel="stylesheet" href="static/leaflet/leaflet.css"/>

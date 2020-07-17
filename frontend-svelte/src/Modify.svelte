@@ -2,9 +2,9 @@
     // TODO: this file is getting out of hand
 
     import { onMount } from 'svelte';
-    import { loc } from './stores.js';
+    import { loc, globalMap, globalChallenge, globalResult } from './stores.js';
 
-    export let ewapi, curMap, curChallenge, curResult;
+    export let ewapi;
 
     // data fetched from server
     let tileServerURL;
@@ -53,8 +53,9 @@
     }
 
     onMount(async () => {
-        tileServerURL = (await ewapi.getTileServer(curMap.ShowLabels)).tileserver;
-        totalScore = calcTotalScore(curResult.Guesses, curChallenge.Places, curMap.GraceDistance, curMap.Area);
+        $globalResult = await ewapi.getResult(getChallengeResultID(getChallengeID()));
+        tileServerURL = (await ewapi.getTileServer($globalMap.ShowLabels)).tileserver;
+        totalScore = calcTotalScore($globalResult.Guesses, $globalChallenge.Places, $globalMap.GraceDistance, $globalMap.Area);
         titleInterval = setInterval(setTitle, 100);
         createMinimap();
     });
@@ -90,8 +91,8 @@
         hasGuessed = true;
         latlng = latlng.wrap();
         let guess = {
-            ChallengeResultID: curResult.ChallengeResultID,
-            RoundNum: curResult.Guesses.length,
+            ChallengeResultID: $globalResult.ChallengeResultID,
+            RoundNum: $globalResult.Guesses.length,
             Location: {Lat: latlng.lat, Lng: latlng.lng},
         };
         ewapi.postGuess(guess).then((response) => {
@@ -112,7 +113,7 @@
         try {
             oldMarker = JSON.parse(sessionStorage.getItem("lastMarker"));
         } finally {
-            if (oldMarker != null && oldMarker.gameID == challengeResultID && oldMarker.roundNumber == curResult.Guesses.length) {
+            if (oldMarker != null && oldMarker.gameID == challengeResultID && oldMarker.roundNumber == $globalResult.Guesses.length) {
                 marker = L.marker(L.latLng(oldMarker.lat, oldMarker.lng));
                 marker.addTo(leafletMap);
                 guessButton.className = guessButton.className.replace("disabled", "");
@@ -137,14 +138,14 @@
         leafletMap.on("click", onMapClick);
 
         leafletMapPolyGroup = L.layerGroup().addTo(leafletMap);
-        let map_poly = showPolygonOnMap(leafletMapPolyGroup, curMap.Polygon);
+        let map_poly = showPolygonOnMap(leafletMapPolyGroup, $globalMap.Polygon);
 
         // Zoom out map
         setTimeout(function() {
             leafletMap.invalidateSize();
             if (oldMarker) {
                 leafletMap.setView([oldMarker.lat, oldMarker.lng], 1);
-            } else if (curMap.Polygon) {
+            } else if ($globalMap.Polygon) {
                 leafletMap.fitBounds(map_poly.getBounds());
             } else {
                 leafletMap.setView([0.0, 0.0], .1);
@@ -160,8 +161,8 @@
         
         // score, round number, and timer
         // TODO: can we use an absolute timer instead of this interval?
-        if (curMap.TimeLimit > 0) {
-            timeRemaining = curMap.TimeLimit;
+        if ($globalMap.TimeLimit > 0) {
+            timeRemaining = $globalMap.TimeLimit;
             timerInterval = setInterval(function() {
                 timeRemaining -= 1;
                 if (timeRemaining <= 0) {
@@ -359,7 +360,7 @@
                     Round
                 </div>
                 <div class="col">
-                    {curResult && curMap ? (curResult.Guesses.length + 1) + " of " + curMap.NumRounds : "loading..."}
+                    {$globalResult && $globalMap ? ($globalResult.Guesses.length + 1) + " of " + $globalMap.NumRounds : "loading..."}
                 </div>
             </div>
             <div class="row">
@@ -390,8 +391,8 @@
                             sessionStorage.setItem("lastMarker", JSON.stringify({
                                 "lat": marker.getLatLng().lat,
                                 "lng": marker.getLatLng().lng,
-                                "roundNumber": Result.Guesses.length,
-                                "gameID": curResult.ChallengeResultID,
+                                "roundNumber": $globalResult.Guesses.length,
+                                "gameID": $globalResult.ChallengeResultID,
                             }));
                         }
                         // https://www.phpied.com/files/location-location/location-location.html
