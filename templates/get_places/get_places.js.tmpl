@@ -29,6 +29,8 @@ const LAT_LIMIT = 85; // polar panos are discarded, they're usually garbage
 // string formatting in javascript...
 const NOMINATIM_URL = (locStringEncoded) => `https://nominatim.openstreetmap.org/search?q=${locStringEncoded}&polygon_geojson=1&limit=5&format=json`;
 
+const FETCH_PANO_POOL = 10; // Maximum simultaneous connections to fetch panos
+
 let streetViewService = new google.maps.StreetViewService();
 
 // loadGeoTiff gets awaited at the start, so geoImage is always present.
@@ -69,7 +71,9 @@ let pageMapInfo = {
 		"outdoors": "outdoors only",
 		"copyright": "any",
 	},
-	"panoCoords": []
+	"panoCoords": [],
+	"shouldUpdate": false,
+	"updateId": null,
 }
 
 let numPanoFetchesInProgress = 0;
@@ -77,6 +81,8 @@ let numPanoFetchesInProgress = 0;
 let previewMap = null;
 let markerGroup = null; // DEBUGGING: map layer group for place markers
 let polygonGroup = null; // map layer group for polygon regions
+
+let fetchTimer = null; // timer id for fetching locations
 
 // given a turf.polygon or turf.multiPolygon,
 // display it on the map, and fit the map to its bounds
@@ -88,66 +94,61 @@ function showPolygonOnMap(map, polygon) {
 	map.fitBounds(map_poly.getBounds());
 }
 
-// given a location string, request a polygon from nominatim
-// then, update from the form inputs and start looking for places 
-// TODO: this isn't great
-// TODO: support multiple char separated strings (combine into a multipoly)
-function fetchPolygonFromLocString(mapInfo) {
-	locString = mapInfo["locStrings"][0]; // TODO: multiple strings (see above)
-	// return null if locString is falsey/empty string
-	// (handled in getRandomLatLngInPolygon())
-	if (locString === "" || !locString) {
-		mapInfo["locPolygon"] = null;
-		numberOfRoundsUpdated();
-		connectedOnlyUpdated();
-		fetchPanos(mapInfo);
-		return;
-	}
+/**
+ * Given an array of locStrings, will return a polygon from nominatim
+ * @todo add support for multiple locStrings
+ * @param locStrings the array of locString
+ */
+function fetchPolygonFromLocString(locStrings) {
+	const locString = locStrings[0];
 
-	const Http = new XMLHttpRequest();
-	const url = NOMINATIM_URL(encodeURI(locString.replace(" ", "+")));
-	Http.open("GET", url);
-	Http.send();
-
-	// TODO: this is insane, improve async flow
-	Http.onreadystatechange = (event) => {
-		if (Http.readyState == 4) {
-			let placesPolygon;
-			let response = JSON.parse(Http.responseText);
-			let errorDialog = document.getElementById("error-dialog");
-
-			for (let i = 0; i < response.length; i++) {
-				let type = response[i]["geojson"]["type"].toLowerCase();
-				if (type === "multipolygon") {
-					if (debug) {
-						console.log(response[i]);
-					}
-					errorDialog.setAttribute("hidden", "hidden");
-					placesPolygon = turf.multiPolygon(response[i]["geojson"]["coordinates"]);
-					break;
-				} else if (type === "polygon") {
-					if (debug) {
-						console.log(response[i]);
-					}
-					errorDialog.setAttribute("hidden", "hidden");
-					placesPolygon = turf.multiPolygon([response[i]["geojson"]["coordinates"]]);
-					break;
-				}
-			}
-
-			if (!placesPolygon) {
-				console.log("No polygon response recieved");
-				errorDialog.removeAttribute("hidden");
-				return;
-			}
-
-			showPolygonOnMap(previewMap, placesPolygon);
-			mapInfo["locPolygon"] = placesPolygon;
-			numberOfRoundsUpdated();
-			connectedOnlyUpdated();
-			fetchPanos(mapInfo);
+	return new Promise((resolve, reject) => {
+		if (locString === "" || !locString) {
+			return resolve(null);
 		}
-	}
+
+		// Send request to nominatim
+		const Http = new XMLHttpRequest();
+		const url = NOMINATIM_URL(encodeURI(locString.replace(" ", "+")));
+		Http.open("GET", url);
+		Http.send();
+
+		Http.onreadystatechange = (event) => {
+			if (Http.readyState == 4) {
+				let placesPolygon;
+				let response = JSON.parse(Http.responseText);
+	
+				// Search for the polygon
+				for (let i = 0; i < response.length; i++) {
+					let type = response[i]["geojson"]["type"].toLowerCase();
+					if (type === "multipolygon") {
+						// Print to console when debugging
+						if (debug) {
+							console.log(response[i]);
+						}
+
+						placesPolygon = turf.multiPolygon(response[i]["geojson"]["coordinates"]);
+						break;
+					} else if (type === "polygon") {
+						// Print to console when debugging
+						if (debug) {
+							console.log(response[i]);
+						}
+
+						placesPolygon = turf.multiPolygon([response[i]["geojson"]["coordinates"]]);
+						break;
+					}
+				}
+	
+				// Reject, if the response is not a polygon
+				if (!placesPolygon) {
+					return reject(null);
+				}
+	
+				return resolve(placesPolygon);
+			}
+		}
+	});
 }
 
 // ===== API/Panorama Fetching =====
@@ -167,80 +168,130 @@ function fetchPolygonFromLocString(mapInfo) {
 	"panoCoords": (array of google.maps.LatLng, default to [])
 }
 */
-function fetchPanos(mapInfo) {
-	disableSubmitButton();
+async function fetchPanos(id) {
 
-	if (mapInfo["panoCoords"] == null) {
-		mapInfo["panoCoords"] = [];
+	updateFetchingBar(0);
+
+	const panos = [];
+	const executing = [];
+
+	const enqueue = function() {
+		// If a new config is available, stop
+		if (id !== pageMapInfo["updateId"]) {
+			return Promise.reject();
+		}
+
+		if (panos.length >= pageMapInfo["numRounds"]) {
+			return Promise.resolve();
+		}
+
+		// Fetch Pano
+		const p = fetchPano(pageMapInfo).then(pano => {
+
+			// Check for duplicates
+			for (let i = 0; i < panos.length; i++) {
+				if (panos[i].equals(pano)) {
+					console.log("duplicate!");
+					return null;
+				}
+			}
+
+			if (debug && panos.length < pageMapInfo["numRounds"]) {
+				L.marker([pano.lat(), pano.lng()]).addTo(markerGroup); // DEBUGGING: show selected places on map
+			}
+
+			panos.push(pano);
+
+			updateFetchingBar(Math.min(panos.length / pageMapInfo["numRounds"], 1));
+
+		}).catch(() => null);
+
+		const exec = p.then(() => executing.splice(executing.indexOf(exec), 1));
+		executing.push(exec);
+
+		let r = Promise.resolve();
+		if (executing.length >= FETCH_PANO_POOL) {
+			r = Promise.race(executing);
+		}
+
+		return r.then(() => enqueue());
 	}
 
-	if (mapInfo["panoCoords"].length + numPanoFetchesInProgress < mapInfo["numRounds"]) {
-		for (let i = mapInfo["panoCoords"].length + numPanoFetchesInProgress; i < mapInfo["numRounds"]; i++) {
-			numPanoFetchesInProgress += 1; // TODO: still a race condition here
-			fetchPano(mapInfo);
-		}
-	} else {
-		// re-enables the submit button if fetchPano never needed to be called (ugh)
-		updateSecretForm(mapInfo["panoCoords"], mapInfo["numRounds"]);
+	await enqueue();
+
+	pageMapInfo["panoCoords"] = panos.slice(0, pageMapInfo["numRounds"]);
+
+	updateSecretForm(pageMapInfo["panoCoords"], pageMapInfo["numRounds"]);
+}
+
+/**
+ * Call this whenever the mapInfo changes and new panos should be generated
+ */
+function updatedMapInfo() {
+	disableSubmitButton();
+
+	updateFetchingBar(0);
+	
+	pageMapInfo["shouldUpdate"] = true;
+
+	if (!fetchTimer) {
+		fetchTimer = setInterval(() => {
+			if (pageMapInfo["shouldUpdate"]) {
+				pageMapInfo["shouldUpdate"] = false;
+
+				// Mark this update cycle
+				const id = Date.now();
+				pageMapInfo["updateId"] = id;
+
+				if (debug) {
+					markerGroup.clearLayers();
+				}
+				
+				pageMapInfo["panoCoords"] = [];
+
+				fetchPanos(id).then(() => {
+					console.log("Finished fetching locations; id: " + id);
+				}).catch("Aborted fetching locations; id: " + id);
+			}
+		}, 100);
 	}
 }
 
-// fetch a pano and add it to mapInfo["panoCoords"]
-// api query is repeated until a good pano is found
-// TODO: I think we've ended up with excessive numRounds checks here, try to clean it up
+/**
+ * Fetch a random location return it. If the location is not valid, reject.
+ * Repetition of fetches has to be done by the caller
+ * @param mapInfo current map info
+ */
 async function fetchPano(mapInfo) {
-	let randomLatLng = getRandomLatLngInPolygon(mapInfo["locPolygon"]);
-
-	let oldPanoReqs = Object.assign(pageMapInfo["panoReqs"]);
-
-	let handleFail = function() {
-		// if pano reqs have changed, stop searching
-		if (pageMapInfo["panoReqs"] !== oldPanoReqs) {
-			return;
-		}
-		// user may have decreased numRounds, if so don't make another request
-		if (mapInfo["panoCoords"].length < mapInfo["numRounds"]) {
-			setTimeout(function() {
-				fetchPano(mapInfo);
-			}, 0);
-		} else {
-			updateSecretForm(mapInfo["panoCoords"], mapInfo["numRounds"]);
-		}
-	};
-
-	function handlePanoResponse(result, status) {
-		if (status == google.maps.StreetViewStatus.OK && resultPanoIsGood(result, mapInfo)) {
-			if (debug) {
-				L.marker([result.location.latLng.lat(), result.location.latLng.lng()]).addTo(markerGroup); // DEBUGGING: show selected places on map
+	return new Promise(async (resolve, reject) => {
+		let randomLatLng = getRandomLatLngInPolygon(mapInfo["locPolygon"]);
+	
+		function handlePanoResponse(result, status) {
+			if (status == google.maps.StreetViewStatus.OK && resultPanoIsGood(result, mapInfo)) {
+				return resolve(result.location.latLng);
+			} else {
+				if (debug) {
+					console.log("Failed to get location; api request: " + status.toString() + "\n");
+				}
+				return reject();
 			}
-
-			// in case the user has decreased numRounds while the request was running, don't add the pano
-			if (mapInfo["panoCoords"].length < mapInfo["numRounds"]) {
-				mapInfo["panoCoords"].push(result.location.latLng);
-			}
-			numPanoFetchesInProgress -= 1; // TODO: still a race condition here
-			updateFetchingBar(mapInfo["panoCoords"], mapInfo["numRounds"]);
-			updateSecretForm(mapInfo["panoCoords"], mapInfo["numRounds"]);
-		} else {
-			console.log("Failed to get location; api request: " + status.toString() + "\n");
-			handleFail();
 		}
-	}
-
-	let source = mapInfo["outdoors"] === "outdoors only" ? google.maps.StreetViewSource.OUTDOOR : google.maps.StreetViewSource.DEFAULT;
-	let population = await getLocationPopulation(randomLatLng.lat(), randomLatLng.lng());
-	let min = mapInfo["panoReqs"]["populationMin"];
-	let max = mapInfo["panoReqs"]["populationMax"];
-	if (population >= min && population <= max) {
-		streetViewService.getPanorama({
-			location: randomLatLng,
-			preference: google.maps.StreetViewPreference.NEAREST,
-			radius: PANO_SEARCH_RADIUS,
-			source: source,
-		}, handlePanoResponse);
-	} else {
-		handleFail();
-	}
+	
+		let source = mapInfo["outdoors"] === "outdoors only" ? google.maps.StreetViewSource.OUTDOOR : google.maps.StreetViewSource.DEFAULT;
+		let population = await getLocationPopulation(randomLatLng.lat(), randomLatLng.lng());
+		let min = mapInfo["panoReqs"]["populationMin"];
+		let max = mapInfo["panoReqs"]["populationMax"];
+		if (population >= min && population <= max) {
+			streetViewService.getPanorama({
+				location: randomLatLng,
+				preference: google.maps.StreetViewPreference.NEAREST,
+				radius: PANO_SEARCH_RADIUS,
+				source: source,
+			}, handlePanoResponse);
+		} else {
+			reject();
+		}
+	});
 }
 
 // returns whether result (pano) meets the requirements of mapInfo
@@ -266,13 +317,6 @@ function resultPanoIsGood(result, mapInfo) {
 		return false;
 	}
 
-	for (let i = 0; i < mapInfo["panoCoords"].length; i++) {
-		if (mapInfo["panoCoords"][i].equals(result.location.latLng)) {
-			console.log("duplicate!");
-			return false;
-		}
-	}
-
 	return true;
 }
 
@@ -281,11 +325,23 @@ function resultPanoIsGood(result, mapInfo) {
 function disableSubmitButton() {
 	let button = document.getElementById("submit-button");
 	button.setAttribute("disabled", "disabled");
+	button = document.getElementById("refresh-panos-button");
+	button.setAttribute("disabled", "disabled");
 }
 
 // update loading/fetching progress bar with number of panoCoords found
-function updateFetchingBar(panoCoords, numRounds) {
-	document.getElementById("loading-progress").setAttribute("style", "width: " + ((100 * panoCoords.length) / numRounds) + "%;");
+function updateFetchingBar(value) {
+	document.getElementById("loading-progress").setAttribute("style", "width: " + (100 * value) + "%;");
+}
+
+function showErrorMessage(message) {
+	const errorDialog = document.getElementById("error-dialog");
+	errorDialog.removeAttribute("hidden");
+}
+
+function hideErrorMessage() {
+	const errorDialog = document.getElementById("error-dialog");
+	errorDialog.setAttribute("hidden", "hidden");
 }
 
 // put panoCoords into the hidden form input
@@ -297,8 +353,10 @@ function updateSecretForm(panoCoords, numRounds) {
 			console.warn("Too many panoCoords?! mapInfo:");
 		}
 		let input = document.getElementById("hidden-input");
-		let button = document.getElementById("submit-button");
 		input.setAttribute("value", JSON.stringify(panoCoords));
+		let button = document.getElementById("submit-button");
+		button.removeAttribute("disabled");
+		button = document.getElementById("refresh-panos-button");
 		button.removeAttribute("disabled");
 	}
 }
@@ -312,7 +370,7 @@ function getRandomLatLng() {
 
 // get a random google.maps.LatLng within the specified turf.polygon or turf.multiPolygon
 function getRandomLatLngInPolygon(polygon) {
-	if (polygon == null) {
+	if (!polygon) {
 		// fall back to global
 		return getRandomLatLng();
 	}
@@ -343,59 +401,94 @@ function numberOfRoundsUpdated() {
 		pageMapInfo["panoCoords"] = pageMapInfo["panoCoords"].slice(0, newNumRounds);
 	}
 	pageMapInfo["numRounds"] = newNumRounds;
-	fetchPanos(pageMapInfo);
+	
+	updatedMapInfo();
+}
+
+function forceUpdatePanos() {
+	updatedMapInfo();
 }
 
 function connectedOnlyUpdated() {
 	// TODO: improve user-friendliness of these values
 	let newConnectedOnly = document.getElementById("connectedOnly").value;
 	if (pageMapInfo["panoReqs"]["panoConnectedness"] !== newConnectedOnly) {
-		disableSubmitButton();
 		pageMapInfo["panoReqs"]["panoConnectedness"] = newConnectedOnly;
-		pageMapInfo["panoCoords"] = []; // TODO: considering storing pano connectedness and only removing as necessary
-		markerGroup.clearLayers(); // DEBUGGING: clear markers
-		fetchPanos(pageMapInfo);
+		
+		updatedMapInfo();
 	}
 }
 
 function outdoorsUpdated() {
 	let newOutdoors = document.getElementById("outdoors").value;
 	if (pageMapInfo["panoReqs"]["outdoors"] !== newOutdoors) {
-		disableSubmitButton();
 		pageMapInfo["panoReqs"]["outdoors"] = newOutdoors;
-		pageMapInfo["panoCoords"] = []; // TODO: considering storing pano connectedness and only removing as necessary
-		markerGroup.clearLayers();
-		updateFetchingBar(pageMapInfo["panoCoords"], pageMapInfo["numRounds"]);
-		fetchPanos(pageMapInfo);
+		
+		updatedMapInfo();
 	}
 }
 
 function onlyGoogleUpdated() {
 	let newOnlyGoogle = document.getElementById("onlyGoogle").value;
 	if (pageMapInfo["panoReqs"]["copyright"] !== newOnlyGoogle) {
-		disableSubmitButton();
 		pageMapInfo["panoReqs"]["copyright"] = newOnlyGoogle;
-		pageMapInfo["panoCoords"] = []; // TODO: considering storing pano connectedness and only removing as necessary
-		markerGroup.clearLayers();
-		updateFetchingBar(pageMapInfo["panoCoords"], pageMapInfo["numRounds"]);
-		fetchPanos(pageMapInfo);
+		
+		updatedMapInfo();
 	}
 }
 
 // TODO: support multiple loc strings
-function locStringUpdated() {
+async function locStringUpdated() {
 	let old = pageMapInfo["locStrings"][0];
 	let newLocString = document.getElementById("locString").value;
 	if (old !== newLocString) {
-		pageMapInfo["locStrings"][0] = newLocString;
 		disableSubmitButton();
-		previewMap.setView([0, 0], 1);
-		pageMapInfo["panoCoords"] = [];
-		polygonGroup.clearLayers();
-		markerGroup.clearLayers();
-		pageMapInfo["locPolygon"] = fetchPolygonFromLocString(pageMapInfo);
-		updateFetchingBar(pageMapInfo["panoCoords"], pageMapInfo["numRounds"]);
-		fetchPanos(pageMapInfo);
+		pageMapInfo["locStrings"][0] = newLocString;
+
+		const polygon = await fetchPolygonFromLocString([newLocString]).then(pol => {
+			hideErrorMessage();
+			return pol;
+		}).catch(() => {
+			if (debug) {
+				console.log("Error while fetching polygon");
+			}
+			
+			showErrorMessage();
+			return null;
+		});
+
+		// In case the locString was updated during request, ignore result
+		if (pageMapInfo["locStrings"][0] !== newLocString) {
+			if (debug) {
+				console.log("locString changed while fetching polygon");
+			}
+
+			return;
+		}
+
+
+		// Make sure to update
+		pageMapInfo["shouldUpdate"] = true;
+
+		// Set polygon in pageMapInfo
+		pageMapInfo["locPolygon"] = polygon;
+
+		// Make sure to update
+		updatedMapInfo();
+
+		// Reset view, if no polygon was returned
+		if (!polygon) {
+			if (debug) {
+				console.log("Resetting polygon to global");
+			}
+
+			previewMap.setView([0, 0], 1);
+			polygonGroup.clearLayers();
+			return;
+		}
+
+		// Show polygon on map
+		showPolygonOnMap(previewMap, polygon);
 	}
 }
 
@@ -407,13 +500,8 @@ function popDensityUpdated() {
 	if (newMin !== oldMin || newMax !== oldMax) {
 		pageMapInfo["panoReqs"]["populationMin"] = newMin;
 		pageMapInfo["panoReqs"]["populationMax"] = newMax;
-		disableSubmitButton();
-		previewMap.setView([0, 0], 1);
-		pageMapInfo["panoCoords"] = [];
-		polygonGroup.clearLayers();
-		markerGroup.clearLayers();
-		updateFetchingBar(pageMapInfo["panoCoords"], pageMapInfo["numRounds"]);
-		fetchPanos(pageMapInfo);
+		
+		updatedMapInfo();
 	}
 }
 
