@@ -13,7 +13,4 @@ compile:
   stage: build
   script:
     - make build
-  artifacts:
-    paths:
-      earthwalker
 
