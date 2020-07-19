@@ -1,0 +1,19 @@
+image: golang:latest
+
+stages:
+  - test
+  - build
+
+format:
+  stage: test
+  script:
+    - make test
+
+compile:
+  stage: build
+  script:
+    - make build
+  artifacts:
+    paths:
+      earthwalker
+
