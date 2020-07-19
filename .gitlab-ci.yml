@@ -1,19 +1,11 @@
-image: golang:latest
+image: alpine:latest
 
-stages:
-  - test
-  - build
-
-format:
-  stage: test
+test:
   script:
+    - apk add --no-cache make go
     - make test
 
 compile:
-  stage: build
   script:
+    - apk add --no-cache make npm go
     - make build
-  artifacts:
-    paths:
-      earthwalker
-
