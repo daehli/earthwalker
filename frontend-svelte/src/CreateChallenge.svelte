@@ -1,8 +1,7 @@
 <script>
     import { onMount } from 'svelte';
-    import { loc, globalMap, globalResult } from './stores.js';
+    import { loc, ewapi, globalMap, globalResult } from './stores.js';
 
-    export let ewapi;
     // TODO: Better organization of this file + additional documentation
     //       The flow is pretty confusing right now.
     // In the meantime, here's what happens in this script:
@@ -62,7 +61,7 @@
         statusText = "Getting Map settings...";
         let mapid = getURLParam("mapid");
         if (mapid && (!$globalMap || $globalMap.MapID !== mapid)) {
-            $globalMap = await ewapi.getMap(mapid);
+            $globalMap = await $ewapi.getMap(mapid);
         } else if (!mapid) {
             alert("No Map ID in URL!");
         }
@@ -81,7 +80,7 @@
     async function handleFormSubmit() {
         // TODO: duplicates code in Join
         let challengeResultID = await submitNewChallengeResult();
-        $globalResult = await ewapi.getResult(challengeResultID);
+        $globalResult = await $ewapi.getResult(challengeResultID);
         // set the generated challenge as the current challenge
         document.cookie = challengeCookieName + "=" + challengeID + ";path=/;max-age=172800";
         // set the generated ChallengeResult as the current ChallengeResult
@@ -101,7 +100,7 @@
             MapID: $globalMap.MapID,
             Places: convertedCoords
         };
-        let data = await ewapi.postChallenge(challenge);
+        let data = await $ewapi.postChallenge(challenge);
         return data.ChallengeID;
     }
 
@@ -110,7 +109,7 @@
             ChallengeID: challengeID,
             Nickname: nickname,
         };
-        let data = await ewapi.postResult(challengeResult);
+        let data = await $ewapi.postResult(challengeResult);
         return data.ChallengeResultID;
     }
 

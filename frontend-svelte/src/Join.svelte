@@ -1,8 +1,6 @@
 <script>
     import { onMount } from 'svelte';
-    import { loc, globalMap, globalChallenge, globalResult } from './stores.js';
-
-    export let ewapi;
+    import { loc, ewapi, globalMap, globalChallenge, globalResult } from './stores.js';
 
     const challengeCookieName = "earthwalker_lastChallenge";
     const resultCookiePrefix = "earthwalker_lastResult_";
@@ -10,13 +8,13 @@
     let nickname = "";
 
      onMount(async () => {
-         $globalChallenge = await ewapi.getChallenge(getChallengeID());
+         $globalChallenge = await $ewapi.getChallenge(getChallengeID());
      });
 
     // TODO: this duplicates a function in CreateChallenge.
     //       consider consolidating.
     async function handleFormSubmit() {
-        $globalResult = await ewapi.getResult(await submitNewChallengeResult());
+        $globalResult = await $ewapi.getResult(await submitNewChallengeResult());
         // set the generated challenge as the current challenge
         document.cookie = challengeCookieName + "=" + $globalChallenge.ChallengeID + ";path=/;max-age=172800";
         // set the generated ChallengeResult as the current ChallengeResult
@@ -32,7 +30,7 @@
             ChallengeID: $globalChallenge.ChallengeID,
             Nickname: nickname,
         };
-        let data = await ewapi.postResult(challengeResult);
+        let data = await $ewapi.postResult(challengeResult);
         return data.ChallengeResultID;
     }
 

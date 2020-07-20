@@ -15,37 +15,6 @@
 
 	let ewapi = new EarthwalkerAPI();
 
-	// these reactive statements keep globalMap in sync with globalChallenge,
-	// and globalChallenge in sync with globalResult 
-	// (updates bubble up but of course not down)
-	// TODO: FIXME: this strategy is super prone to race conditions.
-	//              Maybe provide some kind of async set function instead.
-	//              I'd like to integrate that as a custom store, but that
-	//              would make API access kind of awkward.
-	$: if (
-		$globalResult && (
-			!$globalChallenge ||
-			$globalChallenge.ChallengeID !== $globalResult.ChallengeID
-		)
-	) { updateGlobalChallenge($globalResult.ChallengeID); };
-
-	async function updateGlobalChallenge(challengeID) {
-		console.log("globalResult has changed, updating globalChallenge:"); // TODO: remove debug
-		$globalChallenge = await ewapi.getChallenge(challengeID);
-	}
-
-	$: if (
-		$globalChallenge && (
-			!$globalMap ||
-			$globalMap.MapID !== $globalChallenge.MapID
-		)
-	) { updateGlobalMap($globalChallenge.MapID); };
-
-	async function updateGlobalMap(mapID) {
-		console.log("globalChallenge has changed, updating globalMap:"); // TODO: remove debug
-		$globalMap = await ewapi.getMap(mapID);
-	}
-
 	// TODO: remove debug
 	$: console.log($loc);
 	$: console.log($globalMap);
@@ -84,7 +53,7 @@
 		</nav>
 		<div id="content">
 			{#if $loc === "/"}
-				<Resume {ewapi}/>
+				<Resume/>
 			{:else if $loc.startsWith("/createmap")}
 				<CreateMap/>
 			{:else if $loc.startsWith("/createchallenge")}

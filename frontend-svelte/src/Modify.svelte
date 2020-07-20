@@ -2,9 +2,24 @@
     // TODO: this file is getting out of hand
 
     import { onMount } from 'svelte';
-    import { loc, globalMap, globalChallenge, globalResult } from './stores.js';
+    import { loc, ewapi, globalMap, globalChallenge, globalResult } from './stores.js';
 
-    export let ewapi;
+    // these functions are in every component, because it's easier that way
+    // TODO: FIXME: a cleaner way with no race conditions.  
+    //       Derived stores with promises/callbacks?
+    async function setResultChallengeMap(resultID) {
+        $globalResult = await $ewapi.getResult(resultID);
+        if (!$globalChallenge || $globalResult.ChallengeID !== $globalChallenge.ChallengeID) {
+            return setChallengeMap($globalResult.ChallengeID);
+        }
+    }
+
+    async function setChallengeMap(challengeID) {
+        $globalChallenge = await $ewapi.getChallenge(challengeID);
+        if (!$globalMap || $globalChallenge.MapID !== $globalMap.MapID) {
+            $globalMap = await $ewapi.getMap($globalChallenge.MapID);
+        }
+    }
 
     // data fetched from server
     let tileServerURL;
@@ -53,8 +68,8 @@
     }
 
     onMount(async () => {
-        $globalResult = await ewapi.getResult(getChallengeResultID(getChallengeID()));
-        tileServerURL = (await ewapi.getTileServer($globalMap.ShowLabels)).tileserver;
+        await setResultChallengeMap(getChallengeResultID(getChallengeID()));
+        tileServerURL = (await $ewapi.getTileServer($globalMap.ShowLabels)).tileserver;
         totalScore = calcTotalScore($globalResult.Guesses, $globalChallenge.Places, $globalMap.GraceDistance, $globalMap.Area);
         titleInterval = setInterval(setTitle, 100);
         createMinimap();
@@ -95,7 +110,7 @@
             RoundNum: $globalResult.Guesses.length,
             Location: {Lat: latlng.lat, Lng: latlng.lng},
         };
-        ewapi.postGuess(guess).then((response) => {
+        $ewapi.postGuess(guess).then((response) => {
             if (response) {
                 window.location.replace("/scores");
             } else {

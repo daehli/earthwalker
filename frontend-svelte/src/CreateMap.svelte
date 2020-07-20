@@ -1,11 +1,9 @@
 <script>
     // TODO: svelteify this file
     import { onMount } from 'svelte';
-    import { loc, globalMap } from './stores.js';
+    import { loc, ewapi, globalMap } from './stores.js';
 
     const NOMINATIM_URL = (locStringEncoded) => `https://nominatim.openstreetmap.org/search?q=${locStringEncoded}&polygon_geojson=1&limit=5&polygon_threshold=0.005&format=json`;
-
-    let ewapi = new EarthwalkerAPI();
 
     let mapSettings = {
         Name: "",
@@ -34,7 +32,7 @@
 
     onMount(async () => {
         previewMap = L.map("bounds-map", {center: [0, 0], zoom: 1});
-        let tileServer = (await ewapi.getTileServer()).tileserver;
+        let tileServer = (await $ewapi.getTileServer()).tileserver;
         L.tileLayer(tileServer, {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> contributors, <a href="https://wikitech.wikimedia.org/wiki/Wikitech:Cloud_Services_Terms_of_use">Wikimedia Cloud Services</a>'
         }).addTo(previewMap);
@@ -64,7 +62,7 @@
         //       specific that it takes a huge number of API requests to find good
         //       panos)
         // send new map to server
-        ewapi.postMap(mapSettings)
+        $ewapi.postMap(mapSettings)
             .then( (response) => {
                 if (response && response.MapID) {
                     $globalMap = response;

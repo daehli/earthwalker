@@ -15,6 +15,7 @@ function createLoc() {
 }
 export const loc = createLoc();
 
+export const ewapi = writable(new EarthwalkerAPI());
 export const globalMap = writable(null);
 export const globalChallenge = writable(null);
 export const globalResult = writable(null);
