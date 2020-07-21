@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { writable } from 'svelte/store';
 
-	import { loc, globalMap, globalChallenge, globalResult } from './stores.js';
+	import { loc, ewapi, globalMap, globalChallenge, globalResult } from './stores.js';
 
 	import CreateMap from './CreateMap.svelte'
 	import CreateChallenge from './CreateChallenge.svelte'
@@ -13,7 +13,30 @@
 	// TODO: code split this out into a separate bundle
 	import Modify from './Modify.svelte'
 
-	let ewapi = new EarthwalkerAPI();
+	$ewapi = new EarthwalkerAPI();
+
+    // TODO: FIXME: a cleaner way with no race conditions.  
+    //       Derived stores with promises/callbacks?
+    async function setResultChallengeMap(resultID) {
+        $globalResult = await $ewapi.getResult(resultID);
+        if (!$globalChallenge || $globalResult.ChallengeID !== $globalChallenge.ChallengeID) {
+            return setChallengeMap($globalResult.ChallengeID);
+        }
+    }
+
+    async function setChallengeMap(challengeID) {
+        $globalChallenge = await $ewapi.getChallenge(challengeID);
+        if (!$globalMap || $globalChallenge.MapID !== $globalMap.MapID) {
+            $globalMap = await $ewapi.getMap($globalChallenge.MapID);
+        }
+    }
+
+    onMount(async () => {
+		let challengeID = getChallengeID();
+		if (challengeID) {
+			await setResultChallengeMap(getChallengeResultID(challengeID));
+		}
+    });
 
 	// TODO: remove debug
 	$: console.log($loc);
@@ -35,8 +58,12 @@
 
 <main>
 	{#if $loc.startsWith("/play")}
-		<!-- TODO: code split this out into a separate bundle -->
-		<Modify {ewapi}/>
+		{#if $globalMap && $globalChallenge && $globalResult}
+			<!-- TODO: code split this out into a separate bundle -->
+			<Modify/>
+		{:else}
+			<h3>Loading...</h3>
+		{/if}
 	{:else}
 		<nav class="navbar navbar-expand-sm navbar-light bg-light">
 			<span class="navbar-brand">Earthwalker</span>
@@ -52,20 +79,24 @@
 			</ul>
 		</nav>
 		<div id="content">
-			{#if $loc === "/"}
-				<Resume/>
-			{:else if $loc.startsWith("/createmap")}
-				<CreateMap/>
-			{:else if $loc.startsWith("/createchallenge")}
-				<CreateChallenge {ewapi}/>
-			{:else if $loc.startsWith("/join")}
-				<Join {ewapi}/>
-			{:else if $loc.startsWith("/scores")}
-				<Scores {ewapi}/>
-			{:else if $loc.startsWith("/summary")}
-				<Summary {ewapi}/>
+			{#if $globalMap && $globalChallenge && $globalResult}
+				{#if $loc === "/"}
+					<Resume/>
+				{:else if $loc.startsWith("/createmap")}
+					<CreateMap/>
+				{:else if $loc.startsWith("/createchallenge")}
+					<CreateChallenge/>
+				{:else if $loc.startsWith("/join")}
+					<Join/>
+				{:else if $loc.startsWith("/scores")}
+					<Scores/>
+				{:else if $loc.startsWith("/summary")}
+					<Summary/>
+				{:else}
+					<h3>404.  That's an error.</h3>
+				{/if}
 			{:else}
-				<h3>404.  That's an error.</h3>
+				<h3>Loading...</h3>
 			{/if}
 		</div>
 	{/if}

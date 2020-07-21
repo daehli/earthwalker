@@ -155,7 +155,9 @@ async function getObject(url) {
     if (response.ok) {
         return response.json();
     }
-    return null
+    // non-null return signals fetch completion
+    // TODO: better way?
+    return {}
 }
 
 // posts object to the given URL, returns response object else null
@@ -170,7 +172,9 @@ async function postObject(url, object) {
     if (response.ok) {
         return response.json();
     }
-    return null
+    // non-null return signals fetch completion
+    // TODO: better way?
+    return {}
 }
 
 function orderRounds(arrWithRoundNums) {

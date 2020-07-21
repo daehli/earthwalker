@@ -4,23 +4,6 @@
     import { onMount } from 'svelte';
     import { loc, ewapi, globalMap, globalChallenge, globalResult } from './stores.js';
 
-    // these functions are in every component, because it's easier that way
-    // TODO: FIXME: a cleaner way with no race conditions.  
-    //       Derived stores with promises/callbacks?
-    async function setResultChallengeMap(resultID) {
-        $globalResult = await $ewapi.getResult(resultID);
-        if (!$globalChallenge || $globalResult.ChallengeID !== $globalChallenge.ChallengeID) {
-            return setChallengeMap($globalResult.ChallengeID);
-        }
-    }
-
-    async function setChallengeMap(challengeID) {
-        $globalChallenge = await $ewapi.getChallenge(challengeID);
-        if (!$globalMap || $globalChallenge.MapID !== $globalMap.MapID) {
-            $globalMap = await $ewapi.getMap($globalChallenge.MapID);
-        }
-    }
-
     // data fetched from server
     let tileServerURL;
     // timer and score
@@ -68,7 +51,6 @@
     }
 
     onMount(async () => {
-        await setResultChallengeMap(getChallengeResultID(getChallengeID()));
         tileServerURL = (await $ewapi.getTileServer($globalMap.ShowLabels)).tileserver;
         totalScore = calcTotalScore($globalResult.Guesses, $globalChallenge.Places, $globalMap.GraceDistance, $globalMap.Area);
         titleInterval = setInterval(setTitle, 100);
@@ -128,7 +110,7 @@
         try {
             oldMarker = JSON.parse(sessionStorage.getItem("lastMarker"));
         } finally {
-            if (oldMarker != null && oldMarker.gameID == challengeResultID && oldMarker.roundNumber == $globalResult.Guesses.length) {
+            if (oldMarker != null && oldMarker.gameID == $globalResult.ChallengeResultID && oldMarker.roundNumber == $globalResult.Guesses.length) {
                 marker = L.marker(L.latLng(oldMarker.lat, oldMarker.lng));
                 marker.addTo(leafletMap);
                 guessButton.className = guessButton.className.replace("disabled", "");

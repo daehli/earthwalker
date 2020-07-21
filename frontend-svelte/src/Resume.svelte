@@ -1,32 +1,5 @@
 <script>
-    import { onMount } from 'svelte';
-    import { loc, ewapi, globalMap, globalChallenge, globalResult } from './stores.js';
-
-    // these functions are in every component, because it's easier that way
-    // TODO: FIXME: a cleaner way with no race conditions.  
-    //       Derived stores with promises/callbacks?
-    async function setResultChallengeMap(resultID) {
-        $globalResult = await $ewapi.getResult(resultID);
-        if (!$globalChallenge || $globalResult.ChallengeID !== $globalChallenge.ChallengeID) {
-            return setChallengeMap($globalResult.ChallengeID);
-        }
-    }
-
-    async function setChallengeMap(challengeID) {
-        $globalChallenge = await $ewapi.getChallenge(challengeID);
-        if (!$globalMap || $globalChallenge.MapID !== $globalMap.MapID) {
-            $globalMap = await $ewapi.getMap($globalChallenge.MapID);
-        }
-    }
-
-    onMount(async () => {
-        if (!$globalResult) {
-            let challengeID = getChallengeID();
-            if (challengeID) {
-                await setResultChallengeMap(getChallengeResultID(challengeID));
-            }
-        }
-    });
+    import { loc, globalChallenge, globalResult } from './stores.js';
 </script>
 
 <main>

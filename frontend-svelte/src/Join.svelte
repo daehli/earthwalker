@@ -1,6 +1,6 @@
 <script>
     import { onMount } from 'svelte';
-    import { loc, ewapi, globalMap, globalChallenge, globalResult } from './stores.js';
+    import { loc, ewapi, globalChallenge, globalResult } from './stores.js';
 
     const challengeCookieName = "earthwalker_lastChallenge";
     const resultCookiePrefix = "earthwalker_lastResult_";

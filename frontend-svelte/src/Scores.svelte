@@ -1,10 +1,7 @@
 <script>
     import { onMount } from 'svelte';
-    import { loc } from './stores.js';
-
+    import { loc, ewapi, globalMap, globalChallenge, globalResult } from './stores.js';
     import LeafletGuessesMap from './LeafletGuessesMap.svelte';
-
-    export let ewapi, curMap, curChallenge, curResult;
 
     // data
     let allResults = [];
@@ -13,18 +10,15 @@
     // reactive
     let dataLoaded = false;
     let curRound = 0;
-    $: [score, distance] = dataLoaded ? calcScoreDistance(result.Guesses[curRound], curChallenge.Places[curRound], curMap.GraceDistance, curMap.Area) : [0, 0];
+    $: [score, distance] = dataLoaded ? calcScoreDistance(result.Guesses[curRound], $globalChallenge.Places[curRound], $globalMap.GraceDistance, $globalMap.Area) : [0, 0];
 
     onMount(async () => {
-        if (!curMap || !curChallenge || !curResult) {
-            return;
-        }
-        allResults = await ewapi.getAllResults(curChallenge.ChallengeID);
+        allResults = await $ewapi.getAllResults($globalChallenge.ChallengeID);
         allResults.forEach(r => {
-            r.scoreDists = r.Guesses.map((guess, i) => calcScoreDistance(guess, curChallenge.Places[i], curMap.GraceDistance, curMap.Area));
-            r.scoreDists = r.scoreDists.concat(Array(curMap.NumRounds - r.scoreDists.length).fill([0, 0]));
+            r.scoreDists = r.Guesses.map((guess, i) => calcScoreDistance(guess, $globalChallenge.Places[i], $globalMap.GraceDistance, $globalMap.Area));
+            r.scoreDists = r.scoreDists.concat(Array($globalMap.NumRounds - r.scoreDists.length).fill([0, 0]));
         });
-        result = allResults.find(r => r.ChallengeResultID === curResult.ChallengeResultID);
+        result = allResults.find(r => r.ChallengeResultID === $globalResult.ChallengeResultID);
         curRound = result.Guesses.length - 1;
         allResults.sort((a, b) => b.scoreDists[curRound][0] - a.scoreDists[curRound][0]);
         allResults = allResults;
@@ -42,7 +36,7 @@
 </style>
 
 <main>
-    <LeafletGuessesMap {ewapi} {curMap} {curChallenge} displayedResult={curResult} showAll={false}/>
+    <LeafletGuessesMap displayedResult={result} showAll={false}/>
     <div class="container">
         <div style="margin-top: 2em; text-align: center;">
             <p class="text-center">
@@ -92,7 +86,7 @@
                 </table>
             </div>
             <p class="text-muted">Reload the page to see other player's scores once they finish this round.</p>
-            {#if curMap && curMap.NumRounds && result && result.Guesses && result.Guesses.length == curMap.NumRounds}
+            {#if $globalMap.NumRounds && result && result.Guesses && result.Guesses.length == $globalMap.NumRounds}
                 <button type="button" class="btn btn-primary" on:click={() => {$loc = "/summary";}}>Go to summary</button>
             {:else}
                 <button type="button" class="btn btn-primary" on:click={() => {window.location.replace("/play");}}>Continue to next round</button>

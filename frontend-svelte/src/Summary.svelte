@@ -3,11 +3,8 @@
     //       (also a bit in Modify.svelte)
     //       consolidate.
     import {onMount} from 'svelte';
-    import { loc } from './stores.js';
-
+    import { loc, ewapi, globalMap, globalChallenge, globalResult } from './stores.js';
     import LeafletGuessesMap from './LeafletGuessesMap.svelte';
-
-    export let ewapi, curMap, curChallenge, curResult;
 
     let displayedResult;
     let allResults = [];
@@ -22,14 +19,14 @@
     let scoreMapGuessGroup;
 
     onMount(async () => {
-        allResults = await ewapi.getAllResults(curChallenge.ChallengeID);
+        allResults = await $ewapi.getAllResults($globalChallenge.ChallengeID);
         allResults.forEach(r => {
-            r.scoreDists = r.Guesses.map((guess, i) => calcScoreDistance(guess, curChallenge.Places[i], curMap.GraceDistance, curMap.Area));
-            r.scoreDists = r.scoreDists.concat(Array(curMap.NumRounds - r.scoreDists.length).fill([0, 0]));
+            r.scoreDists = r.Guesses.map((guess, i) => calcScoreDistance(guess, $globalChallenge.Places[i], $globalMap.GraceDistance, $globalMap.Area));
+            r.scoreDists = r.scoreDists.concat(Array($globalMap.NumRounds - r.scoreDists.length).fill([0, 0]));
             r.totalScore = r.scoreDists.reduce((acc, val) => acc + val[0], 0);
             r.totalDist = r.scoreDists.reduce((acc, val) => acc + val[1], 0)
         });
-        displayedResult = allResults.find(r => r.ChallengeResultID === curResult.ChallengeResultID);
+        displayedResult = allResults.find(r => r.ChallengeResultID === $globalResult.ChallengeResultID);
         allResults.sort((a, b) => b.totalScore - a.totalScore);
         allResults = allResults;
     });
@@ -43,14 +40,14 @@
 
 <!-- This prevents users who haven't finished the challenge from viewing
      TODO: cleaner protection for this page -->
-{#if curResult && curMap && curResult.Guesses.length == curMap.NumRounds}
-    <LeafletGuessesMap {ewapi} {curMap} {curChallenge} {displayedResult} showAll={true}/>
+{#if $globalResult && $globalMap && $globalResult.Guesses.length == $globalMap.NumRounds}
+    <LeafletGuessesMap {displayedResult} showAll={true}/>
 
     <div class="container">
         <br>
         <div class="row">
             <div class="col text-center">
-                <button type="button" id="copy-game-link" class="btn btn-primary" on:click={() => showChallengeLinkPrompt(curChallenge.ChallengeID)}>
+                <button type="button" id="copy-game-link" class="btn btn-primary" on:click={() => showChallengeLinkPrompt($globalChallenge.ChallengeID)}>
                     Copy link to this game
                 </button>
             </div>
@@ -89,7 +86,7 @@
                 </thead>
                 <tbody>
                     {#each allResults as result, i}
-                        {#if result.Guesses.length == curMap.NumRounds}
+                        {#if result.Guesses.length == $globalMap.NumRounds}
                             <tr scope="row" on:click={() => {displayedResult = allResults[i];}}>
                                 <td><img style="height: 20px;" src={svgIcon("?", result && result.Icon ? result.Icon : 0)}/></td>
                                 <td>{result.Nickname}</td>
