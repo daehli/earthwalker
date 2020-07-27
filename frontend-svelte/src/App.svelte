@@ -15,8 +15,7 @@
 
 	$ewapi = new EarthwalkerAPI();
 
-    // TODO: FIXME: a cleaner way with no race conditions.  
-    //       Derived stores with promises/callbacks?
+    // TODO: FIXME: a cleaner way with no race conditions.
     async function setResultChallengeMap(resultID) {
         $globalResult = await $ewapi.getResult(resultID);
         if (!$globalChallenge || $globalResult.ChallengeID !== $globalChallenge.ChallengeID) {
@@ -30,13 +29,17 @@
             $globalMap = await $ewapi.getMap($globalChallenge.MapID);
         }
     }
-
-    onMount(async () => {
+	
+	async function fetchData() {
 		let challengeID = getChallengeID();
-		if (challengeID) {
-			await setResultChallengeMap(getChallengeResultID(challengeID));
+		let resultID = getChallengeResultID(challengeID);
+		if (resultID) {
+			await setResultChallengeMap(resultID);
 		}
-    });
+		else if (challengeID) {
+			await setChallengeMap(challengeID);
+		}
+	}
 
 	// TODO: remove debug
 	$: console.log($loc);
@@ -57,13 +60,13 @@
 </style>
 
 <main>
+	<!-- TODO: code split this out into a separate bundle -->
 	{#if $loc.startsWith("/play")}
-		{#if $globalMap && $globalChallenge && $globalResult}
-			<!-- TODO: code split this out into a separate bundle -->
-			<Modify/>
-		{:else}
+		{#await fetchData()}
 			<h3>Loading...</h3>
-		{/if}
+		{:then}
+			<Modify/>
+		{/await}
 	{:else}
 		<nav class="navbar navbar-expand-sm navbar-light bg-light">
 			<span class="navbar-brand">Earthwalker</span>
@@ -79,7 +82,9 @@
 			</ul>
 		</nav>
 		<div id="content">
-			{#if $globalMap && $globalChallenge && $globalResult}
+			{#await fetchData()}
+				<h3>Loading...</h3>
+			{:then}
 				{#if $loc === "/"}
 					<Resume/>
 				{:else if $loc.startsWith("/createmap")}
@@ -95,9 +100,7 @@
 				{:else}
 					<h3>404.  That's an error.</h3>
 				{/if}
-			{:else}
-				<h3>Loading...</h3>
-			{/if}
+			{/await}
 		</div>
 	{/if}
 </main>

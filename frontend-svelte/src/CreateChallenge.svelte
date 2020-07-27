@@ -64,6 +64,8 @@
             $globalMap = await $ewapi.getMap(mapid);
         } else if (!mapid) {
             alert("No Map ID in URL!");
+            statusText = "Please make sure there is a valid Map ID in the URL."
+            return;
         }
 
         statusText = "Looking up population density data...";

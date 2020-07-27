@@ -7,10 +7,6 @@
 
     let nickname = "";
 
-     onMount(async () => {
-         $globalChallenge = await $ewapi.getChallenge(getChallengeID());
-     });
-
     // TODO: this duplicates a function in CreateChallenge.
     //       consider consolidating.
     async function handleFormSubmit() {
@@ -37,23 +33,28 @@
 </script>
 
 <main>
-    <form on:submit|preventDefault={handleFormSubmit} class="container">
-        <br>
-        <h2>Join Challenge</h2>
-        <p>Challenge ID: <code>{$globalChallenge ? $globalChallenge.ChallengeID : "Loading..."}</code></p>
-        <div action="">
-            <!-- TODO: show map settings -->
-            <div class="form-group">
-                <div class="input-group">
-                    <div class="input-group-prepend">
-                        <div class="input-group-text">Your Nickname</div>
+    {#if $globalChallenge && $globalChallenge.ChallengeID}
+        <form on:submit|preventDefault={handleFormSubmit} class="container">
+            <br>
+            <h2>Join Challenge</h2>
+            <p>Challenge ID: <code>{$globalChallenge.ChallengeID}</code></p>
+            <div action="">
+                <!-- TODO: show map settings -->
+                <div class="form-group">
+                    <div class="input-group">
+                        <div class="input-group-prepend">
+                            <div class="input-group-text">Your Nickname</div>
+                        </div>
+                        <input bind:value={nickname} required type="text" class="form-control" id="Nickname"/>
                     </div>
-                    <input bind:value={nickname} required type="text" class="form-control" id="Nickname"/>
                 </div>
+
+                <button id="submit-button" class="btn btn-primary" style="margin-bottom: 2em; color: #fff;">Start Challenge</button>
+
             </div>
-
-            <button id="submit-button" class="btn btn-primary" style="margin-bottom: 2em; color: #fff;">Start Challenge</button>
-
-        </div>
-    </form>
+        </form>
+    {:else}
+        <h2>No Challenge Found</h2>
+        <p>Please make sure the URL contains a valid Challenge ID.</p>
+    {/if}
 </main>
