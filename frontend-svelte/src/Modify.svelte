@@ -18,7 +18,6 @@
         [1200, 900],
         [1600, 1200],
     ];
-    let curMapSize = 1;
     // sets title to "earthwalker"
     let titleInterval;
     // decrements timeRemaining once per second
@@ -30,16 +29,27 @@
 
     let leafletMap = null;
     let leafletMapPolyGroup;
+
+    // settings
+    let locStorage = window.localStorage;
+
+    let shrinkMap = locStorage.shrinkMap !== undefined ? JSON.parse(locStorage.shrinkMap) : true;
+    $: locStorage.shrinkMap = shrinkMap;
+
+    let storedMapSize = locStorage.storedMapSize !== undefined ? JSON.parse(locStorage.storedMapSize) : 1;
+    $: locStorage.storedMapSize = storedMapSize;
+    $: curMapSize = shrinkMap && !mapFocused ? 1 : storedMapSize;
+
+    let showPolygon = locStorage.showPolygon !== undefined ? JSON.parse(locStorage.showPolygon) : true;
+    $: locStorage.showPolygon = showPolygon;
+    $: if (leafletMapPolyGroup) {setPolygonVisibility(showPolygon);}
+
+    // state
     let hasGuessed = false;
     let marker = null;
-
-    let mapFocused = false;
+    let mapFocused = !shrinkMap;
     let unfocusMapInterval;
     let showSettings = false;
-    // settings
-    let showPolygon = true;
-    $: setPolygonVisibility(showPolygon);
-    let shrinkMap = true;
 
     // I assume these are part of the streetview sorcery, I'm not messing with them
     let replaceStateLocal = history.replaceState;
@@ -174,39 +184,16 @@
         }
     }
 
-    function scaleMap(bigger) {
-        if (bigger) {
-            if (curMapSize < mapSizes.length - 1) {
-                curMapSize++;
-            }
-        } else {
-            if (curMapSize > 0) {
-                curMapSize--;
-            }
-        }
-
-        floatingContainer.style.width = mapSizes[curMapSize][0] + "px";
-        floatingContainer.style.height = mapSizes[curMapSize][1] + "px";
-
-        leafletMap.invalidateSize();
-    }
-
-    function setMapSize(width, height) {
-        floatingContainer.style.width = width + "px";
-        floatingContainer.style.height = height + "px";
-        leafletMap.invalidateSize();
-    }
-
     function focusMap() {
         mapFocused = true;
-        setMapSize(mapSizes[curMapSize][0], mapSizes[curMapSize][1]);
+        curMapSize = storedMapSize;
         clearInterval(unfocusMapInterval);
     }
 
     function releaseMap() {
         unfocusMapInterval = setInterval(() => {
             if (shrinkMap) {
-                setMapSize(mapSizes[1][0], mapSizes[1][1]);
+                curMapSize = 1;
                 mapFocused = false;
             }
         }, 800);
@@ -425,6 +412,7 @@
             bind:this={floatingContainer} 
             id="leaflet-container"  
             class={mapFocused ? "focused" : ""}
+            style="width: {mapSizes[curMapSize][0]}px; height: {mapSizes[curMapSize][1]}px;"
         >
             <div id="leaflet-map"></div>
         </div>
@@ -435,8 +423,16 @@
                 </button>
             </div>
             <div id="navigation-bar" class="btn-group btn-group-sm float-right">
-                <button class="btn btn-light" on:click={() => {scaleMap(true)}} disabled={curMapSize == mapSizes.length - 1}>⬉</button>
-                <button class="btn btn-light" on:click={() => {scaleMap(false)}} disabled={curMapSize == 0}>⬊</button>
+                <button 
+                    class="btn btn-light" 
+                    on:click={() => {if (storedMapSize < mapSizes.length - 1) {storedMapSize++;}}}
+                    disabled={storedMapSize == mapSizes.length - 1}
+                >⬉</button>
+                <button 
+                    class="btn btn-light" 
+                    on:click={() => {if (storedMapSize > 0) {storedMapSize--;}}} 
+                    disabled={storedMapSize == 0}
+                >⬊</button>
             </div>
             <button 
                 bind:this={guessButton}
