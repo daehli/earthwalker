@@ -1,3 +1,4 @@
+// Package handlers is an enumeration of backend handlers
 package handlers
 
 import (
@@ -6,7 +7,6 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"regexp"
 	"strconv"
 	"strings"
 
@@ -16,6 +16,7 @@ import (
 const challengeCookieName = "earthwalker_lastChallenge"
 const resultCookiePrefix = "earthwalker_lastResult_"
 
+// A Play is a context to ServeHTTP on
 type Play struct {
 	ChallengeStore       domain.ChallengeStore
 	ChallengeResultStore domain.ChallengeResultStore
@@ -65,19 +66,6 @@ func (handler Play) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// TODO: FIXME: this fails catastrophically if the player has already
 	//              completed the challenge and tries to navigate back to /play
 	ServeLocation(challenge.Places[len(result.Guesses)].Location, w, r)
-}
-
-// GOAL : MATCH [["Jl. SMA Aek Kota Batu","id"],["Sumatera Utara","de"]]
-var stringRegex = "(\\p{L}| |\\d|\\_|\\-|\\,|\\.|/)"
-var languageRegex = "\\[\"" + stringRegex + "+\"+,\"" + stringRegex + "{1,10}\"\\]"
-
-var compiledRegexp *regexp.Regexp = regexp.MustCompile(languageRegex)
-
-// filterStrings filters all string contents from a given string (as byte array),
-// used to strip all localization information from a specific street view packet
-func filterStrings(body []byte) []byte {
-	result := compiledRegexp.ReplaceAllString(string(body), "[\"\",\"\"]")
-	return []byte(result)
 }
 
 func getChallengeID(r *http.Request) (string, error) {
@@ -158,8 +146,8 @@ func floatToString(number float64) string {
 	return strconv.FormatFloat(number, 'f', 14, 64)
 }
 
-// BuildURL builds google street view urls from coordinates
-func BuildURL(location domain.Coords) string {
+// buildURL builds google street view urls from coordinates
+func buildURL(location domain.Coords) string {
 	baseURL, err := url.Parse("https://www.google.com/maps")
 	if err != nil {
 		log.Fatal("Failed while parsing static gmaps url", err)
@@ -180,7 +168,7 @@ func BuildURL(location domain.Coords) string {
 
 // ServeLocation serves a specific location to the user.
 func ServeLocation(l domain.Coords, w http.ResponseWriter, r *http.Request) {
-	mapsURL := BuildURL(l)
+	mapsURL := buildURL(l)
 	modifyMainPage(mapsURL, w, r)
 }
 
