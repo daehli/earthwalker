@@ -2,7 +2,7 @@
     import {onMount} from 'svelte';
     import { loc, ewapi, globalMap, globalChallenge } from '../stores.js';
 
-    export let displayedResult, showAll;
+    export let displayedResult, showAll, curRound;
 
     let tileServer;
 
@@ -16,7 +16,7 @@
         if (showAll) {
             showGuesses(guessGroup, displayedResult.Guesses);
         } else {
-            showGuesses(guessGroup, displayedResult.Guesses.slice(-1));
+            showGuesses(guessGroup, [displayedResult.Guesses[curRound]]);
         }
         lMap.fitBounds(guessGroup.getBounds());
     };

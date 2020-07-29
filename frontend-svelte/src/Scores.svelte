@@ -40,7 +40,7 @@
     {#await fetchData()}
         <h2>Loading...</h2>
     {:then}
-        <LeafletGuessesMap displayedResult={displayedResult} showAll={false}/>
+        <LeafletGuessesMap displayedResult={displayedResult} showAll={false} {curRound}/>
         <div class="container">
             <div style="margin-top: 2em; text-align: center;">
                 <p class="text-center">
