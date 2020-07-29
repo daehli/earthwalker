@@ -109,7 +109,7 @@
         };
         $ewapi.postGuess(guess).then((response) => {
             if (response) {
-                window.location.replace("/scores");
+                window.location.replace("/scores?id="+$globalChallenge.ChallengeID);
             } else {
                 alert("Failed to submit guess?!");
             }

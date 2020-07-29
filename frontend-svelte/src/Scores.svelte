@@ -1,11 +1,13 @@
 <script>
     import { onMount } from 'svelte';
     import { loc, ewapi, globalMap, globalChallenge, globalResult } from './stores.js';
-    import LeafletGuessesMap from './LeafletGuessesMap.svelte';
+    import LeafletGuessesMap from './components/LeafletGuessesMap.svelte';
+    import Leaderboard from './components/Leaderboard.svelte';
 
     // data
     let allResults = [];
     let result;
+    let displayedResult;
 
     // reactive
     let curRound = 0;
@@ -21,6 +23,7 @@
         curRound = result.Guesses.length - 1;
         allResults.sort((a, b) => b.scoreDists[curRound][0] - a.scoreDists[curRound][0]);
         allResults = allResults;
+        displayedResult = result;
     }
 
 </script>
@@ -37,7 +40,7 @@
     {#await fetchData()}
         <h2>Loading...</h2>
     {:then}
-        <LeafletGuessesMap displayedResult={result} showAll={false}/>
+        <LeafletGuessesMap displayedResult={displayedResult} showAll={false}/>
         <div class="container">
             <div style="margin-top: 2em; text-align: center;">
                 <p class="text-center">
@@ -65,32 +68,13 @@
                 </div>
                 <div id="leaderboard" style="margin-top: 2em; text-align: center;">
                     <h3>Leaderboard</h3>
-                    <table class="table table-striped">
-                        <thead>
-                        <th scope="col">Icon</th>
-                        <th scope="col">Nickname</th>
-                        <th scope="col">Points</th>
-                        <th scope="col">Distance Off</th>
-                        </thead>
-                        <tbody>
-                            {#each allResults as curResult, i}
-                                {#if curResult.Guesses.length > curRound}
-                                    <tr scope="row">
-                                        <td><img style="height: 20px;" src={svgIcon("?", curResult && curResult.Icon ? curResult.Icon : 0)}/></td>
-                                        <td>{curResult.Nickname}</td>
-                                        <td>{curResult.scoreDists ? curResult.scoreDists[curRound][0] : 0}</td>
-                                        <td>{distString(curResult.scoreDists ?curResult.scoreDists[curRound][1] : 0)}</td>
-                                    </tr>
-                                {/if}
-                            {/each}
-                        </tbody>
-                    </table>
+                    <Leaderboard bind:displayedResult={displayedResult} {allResults} {curRound}/>
                 </div>
                 <p class="text-muted">Reload the page to see other player's scores once they finish this round.</p>
                 {#if $globalMap.NumRounds && result && result.Guesses && result.Guesses.length == $globalMap.NumRounds}
                     <button type="button" class="btn btn-primary" on:click={() => {$loc = "/summary";}}>Go to summary</button>
                 {:else}
-                    <button type="button" class="btn btn-primary" on:click={() => {window.location.replace("/play");}}>Continue to next round</button>
+                    <button type="button" class="btn btn-primary" on:click={() => {window.location.replace("/play?id="+$globalChallenge.ChallengeID);}}>Continue to next round</button>
                 {/if}
             </div>
         </div>

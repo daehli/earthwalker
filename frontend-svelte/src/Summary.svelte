@@ -4,7 +4,8 @@
     //       consolidate.
     import {onMount} from 'svelte';
     import { loc, ewapi, globalMap, globalChallenge, globalResult } from './stores.js';
-    import LeafletGuessesMap from './LeafletGuessesMap.svelte';
+    import LeafletGuessesMap from './components/LeafletGuessesMap.svelte';
+    import Leaderboard from './components/Leaderboard.svelte';
 
     let displayedResult;
     let allResults = [];
@@ -31,12 +32,6 @@
         allResults = allResults;
     }
 </script>
-
-<style>
-    #leaderboard tr {
-        cursor: pointer;
-    }
-</style>
 
 <!-- This prevents users who haven't finished the challenge from viewing
      TODO: cleaner protection for this page -->
@@ -79,27 +74,8 @@
             </div>
 
             <div id="leaderboard" style="margin-top: 2em; text-align: center;">
-                <h3>Leaderboard</h3>
-                <table class="table table-striped">
-                    <thead>
-                    <th scope="col">Icon</th>
-                    <th scope="col">Nickname</th>
-                    <th scope="col">Number of Points</th>
-                    <th scope="col">Total Distance Off</th>
-                    </thead>
-                    <tbody>
-                        {#each allResults as result, i}
-                            {#if result.Guesses.length == $globalMap.NumRounds}
-                                <tr scope="row" on:click={() => {displayedResult = allResults[i];}}>
-                                    <td><img style="height: 20px;" src={svgIcon("?", result && result.Icon ? result.Icon : 0)}/></td>
-                                    <td>{result.Nickname}</td>
-                                    <td>{result.totalScore}</td>
-                                    <td>{distString(result.totalDist)}</td>
-                                </tr>
-                            {/if}
-                        {/each}
-                    </tbody>
-                </table>
+                <h3>Challenge Leaderboard</h3>
+                <Leaderboard bind:displayedResult={displayedResult} {allResults} curRound={$globalMap.NumRounds - 1}/>
             </div>
         </div>
     {/await}

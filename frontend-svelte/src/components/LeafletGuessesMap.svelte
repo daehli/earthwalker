@@ -1,6 +1,6 @@
 <script>
     import {onMount} from 'svelte';
-    import { loc, ewapi, globalMap, globalChallenge } from './stores.js';
+    import { loc, ewapi, globalMap, globalChallenge } from '../stores.js';
 
     export let displayedResult, showAll;
 
