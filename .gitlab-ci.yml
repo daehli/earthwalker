@@ -3,7 +3,13 @@ image: alpine:latest
 test:
   script:
     - apk add --no-cache make go
-    - make test
+    - go get -u github.com/jstemmer/go-junit-report
+    - go fmt $(go list ./...)
+	  - go vet $(go list ./...)
+    - go test ./... -v 2>&1 | go-junit-report -set-exit-code > report.xml
+  artifacts:
+    reports:
+      junit: report.xml
 
 compile:
   script:
