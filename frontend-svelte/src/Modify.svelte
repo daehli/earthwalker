@@ -39,6 +39,11 @@
     let storedMapSize = locStorage.storedMapSize !== undefined ? JSON.parse(locStorage.storedMapSize) : 1;
     $: locStorage.storedMapSize = storedMapSize;
     $: curMapSize = shrinkMap && !mapFocused ? 1 : storedMapSize;
+    $: if (curMapSize && leafletMap) {
+        floatingContainer.style.width = mapSizes[curMapSize][0] + "px";
+        floatingContainer.style.height = mapSizes[curMapSize][1] + "px";
+        leafletMap.invalidateSize()
+    };
 
     let showPolygon = locStorage.showPolygon !== undefined ? JSON.parse(locStorage.showPolygon) : true;
     $: locStorage.showPolygon = showPolygon;
@@ -412,7 +417,6 @@
             bind:this={floatingContainer} 
             id="leaflet-container"  
             class={mapFocused ? "focused" : ""}
-            style="width: {mapSizes[curMapSize][0]}px; height: {mapSizes[curMapSize][1]}px;"
         >
             <div id="leaflet-map"></div>
         </div>
