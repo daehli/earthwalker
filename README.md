@@ -39,8 +39,8 @@ if you're somewhere else this should be preinstalled.
 Next, you need to install [Git](https://git-scm.com/), [Go](https://golang.org/) and [node](https://nodejs.org/en/download/).
 This can be done through `apt` if you're on Debian:
 
-    sudo apt install git
-    sudo apt install golang-go
+    apt-get install git
+    apt-get install golang-go
     curl -sL https://deb.nodesource.com/setup_14.x | bash -
     apt-get install -y nodejs
 
