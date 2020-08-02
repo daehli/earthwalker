@@ -19,7 +19,7 @@ func Read() (domain.Config, error) {
 	conf := domain.Config{
 		ConfigPath:           getEnv("EARTHWALKER_CONFIG_PATH", appPath+"/config.toml"),
 		StaticPath:           appPath,
-		DBPath:               appPath + "/badger/",
+		DBPath:               appPath + "/badger",
 		Port:                 "8080",
 		TileServerURL:        "https://tiles.wmflabs.org/osm/{z}/{x}/{y}.png",
 		NoLabelTileServerURL: "https://tiles.wmflabs.org/osm-no-labels/{z}/{x}/{y}.png",

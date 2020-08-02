@@ -75,8 +75,8 @@ The website should be hosted at `localhost:8080`. The port can be remapped via d
 
 #### Configuration
 
-Some configuration options can be read from environment variables, a `.toml` file, or command line arguments; these are summarized below.  In all cases, command line arguments override environment variables, which override `.toml` values.  All configuration options are strings.  Using absolute paths is recommended.
-A sample configuration file, `config.toml.sample`, is provided.  Rename/copy it to `config.toml` to start configuring.
+Some configuration options can be read from environment variables, a `.toml` file, or command line arguments; these are summarized below.  In all cases, command line arguments override environment variables, which override `.toml` values.  All configuration options are strings.  Using absolute paths is recommended.  
+You can rename or copy the provided sample configuration file, `config.toml.sample`, to `config.toml` to get started.
 
 <details>
 <summary>Table of configuration options.</summary>
@@ -85,7 +85,7 @@ A sample configuration file, `config.toml.sample`, is provided.  Rename/copy it 
 |-------------------|---------------------------------------------------|----------------------|----------------------------------------------------------|----------|
 |                   | EARTHWALKER_CONFIG_PATH                           |                      | ./config.toml                                            | Location of the `.toml` configuration file |
 | port              | EARTHWALKER_PORT                                  | Port                 | 8080                                                     |          |
-|                   | EARTHWALKER_DB_PATH                               | DBPath               | ./badger/                                                 | Location of the database directory |
+|                   | EARTHWALKER_DB_PATH                               | DBPath               | ./badger                                                 | Location of the database directory |
 |                   | EARTHWALKER_STATIC_PATH                           | StaticPath           | location of executable (usually `earthwalker`)           | Absolute path to the directory containing `static` and `templates` |
 |                   |                                                   | TileServerURL        | https://tiles.wmflabs.org/osm/{z}/{x}/{y}.png            | URL of a raster tile server.  This determines what you see on the map. |
 |                   |                                                   | NoLabelTileServerURL | https://tiles.wmflabs.org/osm-no-labels/{z}/{x}/{y}.png  | As above, but this value is used when a map creator has turned labels off. |
