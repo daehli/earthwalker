@@ -73,21 +73,24 @@ To use the docker container you have to run the following commands (given you al
 It might not be necessary to use the `-t earthwalker:local` param, but it makes it a little prettier.
 The website should be hosted at `localhost:8080`. The port can be remapped via docker.
 
-#### Changing the Tile Server
+#### Configuration
 
-If you are unhappy with the default tile server, you can change it in the configuration file (per default, this is called `config.toml`).
-You need to `cp config.toml.sample config.toml` to start configuring.
+Some configuration options can be read from environment variables, a `.toml` file, or command line arguments; these are summarized below.  In all cases, command line arguments override environment variables, which override `.toml` values.  All configuration options are strings.  Using absolute paths is recommended.
+A sample configuration file, `config.toml.sample`, is provided.  Rename/copy it to `config.toml` to start configuring.
 
-#### Additional Configuration (Environment Variables)
+<details>
+<summary>Table of configuration options.</summary>
 
-Some configuration options can be read from environment variables; these are summarized below.  An example script setting these options is at `start.sh.sample`.
+| Command Line Flag | Environment Variable                              | `.toml` Key          | Default                                                  | Comments |
+|-------------------|---------------------------------------------------|----------------------|----------------------------------------------------------|----------|
+|                   | EARTHWALKER_CONFIG_PATH                           |                      | ./config.toml                                            | Location of the `.toml` configuration file |
+| port              | EARTHWALKER_PORT                                  | Port                 | 8080                                                     |          |
+|                   | EARTHWALKER_DB_PATH                               | DBPath               | ./badger/                                                 | Location of the database directory |
+|                   | EARTHWALKER_STATIC_PATH                           | StaticPath           | location of executable (usually `earthwalker`)           | Absolute path to the directory containing `static` and `templates` |
+|                   |                                                   | TileServerURL        | https://tiles.wmflabs.org/osm/{z}/{x}/{y}.png            | URL of a raster tile server.  This determines what you see on the map. |
+|                   |                                                   | NoLabelTileServerURL | https://tiles.wmflabs.org/osm-no-labels/{z}/{x}/{y}.png  | As above, but this value is used when a map creator has turned labels off. |
 
-| Variable | Default | Comments |
-|---|---|---|
-| EARTHWALKER_PORT | 8080 |   |
-| EARTHWALKER_DB_PATH_REL | executable | Sets what the location of the database directory is relative to.  Options are `executable` (relative to executable), `cwd` (relative to the current directory **at that point in the program execution**), and `absolute`. |
-| EARTHWALKER_DB_PATH | /badger | Where the database directory will be, relative as specified in `EARTHWALKER_DB_PATH_REL`. |
-| EARTHWALKER_STATIC_PATH | location of executable (usually `earthwalker`) | Absolute path to the directory containing `static` and `templates` |
+</details>
 
 ## Images
 
