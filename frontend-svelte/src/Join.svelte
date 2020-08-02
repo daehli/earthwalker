@@ -1,6 +1,7 @@
 <script>
     import { onMount } from 'svelte';
-    import { loc, ewapi, globalChallenge, globalResult } from './stores.js';
+    import { loc, ewapi, globalMap, globalChallenge, globalResult } from './stores.js';
+    import MapInfo from './components/MapInfo.svelte';
 
     const challengeCookieName = "earthwalker_lastChallenge";
     const resultCookiePrefix = "earthwalker_lastResult_";
@@ -37,7 +38,7 @@
         <form on:submit|preventDefault={handleFormSubmit} class="container">
             <br>
             <h2>Join Challenge</h2>
-            <p>Challenge ID: <code>{$globalChallenge.ChallengeID}</code></p>
+            <p>Playing: {$globalMap.Name}<MapInfo/></p>
             <div action="">
                 <!-- TODO: show map settings -->
                 <div class="form-group">
