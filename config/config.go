@@ -14,22 +14,31 @@ import (
 
 // Read a Config from environment variables and TOML file, and return it
 func Read() (domain.Config, error) {
+	// defaults
+	appPath := AppPath()
 	conf := domain.Config{
-		ConfigPath: getEnv("EARTHWALKER_CONFIG_PATH", "config.toml"),
-		StaticPath: getEnv("EARTHWALKER_STATIC_PATH", AppPath()),
-		DBPath:     getDBPath(),
-		Port:       getEnv("EARTHWALKER_PORT", "8080"),
+		ConfigPath:           getEnv("EARTHWALKER_CONFIG_PATH", appPath+"/config.toml"),
+		StaticPath:           appPath,
+		DBPath:               appPath + "/badger/",
+		Port:                 "8080",
+		TileServerURL:        "https://tiles.wmflabs.org/osm/{z}/{x}/{y}.png",
+		NoLabelTileServerURL: "https://tiles.wmflabs.org/osm-no-labels/{z}/{x}/{y}.png",
 	}
 
+	// TOML
 	tomlData, err := ioutil.ReadFile(conf.ConfigPath)
 	if err != nil {
 		log.Printf("Error reading/no config file at '%s', using defaults.\n", conf.ConfigPath)
-		conf.TileServerURL = "https://tiles.wmflabs.org/osm/{z}/{x}/{y}.png"
-		conf.NoLabelTileServerURL = "https://tiles.wmflabs.org/osm-no-labels/{z}/{x}/{y}.png"
 	}
 	if err := toml.Unmarshal(tomlData, &conf); err != nil {
 		return conf, fmt.Errorf("error parsing TOML config file: %v", err)
 	}
+
+	// env vars
+	conf.Port = getEnv("EARTHWALKER_PORT", conf.Port)
+	conf.DBPath = getEnv("EARTHWALKER_DB_PATH", conf.DBPath)
+	conf.StaticPath = getEnv("EARTHWALKER_STATIC_PATH", conf.StaticPath)
+
 	return conf, nil
 }
 
@@ -38,24 +47,6 @@ func getEnv(key string, fallback string) string {
 		return v
 	}
 	return fallback
-}
-
-func getDBPath() string {
-	path := ""
-	pathSuffix := getEnv(os.Getenv("EARTHWALKER_DB_PATH"), "/badger/")
-	pathRel := os.Getenv("EARTHWALKER_DB_PATH_REL")
-	if pathRel == "cwd" {
-		cwd, err := os.Getwd()
-		if err != nil {
-			log.Fatal(err)
-		}
-		path = cwd + pathSuffix
-	} else if pathRel == "absolute" {
-		path = pathSuffix
-	} else { // default: relative to executable
-		path = AppPath() + pathSuffix
-	}
-	return path
 }
 
 // AppPath gets the executable's path.
