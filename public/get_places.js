@@ -26,6 +26,8 @@ const SV_PREF = google.maps.StreetViewPreference.BEST;
 const LAT_LIMIT = 85;
 // fetchPano will query the streetview API this many times before giving up
 const MAX_REQS = 100;
+// getRandomConstrainedLatLng will try this many random latlngs before giving up
+const MAX_LATLNG_ATTEMPTS = 1000;
 
 // == POPULATION DENSITY ========
 // TODO: can we find another way to do population density?
@@ -69,6 +71,11 @@ async function fetchPano(svService, settings, popTIF, incrNumReqsCallback) {
     let foundLatLng = null;
     for (let iters = 0; iters < MAX_REQS; iters++) {
         randomLatLng = await getRandomConstrainedLatLng(settings.Polygon, popTIF, settings.MinDensity, settings.MaxDensity);
+        if (!randomLatLng) {
+            // couldn't find a good latlng (one meeting pop density and polygon requirements)
+            console.log("Maximum number of latlng generation attempts exceeded.");
+            return null;
+        }
         foundLatLng = await new Promise((resolve, reject) => {
             svService.getPanorama({
                 location: randomLatLng,
@@ -86,14 +93,10 @@ async function fetchPano(svService, settings, popTIF, incrNumReqsCallback) {
     function handlePanoResponse(result, status, foundLatLng) {
         if (status == google.maps.StreetViewStatus.OK && resultPanoIsGood(result, settings)) {
             return result.location.latLng;
-        } else {
-            console.log("Failed to get location; api request: " + status.toString() + "\n");
         }
     }
-    // TODO: FIXME: display message to user when this happens
-    //       maybe suggest creating a less specific map or allow
-    //       them to try to fetch panos again.
-    alert("Too many requests without a good streetview pano!  Reload the page to try again or create a map with fewer restrictions.");
+    console.log("Maximum number of StreetView API requests exceeded.");
+    return null;
 }
 
 // returns whether result (pano) meets the requirements of mapInfo
@@ -151,9 +154,14 @@ async function getRandomConstrainedLatLng(polygon, popTIF, minDensity, maxDensit
         return density <= maxDensity && density >= minDensity;
     }
     
+    let attempts = 0;
     let lnglat;
     do {
         lnglat = getRandomLngLatInBounds();
+        if (attempts > MAX_LATLNG_ATTEMPTS) {
+            return null;
+        }
+        attempts++;
     } while (!pointInPolygon(lnglat) || !(await popDensityInLimits(lnglat)));
     return new google.maps.LatLng(lnglat[1], lnglat[0]);
 }

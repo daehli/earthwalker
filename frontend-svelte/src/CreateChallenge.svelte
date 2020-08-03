@@ -55,6 +55,11 @@
             }
         );
 
+        if (foundCoords.some((elem) => !elem)) {
+            statusText = "We're having a hard time finding good StreetView locations.<br/>Refresh the page to try again, or create a map with fewer restrictions."
+            return
+        }
+
         statusText = "Sending Challenge to server..."
         challengeID = await submitNewChallenge();
 
@@ -100,7 +105,7 @@
         <h2>New Challenge - {$globalMap ? $globalMap.Name : "Loading..."}</h2>
         <MapInfo/>
         <br>
-        <h4 class="text-center" id="status">{statusText}</h4>
+        <h4 class="text-center" id="status">{@html statusText}</h4>
         <div action="" method="post">
             <div class="progress">
                 <div 
@@ -116,7 +121,7 @@
             </small>
             <br/>
             <small class="text-muted">
-                {numFound} locations found after {numSVReqs} StreetView API requests ({Math.round(foundProportion * 100)}% success rate).
+                {numFound} locations found after {numSVReqs} StreetView API requests{#if numSVReqs} ({Math.round(foundProportion * 100)}% success rate){/if}.
             </small>
             {#if foundProportion && foundProportion < 0.3}
                 <small class="text-muted">
