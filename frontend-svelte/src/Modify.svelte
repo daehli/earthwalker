@@ -29,6 +29,11 @@
     let leafletMap = null;
     let leafletMapPolyGroup;
 
+    // resize StreetView elements
+    let innerWidth, innerHeight;
+    $: document.body.style.height = innerHeight + "px";
+    $: document.body.style.width = innerWidth + "px";
+
     // settings
     let locStorage = window.localStorage;
 
@@ -228,6 +233,8 @@
         }
     }
 </script>
+
+<svelte:window bind:innerWidth={innerWidth} bind:innerHeight={innerHeight}/>
 
 <style>
     #leaflet-map {
