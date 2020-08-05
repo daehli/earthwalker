@@ -6,8 +6,7 @@
 
     // data fetched from server
     let tileServerURL;
-    // timer and score
-    let timeRemaining = 0;
+    // score
     let totalScore = 0;
     // map sizing
     const mapSizes = [
@@ -48,6 +47,21 @@
     let showPolygon = locStorage.showPolygon !== undefined ? JSON.parse(locStorage.showPolygon) : true;
     $: locStorage.showPolygon = showPolygon;
     $: if (leafletMapPolyGroup) {setPolygonVisibility(showPolygon);}
+    
+    // remaining time
+    let timeRemaining = undefined;
+    if (sessionStorage.getItem("timeRemaining") !== undefined && 
+        sessionStorage.getItem("timeRemainingGameID") !== undefined &&
+        sessionStorage.getItem("roundNumber") !== undefined &&
+        sessionStorage.getItem("timeRemainingGameID") == $globalResult.ChallengeResultID &&
+        sessionStorage.getItem("timeRemainingRoundNumber") == $globalResult.Guesses.length
+    ) {
+        timeRemaining = sessionStorage.getItem("timeRemaining");
+    } else {
+        timeRemaining = $globalMap.TimeLimit;
+    }
+    sessionStorage.setItem("timeRemainingGameID", $globalResult.ChallengeResultID);
+    sessionStorage.setItem("timeRemainingRoundNumber", $globalResult.Guesses.length);
 
     // state
     let hasGuessed = false;
@@ -174,9 +188,9 @@
         // score, round number, and timer
         // TODO: can we use an absolute timer instead of this interval?
         if ($globalMap.TimeLimit > 0) {
-            timeRemaining = $globalMap.TimeLimit;
             timerInterval = setInterval(function() {
                 timeRemaining -= 1;
+                sessionStorage.setItem("timeRemaining", timeRemaining);
                 if (timeRemaining <= 0) {
                     if (marker == null) {
                         makeGuess(L.latLng(0, 0));
