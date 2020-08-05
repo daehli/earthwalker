@@ -7,11 +7,16 @@ It's free and open source, and the idea is that people host it themselves to pla
 
 ## How do I play?
 
-You need to host Earthwalker yourself or find a friend who hosts it.  Don't worry; it isn't too difficult.
-This guide will focus on the simplest case: hosting and playing on the same computer.  If you need any help, you can create an Issue on this project's GitLab page.
+You need to host Earthwalker yourself or find a friend who hosts it. Don't worry; it isn't too difficult.
+The following guide will focus on the simplest case: hosting and playing on the same computer. If you want to play
+on other computers too, see the "hosting outside of your network" paragraph (but first focus on getting earthwalker installed :P).
+If you need any help, you can create an Issue on this project's GitLab page.
 
-If hosting on your own computer isn't an option (or too scary), you could also for instance use [PlayWithDocker](https://labs.play-with-docker.com/),
-follow the "Docker" instructions below inside the console and then open port 8080 on the top of the PlayWithDocker page.
+If hosting on your own computer isn't an option or you want to just quickly try it out,
+you can also for instance use [PlayWithDocker](https://labs.play-with-docker.com/) (this is by Docker, we're not affiliated).
+After signing in, click on "Add new instance", copy the commands in the "Docker" instructions below inside the console and then click on
+"8080" next to "Open Port". It will take you to a link where earthwalker should be running, which you can also share with your friends.
+This isn't a good permanent solution though, as you can only play for four hours and all your maps will be lost after that time.
 
 #### Disclaimer
 
@@ -73,6 +78,19 @@ To use the docker container you have to run the following commands (given you al
 
 It might not be necessary to use the `-t earthwalker:local` param, but it makes it a little prettier.
 The website should be hosted at `localhost:8080`. The port can be remapped via docker.
+
+#### Hosting outside of your network
+
+There are multiple possibilities with which you can host outside of your network.
+
+1. You already have a server somewhere with a cool nginx installation that has all ports forwarded anyway - well, you know you don't need to read this paragraph.
+2. You have full control over your router and you don't want to use any third party services - find out your IP Address,
+and choose any port of your liking - like 8080 or 7777. Open it to TCP in the router, and then start earthwalker on that port on your PC.
+Then, <your-ip>:<opened-port> should be open to others.
+3. Configuring your router is either impossible or too clumsy and you're fine with using third party services - take a look at
+[tunnelto.dev](https://tunnelto.dev/) or [ngrok](https://ngrok.com/). They run on your PC with earthwalker and people will be able to
+access earthwalker through these services. Note that all traffic will flow through their servers, so don't spill your secrets.
+Remember to disable the service after stopping earthwalker.
 
 #### Configuration
 
