@@ -7,7 +7,7 @@ It's free and open source, and the idea is that people host it themselves to pla
 
 ## How do I play?
 
-You need to host Earthwalker yourself or find a friend who hosts it. Don't worry; it isn't too difficult.
+You need to host Earthwalker yourself or find a friend who hosts it. Don't worry; hosting isn't too difficult.
 The following guide will focus on the simplest case: hosting and playing on the same computer. If you want to play
 on other computers too, see the "hosting outside of your network" paragraph (but first focus on getting earthwalker installed :P).
 If you need any help, you can create an Issue on this project's GitLab page.
