@@ -20,7 +20,8 @@ This isn't a good permanent solution though, as you can only play for four hours
 
 #### Disclaimer
 
-First, I need to tell you that this program is technically against Google's Terms of Service, as it hides some UI elements on Street View, and filters out information from some Google packets that are sent to Street View. Hosting this game is your own responsibility.
+First, I need to tell you that this program is technically against Google's Terms of Service, as it hides some UI elements on Street View, and filters out information from some Google packets that are sent to Street View. Hosting this game is your own responsibility
+(but if you only play with your friends, Google will hardly notice, I hope).
 
 #### Hosting on Linux or the Windows Subsystem for Linux (WSL)
 
