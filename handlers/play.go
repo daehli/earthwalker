@@ -51,16 +51,18 @@ func (handler Play) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	// (re)set cookies
 	http.SetCookie(w, &http.Cookie{
-		Name:   challengeCookieName,
-		Value:  result.ChallengeID,
-		MaxAge: 172800,
-		Path:   "/",
+		Name:     challengeCookieName,
+		Value:    result.ChallengeID,
+		MaxAge:   172800,
+		Path:     "/",
+		SameSite: http.SameSiteLaxMode,
 	})
 	http.SetCookie(w, &http.Cookie{
-		Name:   resultCookiePrefix + result.ChallengeID,
-		Value:  result.ChallengeResultID,
-		MaxAge: 172800,
-		Path:   "/",
+		Name:     resultCookiePrefix + result.ChallengeID,
+		Value:    result.ChallengeResultID,
+		MaxAge:   172800,
+		Path:     "/",
+		SameSite: http.SameSiteLaxMode,
 	})
 	log.Println(challenge.Places[len(result.Guesses)].Location)
 	// TODO: FIXME: this fails catastrophically if the player has already
