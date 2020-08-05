@@ -7,8 +7,11 @@ It's free and open source, and the idea is that people host it themselves to pla
 
 ## How do I play?
 
-You need to host Earthwalker yourself or find a friend who hosts it.  Don't worry; it isn't too difficult.  
+You need to host Earthwalker yourself or find a friend who hosts it.  Don't worry; it isn't too difficult.
 This guide will focus on the simplest case: hosting and playing on the same computer.  If you need any help, you can create an Issue on this project's GitLab page.
+
+If hosting on your own computer isn't an option (or too scary), you could also for instance use [PlayWithDocker](https://labs.play-with-docker.com/),
+follow the "Docker" instructions below inside the console and then open port 8080 on the top of the PlayWithDocker page.
 
 #### Disclaimer
 
@@ -59,6 +62,18 @@ And compile the front end:
 
 You should now be able to run `earthwalker.exe` to start the server, and then go to `localhost:8080` in your browser to start playing!
 
+#### Docker
+
+To use the docker container you have to run the following commands (given you already have docker installed and configured).
+    
+    git clone https://gitlab.com/glatteis/earthwalker.git
+    cd earthwalker
+    docker build -t earthwalker:local .
+    docker run -p 8080:8080 earthwalker:local
+
+It might not be necessary to use the `-t earthwalker:local` param, but it makes it a little prettier.
+The website should be hosted at `localhost:8080`. The port can be remapped via docker.
+
 #### Configuration
 
 We've provided a handful of configuration options, which are read from your environment variables, a `.toml` file, or command line arguments (these are all summarized below).  In all cases, command line arguments override environment variables, which override `.toml` values.  All configuration options are strings.  Using absolute paths is recommended.  
@@ -81,18 +96,6 @@ You can rename or copy the provided sample configuration file, `config.toml.samp
 #### Updating
 
 You can update earthwalker by running `git pull` in its directory, and then running `make` or following the compilation instructions again.
-
-#### Docker
-
-To use the docker container you have to run the following commands (given you already have docker installed and configured).
-    
-    git clone https://gitlab.com/glatteis/earthwalker.git
-    cd earthwalker
-    docker build -t earthwalker:local .
-    docker run -p 8080:8080 earthwalker:local
-
-It might not be necessary to use the `-t earthwalker:local` param, but it makes it a little prettier.
-The website should be hosted at `localhost:8080`. The port can be remapped via docker.
 
 ## Contributing
 
