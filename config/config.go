@@ -2,82 +2,58 @@
 package config
 
 import (
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
+	"path"
 
 	"github.com/BurntSushi/toml"
-	"gitlab.com/glatteis/earthwalker/util"
+	"gitlab.com/glatteis/earthwalker/domain"
 )
 
-// EnvType represents the environment file contents
-type EnvType struct {
-	// EarthwalkerStaticPath is documented in start.sh.sample
-	EarthwalkerStaticPath string
-	// EarthwalkerDBPath is documented in start.sh.sample
-	EarthwalkerDBPath string
-	// EarthwalkerPort is documented in start.sh.sample
-	EarthwalkerPort string
-	// EarthwalkerConfigPath is documented in start.sh.sample
-	EarthwalkerConfigPath string
-}
-
-var Env EnvType
-
-// FileType represents the config file contents
-type FileType struct {
-	// TileServerURL is the url of the tile server
-	TileServerURL string
-	// NoLabelTileServerURL is the url of the tile server when no labels are activated
-	NoLabelTileServerURL string
-}
-
-var File FileType
-
-func orDefault(envInput string, def string) string {
-	if envInput == "" {
-		return def
-	}
-	return envInput
-}
-
-func getDBPath() string {
-	path := ""
-	pathSuffix := orDefault(os.Getenv("EARTHWALKER_DB_PATH"), "/badger/")
-	pathRel := os.Getenv("EARTHWALKER_DB_PATH_REL")
-	if pathRel == "cwd" {
-		cwd, err := os.Getwd()
-		if err != nil {
-			log.Fatal(err)
-		}
-		path = cwd + pathSuffix
-	} else if pathRel == "absolute" {
-		path = pathSuffix
-	} else { // default: relative to executable
-		path = util.AppPath() + pathSuffix
-	}
-	return path
-}
-
-func init() {
-	// Initialize Env
-	Env = EnvType{
-		EarthwalkerStaticPath: orDefault(os.Getenv("EARTHWALKER_STATIC_PATH"), util.AppPath()),
-		EarthwalkerDBPath:     getDBPath(),
-		EarthwalkerPort:       orDefault(os.Getenv("EARTHWALKER_PORT"), ""), // Default is intentionally "" s.t. the command line port gets respected
-		EarthwalkerConfigPath: orDefault(os.Getenv("EARTHWALKER_CONFIG_PATH"), "config.toml"),
+// Read a Config from environment variables and TOML file, and return it
+func Read() (domain.Config, error) {
+	// defaults
+	appPath := AppPath()
+	conf := domain.Config{
+		ConfigPath:           getEnv("EARTHWALKER_CONFIG_PATH", appPath+"/config.toml"),
+		StaticPath:           appPath,
+		DBPath:               appPath + "/badger",
+		Port:                 "8080",
+		TileServerURL:        "https://tiles.wmflabs.org/osm/{z}/{x}/{y}.png",
+		NoLabelTileServerURL: "https://tiles.wmflabs.org/osm-no-labels/{z}/{x}/{y}.png",
 	}
 
-	// Initialize Config File
-	tomlData, err := ioutil.ReadFile(Env.EarthwalkerConfigPath)
+	// TOML
+	tomlData, err := ioutil.ReadFile(conf.ConfigPath)
 	if err != nil {
-		log.Println("defaulting to default config.")
-		File = FileType{
-			TileServerURL:        "https://tiles.wmflabs.org/osm/{z}/{x}/{y}.png",
-			NoLabelTileServerURL: "https://tiles.wmflabs.org/osm-no-labels/{z}/{x}/{y}.png",
-		}
+		log.Printf("Error reading/no config file at '%s', using defaults.\n", conf.ConfigPath)
 	}
-	if err := toml.Unmarshal(tomlData, &File); err != nil {
-		log.Fatal(err)
+	if err := toml.Unmarshal(tomlData, &conf); err != nil {
+		return conf, fmt.Errorf("error parsing TOML config file: %v", err)
 	}
+
+	// env vars
+	conf.Port = getEnv("EARTHWALKER_PORT", conf.Port)
+	conf.DBPath = getEnv("EARTHWALKER_DB_PATH", conf.DBPath)
+	conf.StaticPath = getEnv("EARTHWALKER_STATIC_PATH", conf.StaticPath)
+
+	return conf, nil
+}
+
+func getEnv(key string, fallback string) string {
+	if v, ok := os.LookupEnv(key); ok && len(v) > 0 {
+		return v
+	}
+	return fallback
+}
+
+// AppPath gets the executable's path.
+func AppPath() string {
+	appPath, err := os.Executable()
+	if err != nil {
+		log.Fatal("App path not accessible!")
+	}
+	return path.Dir(appPath)
 }

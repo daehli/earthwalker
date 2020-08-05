@@ -1,0 +1,39 @@
+.titlecard {
+	display: none;
+}
+
+.widget-titlecard {
+	display: none;
+}
+
+.minimap {
+	display: none;
+}
+
+.image-header {
+	display: none;
+}
+
+.widget-image-header-close {
+	display: none;
+}
+
+.app-viewcard-strip {
+	display: none;
+}
+
+.scene-footer {
+	display: none;
+}
+
+.widget-image-header-scrim {
+	display: none;
+}
+
+.watermark { 
+	display: none;
+}
+
+#titlecard {
+	display: none;
+}
