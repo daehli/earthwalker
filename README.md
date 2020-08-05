@@ -24,6 +24,9 @@ First, I need to tell you that this program is technically against Google's Term
 
 #### Hosting on Linux or the Windows Subsystem for Linux (WSL)
 
+If you like whales and big images you can also install this via Docker, see "Docker". This guide is for just plainly
+installing the program.
+
 Start by installing [Git](https://git-scm.com/), [Go](https://golang.org/) and [node](https://nodejs.org/en/download/).
 This can be done through `apt` if you're on Debian:
 
