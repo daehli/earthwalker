@@ -1,3 +1,7 @@
+## Breaking changes in the last update!
+
+If your eartwalker doesn't work anymore after updating, please see [this file to fix it](readme/breaking_changes.md).
+
 # Earthwalker
 
 Earthwalker is a game of a similar concept to [GeoGuessr](https://geoguessr.com).
