@@ -56,8 +56,8 @@
         );
 
         if (foundCoords.some((elem) => !elem)) {
-            statusText = "We're having a hard time finding good StreetView locations.<br/>Refresh the page to try again, or create a map with fewer restrictions."
-            return
+            statusText = "We're having a hard time finding good StreetView locations.<br/>Refresh the page to try again, or create a map with fewer restrictions.";
+            return;
         }
 
         statusText = "Sending Challenge to server..."

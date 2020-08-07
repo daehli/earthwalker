@@ -27,7 +27,7 @@ const LAT_LIMIT = 85;
 // fetchPano will query the streetview API this many times before giving up
 const MAX_REQS = 100;
 // getRandomConstrainedLatLng will try this many random latlngs before giving up
-const MAX_LATLNG_ATTEMPTS = 1000;
+const MAX_LATLNG_ATTEMPTS = 1000000;
 
 // == POPULATION DENSITY ========
 // TODO: can we find another way to do population density?
