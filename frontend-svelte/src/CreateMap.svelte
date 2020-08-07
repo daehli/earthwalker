@@ -87,20 +87,39 @@
         previewMap.fitBounds(map_poly.getBounds());
     }
 
-    function updatePolygonFromLocString() {
+    function sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    async function updatePolygonFromLocString() {
         if (locString === "" || !locString) {
             mapSettings.Polygon = null;
             return;
         }
+
+        let places = locString.split("|"); // Union of multiple places, possibly
+
+        mapSettings.Polygon = null;
+        for (let placeIndex in places) {
+            let place = places[placeIndex];
+            fetch(NOMINATIM_URL(encodeURI(place)))
+                .then(response => response.json())
+                .then(data => {
+                    let newPolygon = geojsonFromNominatim(data);
+                    console.log(mapSettings.Polygon);
+                    if (mapSettings.Polygon === null) {
+                        mapSettings.Polygon = newPolygon;
+                    } else {
+                        mapSettings.Polygon.geometry.coordinates.push(...newPolygon.geometry.coordinates);
+                    }
+                    /* mapSettings.Polygon = mapSettings.Polygon.union(geojsonFromNominatim(data)); */
+                    mapSettings.Area = turf.area(mapSettings.Polygon);
+                    showPolygonOnMap();
+                    submitDisabled = false;
+                });
+            await sleep(1500);
+        }
         
-        fetch(NOMINATIM_URL(encodeURI(locString.replace(" ", "+"))))
-            .then(response => response.json())
-            .then(data => {
-                mapSettings.Polygon = geojsonFromNominatim(data);
-                mapSettings.Area = turf.area(mapSettings.Polygon);
-                showPolygonOnMap();
-                submitDisabled = false;
-            });
     }
 
     // given Nominatim results, takes the most significant one with a polygon or
@@ -297,6 +316,7 @@
                     </div>
                     <small class="form-text text-muted">
                         Constrain the game to a specified area - enter a country, state, city, neighborhood, lake, or any other bounded area.
+                        Use | for multiple areas, like "York, England|New York, USA".
                     </small>
                     <div class="card bg-danger text-white mt-1" id="error-dialog" hidden>
                         <p class="card-text">Sorry, that does not seem like a valid bounding box on OSM Nominatim.</p>
