@@ -89,10 +89,6 @@
         previewMap.fitBounds(map_poly.getBounds());
     }
 
-    function sleep(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
-    }
-
     async function updatePolygonFromLocStrings() {
         submitDisabled = true;
         oldLocStrings = locStrings;
