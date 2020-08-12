@@ -85,8 +85,10 @@
 
     function showPolygonOnMap() {
         previewPolyGroup.clearLayers();
-        let map_poly = L.geoJSON(mapSettings.Polygon).addTo(previewPolyGroup);
-        previewMap.fitBounds(map_poly.getBounds());
+        if (mapSettings.Polygon) {
+            let map_poly = L.geoJSON(mapSettings.Polygon).addTo(previewPolyGroup);
+            previewMap.fitBounds(map_poly.getBounds());
+        }
     }
 
     async function updatePolygonFromLocStrings() {
@@ -96,6 +98,7 @@
         mapSettings.Polygon = null;
         if (locStrings.length == 0) {
             mapSettings.Area = 0;
+            showPolygonOnMap();
             return;
         }
 
@@ -128,11 +131,10 @@
 
         if (mapSettings.Polygon) {
             mapSettings.Area = turf.area(mapSettings.Polygon);
-            showPolygonOnMap();
         } else {
             alert("No results found for the given location string(s)!");
         }
-
+        showPolygonOnMap();
         submitDisabled = false;
     }
 
