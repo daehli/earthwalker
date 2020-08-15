@@ -1,6 +1,7 @@
 <script>
     // TODO: svelteify this file
     import { onMount } from 'svelte';
+    import Tags from 'svelte-tags-input';
     import { loc, ewapi, globalMap } from './stores.js';
 
     const NOMINATIM_URL = (locStringEncoded) => `https://nominatim.openstreetmap.org/search?q=${locStringEncoded}&polygon_geojson=1&limit=5&polygon_threshold=0.005&format=json`;
@@ -23,8 +24,9 @@
     let timeLimitMinutes = 0;
     let timeLimitSeconds = 0;
 
-    let locString = "";
-    let oldLocString = "";
+    let locStrings = [];
+    let oldLocStrings = [];
+    
     let previewMap;
     let previewPolyGroup;
     let advancedHidden = true;
@@ -83,43 +85,57 @@
 
     function showPolygonOnMap() {
         previewPolyGroup.clearLayers();
-        let map_poly = L.geoJSON(mapSettings.Polygon).addTo(previewPolyGroup);
-        previewMap.fitBounds(map_poly.getBounds());
+        if (mapSettings.Polygon) {
+            let map_poly = L.geoJSON(mapSettings.Polygon).addTo(previewPolyGroup);
+            previewMap.fitBounds(map_poly.getBounds());
+        }
     }
 
-    function sleep(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
-    }
-
-    async function updatePolygonFromLocString() {
-        if (locString === "" || !locString) {
-            mapSettings.Polygon = null;
+    async function updatePolygonFromLocStrings() {
+        submitDisabled = true;
+        oldLocStrings = locStrings;
+        
+        mapSettings.Polygon = null;
+        if (locStrings.length == 0) {
+            mapSettings.Area = 0;
+            showPolygonOnMap();
             return;
         }
 
-        let places = locString.split("|"); // Union of multiple places, possibly
-
-        mapSettings.Polygon = null;
-        for (let placeIndex in places) {
-            let place = places[placeIndex];
-            fetch(NOMINATIM_URL(encodeURI(place)))
-                .then(response => response.json())
-                .then(data => {
-                    let newPolygon = geojsonFromNominatim(data);
-                    console.log(mapSettings.Polygon);
-                    if (mapSettings.Polygon === null) {
-                        mapSettings.Polygon = newPolygon;
-                    } else {
-                        mapSettings.Polygon.geometry.coordinates.push(...newPolygon.geometry.coordinates);
-                    }
-                    /* mapSettings.Polygon = mapSettings.Polygon.union(geojsonFromNominatim(data)); */
-                    mapSettings.Area = turf.area(mapSettings.Polygon);
-                    showPolygonOnMap();
-                    submitDisabled = false;
-                });
-            await sleep(1500);
+        let promises = [];
+        for (let i = 0; i < locStrings.length; i++) {
+            // cache aggressively, because these borders don't change often
+            promises.push(fetch(NOMINATIM_URL(encodeURI(locStrings[i])), {cache: "force-cache"}));
         }
-        
+        let responses = await Promise.all(promises);
+        let data = [];
+        for (let i = 0; i < responses.length; i++) {
+            if (responses[i].ok) {
+                let json = await responses[i].json();
+                data.push(json);
+            }
+        }
+        console.log(data);
+
+        let stringsWithNoPoly = [];
+        for (let i = 0; i < data.length; i++) {
+            let curPolygon = geojsonFromNominatim(data[i]);
+            if (curPolygon) {
+                if (mapSettings.Polygon) {
+                    mapSettings.Polygon.geometry.coordinates.push(...curPolygon.geometry.coordinates);
+                } else {
+                    mapSettings.Polygon = curPolygon;
+                }
+            } // else { // TODO: no polygon, alert user }
+        }
+
+        if (mapSettings.Polygon) {
+            mapSettings.Area = turf.area(mapSettings.Polygon);
+        } else {
+            alert("No results found for the given location string(s)!");
+        }
+        showPolygonOnMap();
+        submitDisabled = false;
     }
 
     // given Nominatim results, takes the most significant one with a polygon or
@@ -137,6 +153,21 @@
         return null;
     }
 </script>
+
+<style>
+    #locstrings :global(.svelte-tags-input-layout) {
+        border-top-left-radius: 0;
+        border-top-right-radius: 4px;
+        border-bottom-right-radius: 4px;
+        border-bottom-left-radius: 0;
+        flex: 1 1 0;
+        border: 1px solid #ced4da;
+    }
+
+    #locstrings :global(.svelte-tags-input-tag) {
+        background-color: #007bff;
+    }
+</style>
 
 <main>
     <div class="container">
@@ -308,15 +339,15 @@
                 <hr/>
                 
                 <div class="form-group">
-                    <div class="input-group">
+                    <div class="input-group" id="locstrings">
                         <div class="input-group-prepend">
                             <div class="input-group-text">Location string </div>
                         </div>
-                        <input type="text" class="form-control mr-sm-3" id="locString" placeholder="Location" bind:value={locString} on:change={handleLocStringUpdate}/>
+                        <Tags bind:tags={locStrings} on:tags={updatePolygonFromLocStrings}/>
                     </div>
                     <small class="form-text text-muted">
-                        Constrain the game to a specified area - enter a country, state, city, neighborhood, lake, or any other bounded area.
-                        Use | for multiple areas, like "York, England|New York, USA".
+                        Constrain the game to the specified places - countries, states, cities, neighborhoods, or any other bounded areas.  
+                        You can add multiple locations - press Enter to add each string.
                     </small>
                     <div class="card bg-danger text-white mt-1" id="error-dialog" hidden>
                         <p class="card-text">Sorry, that does not seem like a valid bounding box on OSM Nominatim.</p>
