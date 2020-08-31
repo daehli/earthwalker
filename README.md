@@ -36,7 +36,7 @@ Start by installing [Git](https://git-scm.com/), [Go](https://golang.org/) and [
 This can be done through `apt` if you're on Debian:
 
     apt-get install git
-    apt-get install golang-go
+    apt-get install golang-1.14-go
     curl -sL https://deb.nodesource.com/setup_14.x | bash -
     apt-get install -y nodejs
 
