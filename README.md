@@ -85,6 +85,11 @@ To use the docker container you have to run the following commands (given you al
     docker run -p 8080:8080 earthwalker:local
 
 It might not be necessary to use the `-t earthwalker:local` param, but it makes it a little prettier.
+
+You can also directly pulled the image from gitlab registry:
+  
+    docker run -p 8080:8080 registry.gitlab.com/glatteis/earthwalker
+
 The website should be hosted at `localhost:8080`. The port can be remapped via docker.
 
 #### Hosting outside of your network
