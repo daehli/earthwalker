@@ -27,10 +27,15 @@ This isn't a good permanent solution though, as you can only play for four hours
 First, I need to tell you that this program is technically against Google's Terms of Service, as it hides some UI elements on Street View, and filters out information from some Google packets that are sent to Street View. Hosting this game is your own responsibility
 (but if you only play with your friends, Google will hardly notice, I hope).
 
-#### Hosting on Linux or the Windows Subsystem for Linux (WSL)
+#### Using Docker (the easiest way)
 
-If you like whales and big images you can also install this via Docker, see "Docker". This guide is for just plainly
-installing the program.
+Install [Docker](https://www.docker.com/) and run this command:
+  
+    docker run -p 8080:8080 registry.gitlab.com/glatteis/earthwalker
+
+That's it. The website should be hosted at `localhost:8080`. The port can be remapped via docker.
+
+#### Hosting on Linux or the Windows Subsystem for Linux (WSL) manually (without Docker)
 
 Start by installing [Git](https://git-scm.com/), [Go](https://golang.org/) and [node](https://nodejs.org/en/download/).
 This can be done through `apt` if you're on Debian:
@@ -50,7 +55,7 @@ Now, clone this repo and build the program:
 
 You should now be able to run the `earthwalker` executable to start the server, and then go to `localhost:8080` in your browser to start playing!
 
-#### Hosting on Windows
+#### Hosting on Windows manually (without Docker)
 
 I would recommend installing a Windows Subsystem for Linux, for instance [the Debian one](https://www.microsoft.com/en-us/p/debian/),
 and then following the steps for "Hosting on Linux" above. 
@@ -75,9 +80,9 @@ And compile the front end:
 
 You should now be able to run `earthwalker.exe` to start the server, and then go to `localhost:8080` in your browser to start playing!
 
-#### Docker
+#### Using Docker but building it yourself
 
-To use the docker container you have to run the following commands (given you already have docker installed and configured).
+To use the docker container while building earthwalker yourself you have to run the following commands (given you already have docker installed and configured).
     
     git clone https://gitlab.com/glatteis/earthwalker.git
     cd earthwalker
@@ -86,13 +91,7 @@ To use the docker container you have to run the following commands (given you al
 
 It might not be necessary to use the `-t earthwalker:local` param, but it makes it a little prettier.
 
-You can also directly pulled the image from gitlab registry:
-  
-    docker run -p 8080:8080 registry.gitlab.com/glatteis/earthwalker
-
-The website should be hosted at `localhost:8080`. The port can be remapped via docker.
-
-#### Hosting outside of your network
+### Hosting outside of your network
 
 There are multiple possibilities with which you can host outside of your network.
 
@@ -105,7 +104,7 @@ Then, <your-ip>:<opened-port> should be open to others.
 access earthwalker through these services. Note that all traffic will flow through their servers, so don't spill your secrets.
 Remember to disable the service after stopping earthwalker.
 
-#### Configuration
+### Configuration
 
 We've provided a handful of configuration options, which are read from your environment variables, a `.toml` file, or command line arguments (these are all summarized below).  In all cases, command line arguments override environment variables, which override `.toml` values.  All configuration options are strings.  Using absolute paths is recommended.  
 You can rename or copy the provided sample configuration file, `config.toml.sample`, to `config.toml` to get started.
@@ -124,7 +123,7 @@ You can rename or copy the provided sample configuration file, `config.toml.samp
 
 </details>
 
-#### Updating
+### Updating
 
 You can update earthwalker by running `git pull` in its directory, and then running `make` or following the compilation instructions again.
 
