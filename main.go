@@ -99,7 +99,7 @@ func main() {
 		},
 	}))
 	// Public static files
-	http.Handle("/public/", http.StripPrefix("/public/", http.FileServer(http.Dir(conf.StaticPath+"/public"))))
+	// http.Handle("/public/", http.StripPrefix("/public/", http.FileServer(http.Dir(conf.StaticPath+"/public"))))
 	// SV sorcery
 	http.Handle("/play/", handlers.Play{
 		ChallengeStore:       challengeStore,
@@ -107,7 +107,7 @@ func main() {
 	})
 	http.HandleFunc("/maps/", handlers.ServeMaps)
 	// Otherwise, just serve index.html and let the frontend deal with the consequences
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) { http.ServeFile(w, r, "public/index.html") })
+	// http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) { http.ServeFile(w, r, "public/index.html") })
 
 	// == ENGAGE ========
 	log.Println("earthwalker is running on ", port)

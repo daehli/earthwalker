@@ -4,7 +4,6 @@ COPY . /opt/earthwalker/
 
 WORKDIR /opt/earthwalker
 
-RUN apk update && apk add --no-cache make npm && make
-	
+RUN apk update && apk add --no-cache make && make
 
 ENTRYPOINT ["./earthwalker"]
