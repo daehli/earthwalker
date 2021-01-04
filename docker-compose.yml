@@ -17,6 +17,8 @@ services:
       - "4000:4000"
     environment:
       EARTHWALKER_PORT: "4000"
+    volumes:
+      - ${PWD}/frontend-svelte/public/:/opt/earthwalker/public:rw
 
   client:
     build:
