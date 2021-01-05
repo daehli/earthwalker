@@ -44,21 +44,21 @@
         <div class="container">
             <div style="margin-top: 2em; text-align: center;">
                 <p class="text-center">
-                    You were {distString(distance)} from the correct position. Your marker is 
+                    You were {distString(distance)} from the correct position. Your marker is
                     {#if result && result.Guesses && result.Icon}
-                    <img 
-                        style="height: 40px;" 
+                    <img
+                        style="height: 40px;"
                         alt={result && result.Nickname ? result.Nickname : "Your Icon"}
                         src={svgIcon((curRound + 1).toString(), result.Icon)}/>
                     {/if}
                 </p>
                 <div class="progress" style="height: 40px;">
-                    <div 
-                        class="progress-bar" 
-                        role="progressbar" 
-                        style="width: {score / 50}%;" 
-                        aria-valuenow={score.toString()} 
-                        aria-valuemin="0" 
+                    <div
+                        class="progress-bar"
+                        role="progressbar"
+                        style="width: {score / 50}%;"
+                        aria-valuenow={score.toString()}
+                        aria-valuemin="0"
                         aria-valuemax="5000">
                         {score ? (score + "/5000 points") : ""}
                     </div>
