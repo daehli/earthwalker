@@ -1,6 +1,3 @@
-## Breaking changes in the last update!
-
-If your eartwalker doesn't work anymore after updating, please see [this file to fix it](readme/breaking_changes.md).
 
 # Earthwalker
 
@@ -8,6 +5,16 @@ Earthwalker is a game of a similar concept to [GeoGuessr](https://geoguessr.com)
 You get dropped somewhere in the world in Google StreetView, and the goal is to you find out where you are and guess your location more precisely than all of your friends. You can play against the clock, restrict the game to an area, and more.
 
 It's free and open source, and the idea is that people host it themselves to play with their friends. No Google API keys are needed, as Earthwalker "fools" the public Google Street View a bit. This is technically against Google TOS, so I am not hosting a public version of this myself.
+
+## Original Project
+
+Thanks Linus for this fun project. You can find the origin project [here](https://gitlab.com/glatteis/earthwalker). I added docker and docker-compose.yml in the project. It was an example for a friend about implenting nginx with a Backend service and a Frontend service together.
+
+
+**Start**
+```
+$ docker-compose.yml up -d
+```
 
 ## How do I play?
 
@@ -30,7 +37,7 @@ First, I need to tell you that this program is technically against Google's Term
 #### Using Docker (the easiest way)
 
 Install [Docker](https://www.docker.com/) and run this command:
-  
+
     docker run -p 8080:8080 registry.gitlab.com/glatteis/earthwalker
 
 That's it. The website should be hosted at `localhost:8080`. The port can be remapped via docker.
@@ -58,21 +65,21 @@ You should now be able to run the `earthwalker` executable to start the server, 
 #### Hosting on Windows manually (without Docker)
 
 I would recommend installing a Windows Subsystem for Linux, for instance [the Debian one](https://www.microsoft.com/en-us/p/debian/),
-and then following the steps for "Hosting on Linux" above. 
+and then following the steps for "Hosting on Linux" above.
 
-You can also host the game directly on Windows, but it may be a bit more complicated.    
-As on Linux, you'll need to install [Git](https://git-scm.com/), [Go](https://golang.org/) and [node](https://nodejs.org/en/download/).  If you want to use [make](http://www.gnu.org/software/make/), you'll need to install it as well.  
+You can also host the game directly on Windows, but it may be a bit more complicated.
+As on Linux, you'll need to install [Git](https://git-scm.com/), [Go](https://golang.org/) and [node](https://nodejs.org/en/download/).  If you want to use [make](http://www.gnu.org/software/make/), you'll need to install it as well.
 Once you have those components installed and working, clone the repo and cd (change directory) into it:
 
     git clone https://gitlab.com/glatteis/earthwalker.git
     cd earthwalker
 
-Then, run `make` if you've installed it, or if not:  
-Compile the server:  
+Then, run `make` if you've installed it, or if not:
+Compile the server:
 
-    go build 
+    go build
 
-And compile the front end:  
+And compile the front end:
 
     cd frontend-svelte
     npm install
@@ -83,7 +90,7 @@ You should now be able to run `earthwalker.exe` to start the server, and then go
 #### Using Docker but building it yourself
 
 To use the docker container while building earthwalker yourself you have to run the following commands (given you already have docker installed and configured).
-    
+
     git clone https://gitlab.com/glatteis/earthwalker.git
     cd earthwalker
     docker build -t earthwalker:local .
@@ -106,7 +113,7 @@ Remember to disable the service after stopping earthwalker.
 
 ### Configuration
 
-We've provided a handful of configuration options, which are read from your environment variables, a `.toml` file, or command line arguments (these are all summarized below).  In all cases, command line arguments override environment variables, which override `.toml` values.  All configuration options are strings.  Using absolute paths is recommended.  
+We've provided a handful of configuration options, which are read from your environment variables, a `.toml` file, or command line arguments (these are all summarized below).  In all cases, command line arguments override environment variables, which override `.toml` values.  All configuration options are strings.  Using absolute paths is recommended.
 You can rename or copy the provided sample configuration file, `config.toml.sample`, to `config.toml` to get started.
 
 <details>
