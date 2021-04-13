@@ -4,6 +4,7 @@ package api
 // 	     when something goes wrong)
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -12,6 +13,10 @@ import (
 
 	"gitlab.com/glatteis/earthwalker/domain"
 )
+
+type GenericError struct {
+	Err string `json:"error"`
+}
 
 type Root struct {
 	Config               domain.Config
@@ -50,10 +55,14 @@ func (handler Root) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 // sendError text as JSON
 func sendError(w http.ResponseWriter, text string, status int) {
-	respJSON := "{error: \"" + text + "\"}"
+	genericError := GenericError{Err: text}
+	respJSON, err := json.Marshal(genericError)
+	if err != nil {
+		log.Printf("Error during marshaling: %v\n", err)
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	_, err := w.Write([]byte(respJSON))
+	_, err = w.Write(respJSON)
 	if err != nil {
 		log.Printf("Error writing response: %v\n", err)
 	}

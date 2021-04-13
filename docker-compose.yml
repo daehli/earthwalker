@@ -1,18 +1,15 @@
 version: "3.3"
-
-
 services:
   nginx:
     image: nginx:latest
     ports:
-      - "8080:80"
+      - "80:80"
     volumes:
       - ${PWD}/frontend-svelte/public/:/usr/share/nginx/html/public:ro
       - ${PWD}/build/etc/nginx/nginx.conf:/etc/nginx/nginx.conf
 
   earthwalker:
-    build:
-      context: .
+    build: .
     ports:
       - "4000:4000"
     environment:
@@ -23,6 +20,5 @@ services:
   client:
     build:
       context: frontend-svelte/.
-
     volumes:
       - ${PWD}/frontend-svelte/public/:/usr/src/app/public/
